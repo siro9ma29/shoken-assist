@@ -386,9 +386,10 @@
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "v1.23";
-const APP_DATE    = "2026-09-16";
+const APP_VERSION = "v1.24";
+const APP_DATE    = "2026-10-23";
 const APP_HISTORY = [
+  {v:"v1.24", d:"2026-10-23", note:"所見文の文の並びを領域ごとにまとめた。v1.23までは「できる」→「伸長中」→「課題」の段ごとに全カテゴリを並べていたため、学習面→生活面→学習面のように同じ領域の文が離れて生成されていた。(1) 項目を学習系（「学習面」と教科別カテゴリ）と生活系（生活・行動面／健康・体力面／特別活動・係活動／人とのかかわり／行事別）に分け、学習系→生活系の順に並べる。領域の中では「できる」→「伸長中」の順。(2) 「課題」は従来どおり所見全体の最後に置く。(3) can→grow の切れ目（「また、」または因果文化、v1.18）は領域ごとに判定する。直前が別の領域の文の場合は因果化せず「また、」でつなぐ。can→can の因果化（v1.21）も同じ領域の can どうしに限った。(4) 字数による採用判定もこの並び順で行う。"},
   {v:"v1.23", d:"2026-10-23", note:"所見文の文頭に補っていた児童の呼称（「〇〇さんは、」）を付けないようにした。buildText()の3か所（課題の1文目、can→grow因果文の前半、先頭の文）から呼称付与を削除。児童名（state.name）は名簿の表示とCSV書き出し用に残し、名簿CSV取り込み画面の文言を「名前」基準に改めた（敬称の選択は名簿表示用として残す）。DBの文例には児童名を含めない方針も確認済み（文例作成時は児童名を入れない）。"},
   {v:"v1.22", d:"2026-09-16", note:"「基本設定」パネルの「文末表現のばらつき」（そろえる／変化をつける）の選択欄を削除し、常に「変化をつける」の動作に固定した。「そろえる」を選ぶ運用がほぼ想定されないため、選択肢自体をなくして画面を簡潔にした。(1) UI（varSegのボタン2つとヒント文）を削除。(2) state.variantを廃止し、getFragment()・can→can因果化（v1.21）内の文末バリアント計算から`state.variant ? (idx+seed) : 0`の分岐を外し、常に`idx+seed`を使う（＝常時ばらつきあり）。(3) 「言い回しを変えられません」の案内文から「そろえる」になっている場合の文言を削除し、常に「課題の文は形が決まっている」旨の文言のみ表示する。(4) 児童レコード（blankStudent／captureCurrent／applyRecord／normalizeStudent）からvariantフィールドの読み書きを削除。旧バージョンで保存したファイル（variant:falseを含む）を読み込んでも、単に無視されるだけで動作に影響しない。"},
   {v:"v1.21", d:"2026-09-16", note:"「できる」どうしが隣接する場面の因果化。健康・体力面／体育／運動会の項目で、直前の「できる」文が取り組み方・姿勢を表す語（EFFORT_MARK、v1.18と同じ判定）を含むとき、今回の「できる」文を通常の文末（「様子が見られました」等）ではなく、自分自身のgrowフィールドを結果節にした因果文（「〜することで、〜てきました。」）に差し替えるようにした。(1) v1.18のcan→grow因果化は「直前のcanを消して1文に合体」する方式だったが、今回はcan→canのため両方とも独立文のまま残す必要があり、対象文の文末表現だけを差し替える別実装にした（前文を pop しない）。(2) 対象カテゴリはTAIIKU_CATS（健康・体力面／体育／運動会）に限定し、DB読み込み時にTAIIKU_IDSへ項目idを集約して判定する。他教科の「できる」どうしの隣接には影響しない。(3) 因果化が起きた文には、通常のcan→can接続（従来は無接続）と違い「また、」を付ける。人が読んだときに前文との接続が分かりやすいため。(4) 結果節はgrowフィールドをそのままendGrow()に通して生成する（新規の専用フィールドは追加しない。工数を抑えつつ既存データを再利用する方針）。"},
@@ -1382,6 +1383,18 @@ function groupKind(group){
   if((group.grade || 'all') === 'all') return 'common';
   return SUBJECT_CAT_NAMES.has(group.cat) ? 'subject' : 'event';
 }
+/* v1.24：文の並びを領域ごとにまとめるための分類。
+   'learn'（学習系）＝「学習面」と教科別カテゴリ、
+   'life' （生活系）＝それ以外（生活・行動面／健康・体力面／特別活動・係活動／人とのかかわり／行事別）。
+   所見文はこの順（学習系→生活系）に並べ、同じ領域の文が離れないようにする。 */
+const DOMAIN_ORDER = ['learn','life'];
+const ITEM_DOMAIN = new Map();
+DB.forEach(g=>{
+  const d = (g.cat === '学習面' || groupKind(g) === 'subject') ? 'learn' : 'life';
+  g.items.forEach(i=>ITEM_DOMAIN.set(i.id, d));
+});
+function domainOf(c){ return ITEM_DOMAIN.get(c.it.id) || 'life'; }
+
 function gradeLabel(grade){
   return grade === 'mid' ? '中学年' : grade === 'high' ? '高学年' : '低学年';
 }
@@ -1604,9 +1617,16 @@ function getFragment(it, lvl, idx, seed){
   return lvl==='can' ? endCan(it.can, variant) : endGrow(it.grow, variant);
 }
 
-/* 「できる」→「伸長中」→「課題」の順に並べる（所見の定石）。
+/* 並び順（v1.24で変更）。
+   v1.23までは「できる」→「伸長中」→「課題」の段ごとに全領域をまとめて並べていたため、
+   学習面のできる→生活面のできる→学習面の伸長中…と、同じ領域の文が離れてしまっていた。
+   v1.24では領域（学習系→生活系）ごとにまとめ、領域の中で「できる」→「伸長中」の順にする。
+   「課題」は従来どおり所見全体の最後に置く（よさ・進歩を先に伝え、課題と手立てで結ぶ定石のため）。
    同じ段の中では、もとの項目の並び順を保つ。 */
-const order = arr => ['can','grow','issue'].flatMap(l=>arr.filter(c=>c.lvl===l));
+const order = arr => [
+  ...DOMAIN_ORDER.flatMap(d=>['can','grow'].flatMap(l=>arr.filter(c=>c.lvl===l && domainOf(c)===d))),
+  ...arr.filter(c=>c.lvl==='issue'),
+];
 
 /* 観点リストから所見文をまるごと組み立てる。
    採用判定にもこの関数を使うため、字数の見積もりと実際の出力が必ず一致する。
@@ -1616,7 +1636,10 @@ function buildText(list, seed){
   seed = seed || 0;
   if(!list.length) return { text:"", len:0, parts:[], owners:[] };
   const ordered = order(list);
-  const firstGrowPos = ordered.findIndex(c=>c.lvl==='grow');
+  // 各領域の最初の「伸長中」の位置（v1.24：can→grow の切れ目は領域ごとにある）
+  const firstGrowPos = new Set(DOMAIN_ORDER
+    .map(d=>ordered.findIndex(c=>c.lvl==='grow' && domainOf(c)===d))
+    .filter(i=>i>=0));
   const parts  = [];
   const owners = [];   // parts[i] がどの観点から出た文かを記録する（v1.12）
 
@@ -1638,7 +1661,7 @@ function buildText(list, seed){
     // 「また、」を付けて前文とのつながりを示す。
     if(c.lvl==='can' && i>0){
       const prev = ordered[i-1];
-      if(prev.lvl==='can' && isEffortCan(prev.it.can) && isTaiikuItem(c.it) && c.it.grow){
+      if(prev.lvl==='can' && domainOf(prev)===domainOf(c) && isEffortCan(prev.it.can) && isTaiikuItem(c.it) && c.it.grow){
         const variant = i + seed;
         const sent = "また、" + toCausalClause(c.it.can) + endGrow(c.it.grow, variant);
         parts.push(sent);   owners.push([c]);
@@ -1652,9 +1675,11 @@ function buildText(list, seed){
     // 含む場合は、2文に割らず「〜することで、〜てきました。」の因果文にまとめる。
     // それ以外は従来どおり「また、」でつなぐ（v1.7は「これからは、」だったが、
     // v1.8で grow を進歩型に統一したため時制が食い違い「また、」に変更した）。
-    if(i===firstGrowPos && i>0){
-      const prev = ordered[i-1];   // firstGrowPos の直前は必ず最後の can（order()による整列のため）
-      if(prev.lvl==='can' && isEffortCan(prev.it.can)){
+    if(firstGrowPos.has(i) && i>0){
+      // 直前が同じ領域の can なら、それがその領域の最後の can（order()による整列のため）。
+      // 直前が別の領域の文なら因果化はせず、「また、」でつなぐ。
+      const prev = ordered[i-1];
+      if(prev.lvl==='can' && domainOf(prev)===domainOf(c) && isEffortCan(prev.it.can)){
         const clause = toCausalClause(prev.it.can);
         parts.pop();   owners.pop();   // 直前に積んだ独立文（can）を取り除き、この文に合体させる
         sent = clause + sent;
