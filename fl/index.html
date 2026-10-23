@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>所見文アシスト（外国語活動）</title>
+<style>
+  :root{
+    --ink:#2b2b28; --sub:#6b6b64; --line:#dcd8cd;
+    --bg:#f6f4ee; --panel:#ffffff; --accent:#3f6f5a; --accent-soft:#e7efe9;
+    --warn:#b06a3a; --warn-soft:#f4e9df; --sel:#3f6f5a;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+    line-height:1.7; font-size:15px;
+  }
+  header{
+    background:var(--panel); border-bottom:1px solid var(--line);
+    padding:16px 22px; position:sticky; top:0; z-index:10;
+  }
+  header h1{font-size:19px; margin:0; letter-spacing:.04em; display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;}
+  header h1 .ver{
+    font-size:11.5px; font-weight:700; letter-spacing:.02em;
+    color:var(--accent); background:var(--accent-soft);
+    border:1px solid var(--accent); border-radius:12px; padding:2px 9px; white-space:nowrap;
+  }
+  header h1 .ver .date{font-weight:400; color:var(--sub); margin-left:5px;}
+  header p{margin:3px 0 0; font-size:12.5px; color:var(--sub);}
+  .wrap{max-width:1080px; margin:0 auto; padding:22px; display:grid; grid-template-columns:340px 1fr; gap:22px;}
+  @media(max-width:860px){.wrap{grid-template-columns:1fr;}}
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:18px;}
+  .panel h2{font-size:13px; letter-spacing:.08em; color:var(--sub); margin:0 0 14px; font-weight:700;
+    padding-bottom:8px; border-bottom:1px solid var(--line);}
+  .field{margin-bottom:16px;}
+  .field label{display:block; font-size:13px; font-weight:700; margin-bottom:6px;}
+  .row{display:flex; gap:8px; flex-wrap:wrap;}
+  .seg{display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden;}
+  .seg button{flex:1; border:none; background:var(--panel); padding:8px 6px; font-size:13px; cursor:pointer; color:var(--sub);}
+  .seg button.on{background:var(--accent); color:#fff;}
+  input[type=number],input[type=text]{
+    width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:14px; font-family:inherit;
+  }
+  .chips{display:flex; flex-wrap:wrap; gap:7px;}
+  .chip{border:1px solid var(--line); border-radius:20px; padding:5px 12px; font-size:12.5px; cursor:pointer; background:var(--panel); color:var(--sub);}
+  .chip.on{background:var(--accent-soft); border-color:var(--accent); color:var(--accent); font-weight:700;}
+  textarea{
+    width:100%; min-height:150px; padding:12px; border:1px solid var(--line); border-radius:8px;
+    font-size:14px; font-family:inherit; line-height:1.7; resize:vertical;
+  }
+  .hint{font-size:12px; color:var(--sub); margin:4px 0 0;}
+  .cats{display:flex; flex-direction:column; gap:8px;}
+  details.cat{border:1px solid var(--line); border-radius:8px; overflow:hidden;}
+  details.cat>summary{list-style:none; cursor:pointer; padding:10px 12px; font-weight:700; font-size:13.5px;
+    display:flex; justify-content:space-between; align-items:center; background:#faf9f5;}
+  details.cat>summary::-webkit-details-marker{display:none;}
+  details.cat>summary .count{font-size:11px; color:var(--accent); font-weight:700;}
+  .items{padding:6px 12px 12px;}
+  .item{display:flex; gap:9px; padding:8px 0; border-top:1px dashed var(--line); align-items:center; justify-content:space-between;}
+  .item:first-child{border-top:none;}
+  .item .txt{font-size:13.5px; flex:1;}
+  .item.sel .txt{font-weight:700;}
+  .lvlpick{display:flex; gap:5px; flex:none;}
+  .lvlpick label{position:relative; cursor:pointer;}
+  .lvlpick input{position:absolute; opacity:0; width:0; height:0;}
+  .lvlpick span{
+    display:inline-block; border:1px solid var(--line); border-radius:14px;
+    padding:3px 10px; font-size:11.5px; color:var(--sub); background:var(--panel);
+    white-space:nowrap; user-select:none;
+  }
+  .lvlpick input:checked + span.can{background:var(--accent-soft); border-color:var(--accent); color:var(--accent); font-weight:700;}
+  .lvlpick input:checked + span.grow{background:var(--warn-soft); border-color:var(--warn); color:var(--warn); font-weight:700;}
+  .lvlpick input:focus-visible + span{outline:2px solid var(--accent); outline-offset:1px;}
+  .star{flex:none; border:1px solid var(--line); background:var(--panel); border-radius:14px;
+    padding:3px 8px; font-size:12px; color:#c4c0b4; cursor:pointer; font-family:inherit; line-height:1.3;}
+  .star:hover{border-color:var(--warn);}
+  .star.on{background:#fdf3dd; border-color:#c99a2e; color:#b8860b; font-weight:700;}
+  .star:disabled{opacity:.35; cursor:not-allowed;}
+  .item.pri{background:#fffdf5;}
+  .item.pri .txt{font-weight:700;}
+  .prinote{font-size:12px; color:var(--sub); margin:8px 0 0;}
+  .prinote b{color:#b8860b;}
+  .dropped{font-size:12px; color:var(--sub); background:#faf9f5; border:1px dashed var(--line);
+    border-radius:8px; padding:8px 10px; margin-top:10px; line-height:1.6;}
+  .chips{display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;}
+  .chips button{border:1px solid var(--line); background:var(--panel); border-radius:14px;
+    padding:4px 10px; font-size:11.5px; color:var(--sub); cursor:pointer; font-family:inherit;}
+  .chips button:hover{border-color:var(--accent); color:var(--accent);}
+  .chips button.on{background:var(--accent-soft); border-color:var(--accent); color:var(--accent); font-weight:700;}
+  .nglint{font-size:12px; color:#8a3b3b; background:#fdf1f1; border:1px solid #e6c9c9;
+    border-radius:8px; padding:8px 10px; margin-top:10px; line-height:1.6;}
+  .nglint b{color:#8a3b3b;}
+  .btnrow{display:flex; gap:10px; margin-top:6px;}
+  .btn{flex:1; padding:12px; border:none; border-radius:8px; font-size:15px; font-weight:700; cursor:pointer; font-family:inherit;}
+  .btn.primary{background:var(--accent); color:#fff;}
+  .btn.ghost{background:var(--panel); border:1px solid var(--line); color:var(--ink); flex:none; padding:12px 16px;}
+  .out{min-height:120px; white-space:pre-wrap; font-size:15px; line-height:1.9; padding:14px;
+    background:#faf9f5; border:1px solid var(--line); border-radius:8px;}
+  .out.empty{color:var(--sub);}
+  .meta{display:flex; justify-content:space-between; align-items:center; margin-top:10px; font-size:12.5px; color:var(--sub);}
+  .meta .over{color:var(--warn); font-weight:700;}
+  .tools{display:flex; gap:8px; margin-top:12px;}
+  .tools button{padding:8px 12px; border:1px solid var(--line); border-radius:8px; background:var(--panel);
+    font-size:12.5px; cursor:pointer; font-family:inherit;}
+  .note{font-size:12px; color:var(--sub); background:var(--warn-soft); border-radius:8px; padding:10px 12px; margin-top:14px; line-height:1.6;}
+  /* バージョン表示。float:right だと本文が回り込み、文の途中に割り込んで見えるため
+     ブロック要素として本文の下に置く。 */
+  .notever{display:block; text-align:right; opacity:.7; margin-top:6px; font-size:11px;}
+
+.anlist{max-height:320px; overflow:auto; border:1px solid var(--line); border-radius:8px;}
+.anrow{display:flex; align-items:center; gap:8px; padding:7px 10px; border-bottom:1px solid var(--line); font-size:13px; cursor:pointer;}
+.anrow:last-child{border-bottom:none;}
+.anrow:hover{background:rgba(0,0,0,.03);}
+.ancat{flex:0 0 auto; font-size:11px; padding:2px 6px; border-radius:4px; background:var(--line); opacity:.8;}
+.antxt{flex:1 1 auto;}
+.anlvl{flex:0 0 auto; font-size:11px; padding:2px 7px; border-radius:10px; font-weight:600;}
+.anlvl.can{background:#dff3e3; color:#1b6b34;}
+.anlvl.grow{background:#fdeedd; color:#96550c;}
+.ankw{flex:0 0 auto; font-size:11px; opacity:.55; max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+</style>
+</head>
+<body>
+<header>
+  <h1>所見文アシスト（3・4年 外国語活動）<span class="ver" id="verBadge"></span></h1>
+  <p>3・4年生の外国語活動の3観点（知識・技能／思考・判断・表現／主体的に学習に取り組む態度）にそって、チェックした項目から所見文の下書きを組み立てます。生成後は必ず担任が加筆・修正してください。</p>
+</header>
+
+<div class="wrap">
+  <!-- 左：設定＋メモ -->
+  <div>
+    <div class="panel">
+      <h2>基本設定</h2>
+      <div class="field">
+        <label>文字数のめやす</label>
+        <div class="seg" id="lenSeg">
+          <button data-len="80">80字</button>
+          <button data-len="120" class="on">120字</button>
+          <button data-len="160">160字</button>
+        </div>
+        <div class="row" style="margin-top:8px; align-items:center;">
+          <input type="number" id="lenInput" value="120" min="30" max="400" style="width:90px;">
+          <span class="hint" style="margin:0;">字前後で調整</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>文体</label>
+        <div class="seg">
+          <button class="on" disabled style="flex:none; padding:8px 14px;">敬体（です・ます）</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>児童の呼び方（文頭）</label>
+        <input type="text" id="nameInput" placeholder="例）○○さん／空欄可">
+        <p class="hint">入力すると文頭に付きます。空欄なら名前なしで生成します。</p>
+      </div>
+
+      <div class="field">
+        <label>活動場面（任意）</label>
+        <input type="text" id="sceneInput" placeholder="例）好きなもの紹介">
+        <div class="chips" id="sceneChips">
+          <button data-scene="あいさつ">あいさつ</button>
+          <button data-scene="好きなもの紹介">好きなもの紹介</button>
+          <button data-scene="インタビュー">インタビュー</button>
+          <button data-scene="カードゲーム">カードゲーム</button>
+          <button data-scene="歌・チャンツ">歌・チャンツ</button>
+          <button data-scene="アルファベット">アルファベット</button>
+        </div>
+        <p class="hint">入力すると「『好きなもの紹介』の活動では、〜」と場面から書き起こします。</p>
+      </div>
+
+      <div class="field">
+        <label>結びの一文（身に付いた力）</label>
+        <div class="seg" id="closeSeg">
+          <button data-close="off">付けない</button>
+          <button data-close="on" class="on">付ける</button>
+        </div>
+        <p class="hint">選んだ観点から「〜する力が育っています。」などの締めを自動で付けます。</p>
+      </div>
+
+      <div class="field">
+        <label>文のまとめ方</label>
+        <div class="seg" id="joinSeg">
+          <button data-join="off" class="on">1観点＝1文</button>
+          <button data-join="on">2観点をまとめる</button>
+        </div>
+        <p class="hint">同じ観点の「できる」2件を「〜し、〜」で1文にまとめます。現在の文例は多くが読点を含むため、まとめると1文が60字前後の長文になります。既定は「1観点＝1文」です。</p>
+      </div>
+
+      <div class="field">
+        <label>文末表現のばらつき</label>
+        <div class="seg" id="varSeg">
+          <button data-var="off">そろえる</button>
+          <button data-var="on" class="on">変化をつける</button>
+        </div>
+        <p class="hint">語尾（〜です／〜ています／〜が見られました 等）の重複を避けます。</p>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:18px;">
+      <h2>観察メモを読み取る</h2>
+      <textarea id="memo" placeholder="担任の観察メモを貼り付けてください。&#10;例）Do you like〜？のやり取りで、進んで友達に質問していた。&#10;　　英語の歌やチャンツを楽しんで歌う。&#10;　　発表では声が小さく、支援が必要。"></textarea>
+      <div class="btnrow" style="margin-top:10px;">
+        <button class="btn primary" id="analyzeBtn">メモから観点を読み取る</button>
+        <button class="btn ghost" id="memoClearBtn">メモを消す</button>
+      </div>
+      <div id="analysis" style="display:none; margin-top:12px;"></div>
+      <p class="hint">キーワード照合で候補を出します（AIは使わずローカル処理）。結果は必ず目視で確認・修正してください。</p>
+    </div>
+  </div>
+
+  <!-- 右：項目選択＋出力 -->
+  <div>
+    <div class="panel">
+      <h2>観点と項目を選ぶ（各項目で「できる」／「伸長中」を選択）　<span style="color:var(--accent); float:right;" id="selCount">0件選択中</span></h2>
+      <div class="cats" id="cats"></div>
+      <p class="prinote" id="priNote"></p>
+      <div class="btnrow" style="margin-top:16px;">
+        <button class="btn primary" id="genBtn">所見文をつくる</button>
+        <button class="btn ghost" id="clearBtn">選択解除</button>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:18px;">
+      <h2>下書き</h2>
+      <div class="out empty" id="out">ここに所見文の下書きが表示されます。</div>
+      <div class="meta">
+        <span id="lenMeta">— 字</span>
+        <span id="tip"></span>
+      </div>
+      <div class="nglint" id="nglint" style="display:none;"></div>
+      <div class="dropped" id="dropped" style="display:none;"></div>
+      <div class="tools">
+        <button id="copyBtn">コピー</button>
+        <button id="regenBtn">別の言い回しで再生成</button>
+      </div>
+      <div class="note">
+        この下書きは定型文を組み合わせたものです。外国語活動は数値による評定ではなく、顕著な事項を端的に文章で記述する評価です。児童一人一人のよい点や進歩を励ます個人内評価となるよう、「〜の場面で、〜の表現を使って、〜できた」という具体的な姿（単元名・エピソード・振り返りカードの記述など）を加え、事実と異なる表現がないか必ず確認してから通知表に転記してください。
+        <span class="notever" id="noteVer"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ バージョン情報 ============
+   更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
+const APP_VERSION = "FL v1.3";
+const APP_DATE    = "2026-07-30";
+const APP_HISTORY = [
+  {v:"FL v1.3", d:"2026-07-30", note:"所見の書き方の資料に基づき生成ロジックを改善。(1)「活動場面」の入力欄を追加し「『好きなもの紹介』の活動では、〜」と場面から書き起こすようにした。(2) 採用された観点から「〜する力が育っています。」等の結びの一文を自動で付けるようにした（場面→様子→育った力の3段構成）。(3)「できる」から「伸長中」に移る接続を「これからは、」から「また、」に修正。FL v1.1で伸長中の文例を児童の進歩を述べる形に改めたため、「これからは、〜増えてきました」と時制が食い違い、かつ「まだできていない」という印象を与えていた。(4) 採用判定を1件ずつ完成形を組み立てて測る方式に変更し、呼称・場面・結びの字数も判定に入るようにした（従来はこれらが字数に数えられていなかった）。(5) 能力の優劣や他児との比較を印象づける表現を検出して知らせるチェックを追加。(6) 同じ観点の「できる」2件を連用中止形で1文にまとめる機能を追加したが、現在の文例は33/34件が読点を含み、まとめると読点3個以上・60字前後の長文になるため既定はオフとし、読点の数による上限を設けた。"},
+  {v:"FL v1.2", d:"2026-07-30", note:"通常版v1.7の「★重点」機能を移植（最大3件）。★を付けた観点は文字数のめやすに関わらず必ず所見に反映される。★は選択中の項目にのみ付けられ、3件に達すると他の★ボタンは無効化される。生成ロジックを打ち切り方式から採用リスト方式に書き換え、字数の都合で入りきらなかった観点を生成後に一覧表示するようにした。これで通常版と生成ロジックが同一になった。"},
+  {v:"FL v1.1", d:"2026-07-30", note:"文部科学省・国立教育政策研究所の資料に基づき観点を全面再編。領域別（聞く／やり取り／発表）の区分をやめ、指導要録と同じ3観点（知識・技能／思考・判断・表現／主体的に学習に取り組む態度）を大分類とした。思考・判断・表現の項目には［聞く］［やり取り］［発表］を明示。「相手が分かっているかを確かめて伝える」「自分たちの生活と比べて聞く」「相手が喜ぶよう内容を工夫する」「友達の発表のよさを取り入れる」など資料の記述例に対応する観点を追加。個人内評価の趣旨に沿い、「伸長中」の文例を教師の支援を述べる形から児童の進歩を述べる形に書き換えた。全34項目。"},
+  {v:"FL v1.0", d:"2026-07-23", note:"外国語活動版（小学校3・4年）の初版。学習指導要領の3観点（知識・技能／思考・判断・表現／主体的に学習に取り組む態度）＋「聞くこと」「話すこと［やり取り］」「話すこと［発表］」の領域別観点で構成。通常版v1.6の生成ロジック・メモ読み取り機能をそのまま継承。"},
+];
+document.getElementById('verBadge').innerHTML =
+  APP_VERSION + '<span class="date">' + APP_DATE + '</span>';
+document.getElementById('verBadge').title =
+  APP_HISTORY.map(h=>`${h.v}（${h.d}）${h.note}`).join("\n");
+document.title = "所見文アシスト（外国語活動） " + APP_VERSION;
+document.getElementById('noteVer').textContent = APP_VERSION;
+
+/* ============ 文例データベース ============
+   各項目に can（できている）/ grow（伸長中）両方の文例をもつ。
+   frag: 文の中核。文頭の呼称・接続・文末は生成時に付与する。 */
+const DB = [
+ {cat:"知識・技能（音声・表現・文化に慣れ親しむ）", items:[
+   {id:"k1", txt:"英語特有の音やリズムの違いに気づき、まねて言うことができる",
+    can:"英語特有の音やリズムの違いに気づき、聞こえたとおりにまねて言う",
+    grow:"英語の音やリズムをまねて声に出す姿が、少しずつ増えてきました"},
+   {id:"k2", txt:"ゆっくりはっきり話された語句や表現を聞き取ることができる",
+    can:"ゆっくりはっきり話された語句や表現を、集中して聞き取る",
+    grow:"繰り返し聞くうちに、聞き取れる語句が少しずつ増えてきました"},
+   {id:"k3", txt:"単元で扱う語や表現を聞いて意味が分かる",
+    can:"単元で扱う語や表現を聞いて、その意味を捉える",
+    grow:"絵カードなどを手がかりに、語や表現の意味を捉えられる場面が増えてきました"},
+   {id:"k4", txt:"あいさつや自己紹介の表現を使うことができる",
+    can:"あいさつや自己紹介の表現を、場面に合わせて使う",
+    grow:"あいさつや自己紹介の表現を自分から使おうとする姿が見られるようになりました"},
+   {id:"k5", txt:"数・色・形・食べ物など身近な語彙に慣れ親しんでいる",
+    can:"数や色、形、食べ物などの身近な語彙に慣れ親しみ、進んで口にする",
+    grow:"ゲームや歌を重ねる中で、口にできる語彙が少しずつ増えてきました"},
+   {id:"k6", txt:"歌やチャンツを楽しみ、リズムに乗って英語を話す",
+    can:"歌やチャンツを楽しみ、リズムに乗って英語を話すことに慣れ親しむ",
+    grow:"歌やチャンツに声を出して参加できるようになってきました"},
+   {id:"k7", txt:"アルファベットの大文字・小文字の形や読み方に慣れ親しんでいる",
+    can:"アルファベットの大文字・小文字の形や読み方に慣れ親しみ、進んで見つける",
+    grow:"アルファベットの形や読み方に少しずつ親しんできました"},
+   {id:"k8", txt:"単元の言い方（I have 〜. What do you want? など）を理解して使う",
+    can:"単元で学んだ言い方をよく理解し、やり取りの中で使う",
+    grow:"学んだ言い方を、友達の様子を見ながら使えるようになってきました"},
+   {id:"k9", txt:"英語の指示（Stand up など）を聞いて動くことができる",
+    can:"英語の指示を聞き取り、その場ですぐに行動に移す",
+    grow:"英語の指示を聞いて動ける場面が増えてきました"},
+   {id:"k10", txt:"世界には様々なあいさつや言葉があることを知っている",
+    can:"世界には様々なあいさつや言葉があることを知り、進んで声に出す",
+    grow:"世界の様々なあいさつに関心を寄せるようになってきました"},
+   {id:"k11", txt:"外国の行事や生活の様子を知り、文化に慣れ親しんでいる",
+    can:"外国の行事や生活の様子を知り、日本との違いに気づく",
+    grow:"外国の行事や生活の様子に関心を広げてきました"},
+ ]},
+ {cat:"思考・判断・表現（目的や場面に応じて伝え合う）", items:[
+   {id:"j1", txt:"［聞く］聞き取った内容から必要な情報を選ぶことができる",
+    can:"聞き取った内容から必要な情報を選び、絵や記号と結びつける",
+    grow:"聞く視点を示すと、必要な情報を選び取れるようになってきました"},
+   {id:"j2", txt:"［聞く］分からない語があっても推測しながら聞くことができる",
+    can:"分からない語があっても、映像や様子を手がかりに推測しながら聞く",
+    grow:"分からない語があっても最後まで聞き通そうとする姿が増えてきました"},
+   {id:"j3", txt:"［聞く］自分たちの生活と比べながら、考えて聞くことができる",
+    can:"外国の様子を自分たちの生活と比べながら、考えて聞く",
+    grow:"自分の生活と比べて聞くことで、気づきを言葉にできるようになってきました"},
+   {id:"j4", txt:"［聞く］日本語と英語の言い方の違いに気づき、伝えることができる",
+    can:"日本語と英語で言い方や語順が違うことに気づき、分かったことを伝える",
+    grow:"日本語と英語の言い方の違いに気づく場面が増えてきました"},
+   {id:"j5", txt:"［やり取り］相手に伝わるよう、声の大きさや速さを工夫する",
+    can:"相手に伝わるよう、声の大きさや話す速さを工夫する",
+    grow:"相手に届く声で話せる場面が少しずつ増えてきました"},
+   {id:"j6", txt:"［やり取り］身振りや表情を交えて分かりやすく伝える",
+    can:"言葉だけでなく、身振りや表情を交えて相手に分かりやすく伝える",
+    grow:"身振りや表情を交えて伝えようとする姿が見られるようになりました"},
+   {id:"j7", txt:"［やり取り］相手が分かっているかを確かめながら伝える",
+    can:"相手が分かっているかを確かめ、ゆっくり言い直すなどして伝える",
+    grow:"相手の様子を見ながら伝えようとする姿が増えてきました"},
+   {id:"j8", txt:"［やり取り］質問に応じて答え、やり取りを続けることができる",
+    can:"友達やALTの質問に応じて答え、反応を返しながらやり取りを続ける",
+    grow:"質問に自分の言葉で答えられる場面が増えてきました"},
+   {id:"j9", txt:"［やり取り］分からないときに聞き返したり尋ねたりできる",
+    can:"分からないときにはOne more time, please.などと自分から尋ねる",
+    grow:"分からないときに自分から聞き返そうとする姿が見られるようになりました"},
+   {id:"j10", txt:"［発表］伝えたいことの順序を考えて組み立てることができる",
+    can:"伝えたいことの順序を考え、まとまりのある発表に組み立てる",
+    grow:"話す順序を考えて組み立てられるようになってきました"},
+   {id:"j11", txt:"［発表］聞き手を見て、はっきりとした声で発表する",
+    can:"聞き手の方を見て、はっきりとした声で発表する",
+    grow:"聞き手を見て話せる場面が少しずつ増えてきました"},
+   {id:"j12", txt:"［発表］絵や実物を示しながら分かりやすく発表する",
+    can:"絵や実物、ポスターを示しながら、聞き手に分かりやすく発表する",
+    grow:"絵や実物を使って伝える工夫が見られるようになりました"},
+ ]},
+ {cat:"主体的に学習に取り組む態度", items:[
+   {id:"a1", txt:"間違いや言いよどみがあっても、粘り強く伝えようと工夫する",
+    can:"表現の誤りや言いよどむ場面があっても、粘り強く、よりよく伝えようと工夫する",
+    grow:"間違いを恐れず英語を使ってみようとする姿が増えてきました"},
+   {id:"a2", txt:"自分から進んで友達に英語で話しかけようとする",
+    can:"自分から進んで友達に英語で話しかけ、やり取りを楽しむ",
+    grow:"自分から英語で話しかけようとする姿が見られるようになりました"},
+   {id:"a3", txt:"多くの友達と関わり、相手を替えてやり取りしようとする",
+    can:"多くの友達と関わり、相手を替えながら意欲的にやり取りする",
+    grow:"いろいろな友達とやり取りする機会が少しずつ増えてきました"},
+   {id:"a4", txt:"外国語活動の学習を楽しみ、意欲的に参加している",
+    can:"外国語活動の学習をいつも楽しみ、生き生きと活動に参加する",
+    grow:"活動を楽しむ様子が少しずつ見られるようになりました"},
+   {id:"a5", txt:"友達と協力して、ゲームやペア活動に取り組もうとする",
+    can:"友達と協力しながら、ゲームやペア活動に意欲的に取り組む",
+    grow:"友達と協力して活動を進めようとする姿が増えてきました"},
+   {id:"a6", txt:"ALTや外国の人に自分から関わろうとする",
+    can:"ALTに自分から話しかけるなど、外国の人と積極的に関わる",
+    grow:"ALTに自分から関わろうとする姿が少しずつ見られるようになりました"},
+   {id:"a7", txt:"相手の思いを大切にしながら伝え合おうとする",
+    can:"相手の思いを大切にしながら、互いに考えを伝え合う",
+    grow:"相手の思いを受け止めながら伝え合おうとする姿が見られます"},
+   {id:"a8", txt:"相手が喜ぶよう、伝える内容を工夫しようとする",
+    can:"相手が喜ぶように、伝える内容や見せ方を自分で工夫する",
+    grow:"相手のことを考えて内容を選ぼうとする姿が見られるようになりました"},
+   {id:"a9", txt:"友達の発表のよさを見つけ、自分の発表に取り入れようとする",
+    can:"友達の発表のよさを見つけ、自分の発表にも取り入れる",
+    grow:"友達の発表のよさに気づき、言葉にできるようになってきました"},
+   {id:"a10", txt:"振り返りをもとに自分の課題に気づき、次の目標をもつ",
+    can:"振り返りカードに自分の課題を書き表し、次の目標をもって学習に向かう",
+    grow:"振り返りをもとに次のめあてを考えられるようになってきました"},
+   {id:"a11", txt:"外国の文化や習慣の違いを認め、尊重しようとする",
+    can:"外国の文化や習慣の違いを認め、尊重しようとする態度を示す",
+    grow:"文化の違いに関心をもち、受け止めようとする姿が見られます"},
+ ]},
+];
+
+/* ============ 文末バリエーション ============ */
+const ENDINGS = {
+  can:[
+    (f)=>f+"ことができました。",
+    (f)=>f+"様子が見られました。",
+    (f)=>toTeiru(f)+"。",
+    (f)=>f+"姿が印象的でした。",
+  ],
+  grow:[
+    (f)=>f+"。",
+    (f)=>f+"ところです。",
+  ]
+};
+/* 常体の動詞終止形 →「〜ています」 */
+function toTeiru(s){
+  s = s.replace(/。$/, "");
+  if(/(ています|でいます|ました|です)$/.test(s)) return s;
+  if(/(ている|でいる)$/.test(s)) return s.replace(/ている$/,"ています").replace(/でいる$/,"でいます");
+  if(/する$/.test(s)) return s.replace(/する$/, "しています");
+  if(/来る$/.test(s)) return s.replace(/来る$/, "来ています");
+  if(/([いえきけぎげじぜしせちてでにねひへびべみめりれ])る$/.test(s)) return s.replace(/る$/, "ています");
+  const te = {"う":"って","つ":"って","る":"って","む":"んで","ぶ":"んで","ぬ":"んで","く":"いて","ぐ":"いで","す":"して"};
+  const last = s.slice(-1);
+  if(te[last]) return s.slice(0,-1) + te[last] + "います";
+  return toPolite(s);
+}
+
+/* 「できる」系fragはそのまま文末付与、「伸長中」fragは既に語尾を含む場合が多いので調整 */
+function endCan(frag, variant){
+  const opts = ENDINGS.can;
+  const fn = opts[variant % opts.length];
+  return fn(frag);
+}
+function endGrow(frag, variant){
+  // grow系fragは敬体で登録済み。念のため常体で来た場合は敬体化する。
+  return toPolite(frag) + "。";
+}
+
+/* 常体の動詞終止形 →「連用中止形」（例：工夫する→工夫し／聞き取る→聞き取り）
+   2つの観点を1文にまとめるときの接続に使う。toPolite の「ます形」から
+   「ます」を落とすだけなので、活用処理は既存の実装をそのまま流用している。
+   変換できない語（形容詞など）は null を返し、その場合は文をまとめない。 */
+function toRenyou(s){
+  s = s.replace(/。$/, "");
+  const p = toPolite(s);
+  if(!/ます$/.test(p)) return null;
+  const r = p.slice(0, -2);
+  return r.length ? r : null;
+}
+
+/* 常体→敬体 変換（保険。fragが常体で書かれていた場合に備える） */
+function toPolite(s){
+  s = s.replace(/。$/, "");
+  if(/(ます|ました|です|でした|ません)$/.test(s)) return s;          // 既に敬体
+  s = s.replace(/でいる$/, "でいます").replace(/ている$/, "ています"); // 〜ている
+  if(/(ています|でいます)$/.test(s)) return s;
+  if(/(だった|た)$/.test(s)) return s.replace(/だった$/, "でした").replace(/([^で])た$/, "$1ました");
+  if(/(である|だ)$/.test(s)) return s.replace(/(である|だ)$/, "です");
+  if(/する$/.test(s)) return s.replace(/する$/, "します");            // サ変
+  if(/来る$/.test(s)) return s.replace(/来る$/, "来ます");            // カ変
+  s = s.replace(/([いえきけぎげじぜしせちてでにねひへびべみめりれ])る$/, "$1ます"); // 一段動詞
+  if(/ます$/.test(s)) return s;
+  const godan = {"う":"い","く":"き","ぐ":"ぎ","す":"し","つ":"ち","ぬ":"に","ぶ":"び","む":"み","る":"り"};
+  const last = s.slice(-1);
+  if(godan[last]) return s.slice(0,-1) + godan[last] + "ます";        // 五段動詞
+  if(/い$/.test(s)) return s + "です";                                // 形容詞
+  return s;
+}
+
+/* ============ 結びの一文（身に付いた力） ============ */
+/* 「どんな場面で」「どんな様子が見られ」「どんな力が育ったか」の3段構成のうち、
+   3段目にあたる締めの文。採用された観点が最も多い観点から選ぶ。 */
+const CLOSERS = {
+  k:[ "英語の音声や表現に慣れ親しんできています。",
+      "学習した語句や表現を聞いて分かる力が育っています。",
+      "英語の音やリズムに親しみ、口にすることに慣れてきています。" ],
+  j:[ "相手を意識して伝えようと工夫する力が育っています。",
+      "知っている英語を使って伝え合う力が育っています。",
+      "相手や場面に応じて表現を選ぼうとする力が育っています。" ],
+  a:[ "英語を使って進んで人とかかわろうとする態度が育っています。",
+      "コミュニケーションを楽しもうとする態度が見られます。",
+      "間違いを恐れず英語で伝えようとする態度が育っています。" ],
+};
+
+/* 採用された観点の内訳から、締めに使う観点を1つ決める。
+   同数のときは、外国語活動で最も重視される「主体的に学習に取り組む態度」を優先する。 */
+function pickCloser(list, seed){
+  const n = {k:0, j:0, a:0};
+  list.forEach(c=>{ const p = c.it.id[0]; if(p in n) n[p]++; });
+  let best = 'a';
+  ['a','j','k'].forEach(p=>{ if(n[p] > n[best]) best = p; });
+  const opts = CLOSERS[best];
+  return opts[(seed||0) % opts.length];
+}
+
+/* ============ 避けたい表現のチェック ============ */
+/* 能力の優劣を印象づける表現・他児と比較する表現・「できない」の記述を検出する。
+   文例を学校独自のものに差し替えたときの安全網。 */
+const NG_WORDS = ["英語が得意","英語が苦手","苦手です","苦手でした","発音が悪い","発音がよくない",
+  "間違いが多い","誤りが多い","消極的","クラスの中で","クラスで一番","ほかの子","他の子",
+  "友達より","友達に比べ","できません","できないことが多い","劣っ"];
+
+function lintText(text){
+  return NG_WORDS.filter(w=>text.includes(w));
+}
+
+/* 起動時に文例データ全体を点検する（問題があればコンソールに警告） */
+(function lintDB(){
+  const bad = [];
+  DB.forEach(g=>g.items.forEach(it=>{
+    ['can','grow'].forEach(k=>{
+      const hit = lintText(it[k]);
+      if(hit.length) bad.push(it.id + "." + k + " → " + hit.join("／"));
+    });
+  }));
+  if(bad.length) console.warn("[所見文アシスト] 避けたい表現が文例に含まれています：\n" + bad.join("\n"));
+})();
+
+/* ============ UI構築 ============ */
+/* sel: Map<id, "can"|"grow">  /  pri: Set<id>（★重点。最大 MAX_PRI 件） */
+const MAX_PRI = 3;
+const state = { len:120, variant:true, join:false, closer:true,
+                sel:new Map(), pri:new Set(), regenSeed:0 };
+
+const catsEl = document.getElementById('cats');
+DB.forEach(group=>{
+  const d = document.createElement('details'); d.className='cat'; d.open=true;
+  const n = group.items.length;
+  d.innerHTML = `<summary>${group.cat}<span class="count" data-cat="${group.cat}">0/${n}</span></summary>`;
+  const box = document.createElement('div'); box.className='items';
+  group.items.forEach(it=>{
+    const row=document.createElement('div'); row.className='item'; row.dataset.id=it.id;
+    row.innerHTML=`<span class="txt">${it.txt}</span>
+      <button type="button" class="star" data-id="${it.id}" title="重点にする（最大${MAX_PRI}件・必ず所見に入ります）">★</button>
+      <span class="lvlpick">
+        <label title="できている"><input type="checkbox" data-id="${it.id}" data-lvl="can"><span class="can">できる</span></label>
+        <label title="伸びつつある"><input type="checkbox" data-id="${it.id}" data-lvl="grow"><span class="grow">伸長中</span></label>
+      </span>`;
+    row.querySelector('.star').addEventListener('click', ()=>{
+      if(state.pri.has(it.id)){
+        state.pri.delete(it.id);
+      }else{
+        if(!state.sel.has(it.id)){
+          alert("先にこの項目の「できる」または「伸長中」を選んでから★を付けてください。");
+          return;
+        }
+        if(state.pri.size >= MAX_PRI){
+          alert("★重点は最大"+MAX_PRI+"件までです。他の★を外してから付けてください。");
+          return;
+        }
+        state.pri.add(it.id);
+      }
+      updateCounts();
+    });
+    row.querySelectorAll('input').forEach(inp=>{
+      inp.addEventListener('change', e=>{
+        const lvl = e.target.dataset.lvl;
+        if(e.target.checked){
+          // 排他：同じ項目のもう一方を外す
+          row.querySelectorAll('input').forEach(o=>{ if(o!==e.target) o.checked=false; });
+          state.sel.set(it.id, lvl);
+        }else{
+          state.sel.delete(it.id);
+          state.pri.delete(it.id);   // 選択を外したら★も外す
+        }
+        row.classList.toggle('sel', state.sel.has(it.id));
+        updateCounts();
+      });
+    });
+    box.appendChild(row);
+  });
+  d.appendChild(box); catsEl.appendChild(d);
+});
+setTimeout(updateCounts, 0);   // ★ボタンの初期状態を反映
+
+function updateCounts(){
+  document.getElementById('selCount').textContent =
+    state.sel.size+'件選択中' + (state.pri.size ? `（★${state.pri.size}）` : '');
+  DB.forEach(g=>{
+    const n = g.items.filter(i=>state.sel.has(i.id)).length;
+    const el = document.querySelector(`.count[data-cat="${g.cat}"]`);
+    if(el) el.textContent = `${n}/${g.items.length}`;
+  });
+  // ★ボタンの表示と、上限に達したときの無効化
+  const full = state.pri.size >= MAX_PRI;
+  document.querySelectorAll('#cats .star').forEach(b=>{
+    const on = state.pri.has(b.dataset.id);
+    b.classList.toggle('on', on);
+    b.disabled = !on && (full || !state.sel.has(b.dataset.id));
+    b.closest('.item').classList.toggle('pri', on);
+  });
+  const pn = document.getElementById('priNote');
+  if(pn){
+    pn.innerHTML = state.pri.size
+      ? `★重点 <b>${state.pri.size}/${MAX_PRI}</b> 件：字数のめやすに関わらず必ず所見に入ります。`
+      : `★を押すと重点指定（最大${MAX_PRI}件）。★の観点は字数のめやすに関わらず必ず所見に入ります。`;
+  }
+}
+
+/* 文字数セグメント */
+document.getElementById('lenSeg').addEventListener('click',e=>{
+  if(e.target.dataset.len){
+    [...e.currentTarget.children].forEach(b=>b.classList.remove('on'));
+    e.target.classList.add('on');
+    state.len=+e.target.dataset.len;
+    document.getElementById('lenInput').value=state.len;
+  }
+});
+document.getElementById('lenInput').addEventListener('input',e=>{
+  state.len=+e.target.value||120;
+  [...document.querySelectorAll('#lenSeg button')].forEach(b=>b.classList.remove('on'));
+});
+document.getElementById('varSeg').addEventListener('click',e=>{
+  if(e.target.dataset.var){
+    [...e.currentTarget.children].forEach(b=>b.classList.remove('on'));
+    e.target.classList.add('on');
+    state.variant = e.target.dataset.var==='on';
+  }
+});
+document.getElementById('closeSeg').addEventListener('click',e=>{
+  if(e.target.dataset.close){
+    [...e.currentTarget.children].forEach(b=>b.classList.remove('on'));
+    e.target.classList.add('on');
+    state.closer = e.target.dataset.close==='on';
+  }
+});
+document.getElementById('joinSeg').addEventListener('click',e=>{
+  if(e.target.dataset.join){
+    [...e.currentTarget.children].forEach(b=>b.classList.remove('on'));
+    e.target.classList.add('on');
+    state.join = e.target.dataset.join==='on';
+  }
+});
+/* 活動場面のクイック入力 */
+document.getElementById('sceneChips').addEventListener('click',e=>{
+  const v = e.target.dataset.scene;
+  if(!v) return;
+  const box = document.getElementById('sceneInput');
+  box.value = (box.value.trim()===v) ? "" : v;   // 同じものを再度押すと解除
+  [...e.currentTarget.children].forEach(b=>b.classList.toggle('on', b.dataset.scene===box.value));
+});
+
+/* ============ 生成ロジック ============ */
+function getFragment(it, lvl, idx){
+  const variant = state.variant ? (idx + state.regenSeed) : 0;
+  const frag = it[lvl];
+  return lvl==='can' ? endCan(frag, variant) : endGrow(frag, variant);
+}
+
+/* 「できる」→「伸長中」の順に並べる（所見の定石） */
+const order = arr => [...arr.filter(c=>c.lvl==='can'), ...arr.filter(c=>c.lvl==='grow')];
+
+/* 2つの観点を1文にまとめてよいか。
+   同じ観点・どちらも「できる」・連用中止形に変換できる・合計が長すぎない、の4条件。 */
+const JOIN_MAX   = 56;   // まとめる2件の合計字数の上限
+const JOIN_COMMA = 3;    // まとめた文に許す読点の数の上限
+function canJoin(a, b){
+  if(!state.join || !a || !b) return false;
+  if(a.lvl!=='can' || b.lvl!=='can') return false;
+  if(a.it.id[0] !== b.it.id[0]) return false;              // 観点をまたいでつながない
+  if(toRenyou(a.it.can) === null) return false;
+  if([...(a.it.can + b.it.can)].length > JOIN_MAX) return false;
+  // 文例自体が読点を含むため、つなぐと読点だらけの長文になりやすい。
+  // つなぎの読点1つを足した数で上限を見る。
+  const commas = (a.it.can.match(/、/g)||[]).length + (b.it.can.match(/、/g)||[]).length + 1;
+  return commas <= JOIN_COMMA;
+}
+
+/* 観点リストから所見文をまるごと組み立てる。
+   採用判定でもこの関数を使うため、字数の推定と実際の出力が必ず一致する。 */
+function buildText(list){
+  if(!list.length) return { text:"", len:0 };
+  const name  = document.getElementById('nameInput').value.trim();
+  const scene = document.getElementById('sceneInput').value.trim();
+  const ordered = order(list);
+
+  // 1) 文の単位にまとめる（1観点＝1文、または同観点の「できる」2件＝1文）
+  const units = [];
+  for(let i=0; i<ordered.length; i++){
+    if(canJoin(ordered[i], ordered[i+1])){ units.push([ordered[i], ordered[i+1]]); i++; }
+    else units.push([ordered[i]]);
+  }
+
+  // 2) 各単位を文にする
+  const firstGrowUnit = units.findIndex(u=>u[0].lvl==='grow');
+  const lastIdx = units.length - 1;
+  const sentences = units.map((u,i)=>{
+    let sent;
+    if(u.length===2){
+      // 「〜し、〜することができました。」の形にまとめる
+      let v = state.variant ? (i + state.regenSeed) : 0;
+      if(state.closer && i===lastIdx && v % ENDINGS.can.length === 2) v++;  // 結びと語尾が重なるのを避ける
+      sent = endCan(toRenyou(u[0].it.can) + "、" + u[1].it.can, v);
+    }else{
+      let v = state.variant ? (i + state.regenSeed) : 0;
+      if(state.closer && i===lastIdx && u[0].lvl==='can' && v % ENDINGS.can.length === 2) v++;
+      sent = u[0].lvl==='can' ? endCan(u[0].it.can, v) : endGrow(u[0].it.grow, v);
+    }
+    if(i===0){
+      // 「どんな場面で」＝書き起こし。呼称と活動場面をここでまとめて付ける。
+      let head = "";
+      if(name)  head += name + "は、";
+      if(scene) head += "「" + scene + "」の活動" + (name ? "で、" : "では、");
+      sent = head + sent;
+    }
+    // can→grow の切れ目。「伸長中」の文例は児童の進歩を述べる形（「〜増えてきました」）
+    // なので、「これからは、」を付けると時制が食い違い、かつ「まだできていない」という
+    // 印象を与える。所見では「できない」を書かないため、中立な「また、」でつなぐ。
+    if(i===firstGrowUnit && i>0) sent = "また、" + sent;
+    return sent;
+  });
+
+  // 3) 「どんな力が育ったか」＝結びの一文
+  if(state.closer) sentences.push(pickCloser(list, state.regenSeed));
+
+  const text = sentences.join("");
+  return { text, len:[...text].length };
+}
+
+function generate(){
+  const chosen = DB.flatMap(g=>g.items)
+    .filter(i=>state.sel.has(i.id))
+    .map(i=>({it:i, lvl:state.sel.get(i.id)}));
+  if(chosen.length===0){
+    setOut("項目の「できる」または「伸長中」を1つ以上選んでから「所見文をつくる」を押してください。", true);
+    return;
+  }
+  const target = state.len;
+
+  // ★重点は必ず採用。★内でも「できる」→「伸長中」の順、
+  // 続いて★以外を同じく「できる」→「伸長中」の順に並べる。
+  const isPri = c => state.pri.has(c.it.id);
+  const priList  = order(chosen.filter(isPri));
+  const restList = order(chosen.filter(c=>!isPri(c)));
+
+  // 採用リストを1件ずつ広げる。毎回 buildText で完成形の字数を測るので、
+  // 呼称・活動場面・結びの一文・文のまとめによる増減がすべて判定に入る。
+  const adopted = [...priList];
+  let best = buildText(adopted);
+  const dropped = [];
+
+  restList.forEach(c=>{
+    const cand = buildText([...adopted, c]);
+    // 採用が1件もないときは1件目を必ず採用。以降はめやすに近づく場合のみ。
+    if(adopted.length===0 || Math.abs(cand.len - target) < Math.abs(best.len - target)){
+      adopted.push(c); best = cand;
+    }else{
+      dropped.push(c);
+    }
+  });
+
+  setOut(best.text, false);
+  updateMeta(best.text, target);
+  showDropped(dropped);
+  showLint(best.text);
+}
+
+/* 避けたい表現が混ざっていたら知らせる */
+function showLint(text){
+  const box = document.getElementById('nglint');
+  if(!box) return;
+  const hit = lintText(text);
+  if(!hit.length){ box.style.display='none'; box.textContent=''; return; }
+  box.innerHTML = `<b>避けたい表現が含まれています：${hit.join("／")}</b><br>`
+    + `能力の優劣や他児との比較を印象づける表現、「できない」ことの記述は避け、`
+    + `学習の過程や成長を表す言い方に置き換えてください。`;
+  box.style.display='block';
+}
+
+/* 字数の都合で入りきらなかった観点を知らせる */
+function showDropped(dropped){
+  const box = document.getElementById('dropped');
+  if(!dropped.length){ box.style.display='none'; box.textContent=''; return; }
+  const names = dropped.map(c=>`${c.it.txt}（${c.lvl==='can'?'できる':'伸長中'}）`).join('／');
+  box.innerHTML = `字数のめやすに収まらず、${dropped.length}件の観点は入りませんでした：${names}<br>`
+    + `必ず入れたい観点は ★ を付けてください（最大${MAX_PRI}件）。または文字数のめやすを増やしてください。`;
+  box.style.display='block';
+}
+
+function setOut(t, empty){
+  const o=document.getElementById('out');
+  o.textContent=t; o.classList.toggle('empty', !!empty);
+  if(empty){
+    document.getElementById('lenMeta').textContent='— 字';
+    document.getElementById('tip').textContent='';
+    const d=document.getElementById('dropped'); if(d){ d.style.display='none'; d.textContent=''; }
+    const g=document.getElementById('nglint');  if(g){ g.style.display='none'; g.textContent=''; }
+  }
+}
+function updateMeta(text, target){
+  const n=[...text].length;
+  const meta=document.getElementById('lenMeta');
+  meta.textContent = n+' 字（めやす '+target+'字）';
+  const tip=document.getElementById('tip');
+  const diff=n-target;
+  if(Math.abs(diff)<=target*0.2){ tip.textContent='めやすの範囲内です'; tip.className=''; }
+  else if(diff>0){ tip.innerHTML='<span class="over">やや長め：項目を減らすと近づきます</span>'; }
+  else { tip.textContent='やや短め：項目を足すと近づきます'; }
+}
+
+document.getElementById('genBtn').addEventListener('click',()=>{ state.regenSeed=0; generate(); });
+document.getElementById('regenBtn').addEventListener('click',()=>{ state.regenSeed++; generate(); });
+document.getElementById('clearBtn').addEventListener('click',()=>{
+  state.sel.clear();
+  state.pri.clear();
+  document.querySelectorAll('#cats input[type=checkbox]').forEach(c=>c.checked=false);
+  document.querySelectorAll('#cats .item').forEach(r=>r.classList.remove('sel','pri'));
+  updateCounts(); setOut("ここに所見文の下書きが表示されます。", true);
+  showDropped([]);
+});
+document.getElementById('copyBtn').addEventListener('click',()=>{
+  const t=document.getElementById('out').textContent;
+  navigator.clipboard?.writeText(t).then(()=>{
+    const b=document.getElementById('copyBtn'); b.textContent='コピーしました'; setTimeout(()=>b.textContent='コピー',1400);
+  });
+});
+updateCounts();
+
+/* ============ メモ自動読み取り ============ */
+/* 各項目のキーワード。メモ内に含まれれば候補としてヒットする。 */
+const KW = {
+ k1:["音","リズム","まね","真似","発音","イントネーション","音声"],
+ k2:["聞き取","聞きとる","ゆっくり","はっきり話され","リスニング"],
+ k3:["聞いて意味","意味が分か","意味を捉","語の意味","表現の意味"],
+ k4:["あいさつ","挨拶","自己紹介","Hello","ハロー","名前を言"],
+ k5:["数","色","形","動物","果物","くだもの","食べ物","語彙","単語","ナンバー","カラー","文房具","持ち物"],
+ k6:["歌","チャンツ","ソング","song","リズムに合わせ","口ずさ"],
+ k7:["アルファベット","大文字","小文字","文字の形","ABC"],
+ k8:["I have","What do you want","Do you like","表現をよく理解","言い方を理解","単元の表現","ワークシートの記述","表現を使っ"],
+ k9:["指示","Stand up","立って","動作で","指示を聞い"],
+ k10:["世界のあいさつ","世界の挨拶","様々なあいさつ","いろいろな言葉","世界の言葉","時間帯"],
+ k11:["外国の文化","異文化","行事","クリスマス","海外","国旗","他国","外国の生活","生活の様子","世界の国"],
+
+ j1:["必要な情報","線で結","選び","聞いて選","○をつけ","絵と結び","どの国の"],
+ j2:["推測","予想しながら","分からない語","知らない言葉","手がかり"],
+ j3:["比べ","比較","くらべ","自分たちの","日本と"],
+ j4:["語順","言い方の違い","日本語と英語","違いに気づ","違いに気付","言葉の違い","規則"],
+ j5:["声の大き","はっきりした声","ゆっくり話","伝わるよう","話す速さ"],
+ j6:["身振り","ジェスチャー","表情","手ぶり","動きをつけ","手で形"],
+ j7:["確かめ","伝わっているか","分かっているか","相手の様子","反応を見"],
+ j8:["質問に答え","答える","応答","返事を英語","やり取りを続け","会話をつな","インタビュー"],
+ j9:["聞き返","もう一度","One more","分からないとき","尋ね"],
+ j10:["順序","組み立て","構成","まとまり","はじめに"],
+ j11:["聞き手を見","顔を上げ","目を見て","はっきりとした声で発表","前を向"],
+ j12:["絵を見せ","実物","カードを示","ポスター","作品を見せ","写真を見せ"],
+
+ a1:["間違いを恐れ","失敗を恐れ","言いよど","粘り強","あきらめ","諦め","恥ずかし","誤り","苦手"],
+ a2:["話しかけ","自分から英語","進んでやり取り","声をかけて英語"],
+ a3:["多くの友達","たくさんの友達","相手を替え","いろいろな友達と英語","何人も","級友"],
+ a4:["楽しんで","笑顔","生き生き","意欲的","好き","楽しそう","楽しみ"],
+ a5:["協力","ペア","グループ","ゲーム","一緒に活動","友達と取り組"],
+ a6:["ALT","外国の方","ネイティブ","先生に話しかけ","外国人"],
+ a7:["相手の思い","伝え合","思いやり","相手を大切","相手に配慮"],
+ a8:["相手が喜","喜ぶよう","内容を工夫","相手のことを考え","工夫して発表"],
+ a9:["友達の発表","よさを見つけ","取り入れ","参考に","拍手","感想を伝え"],
+ a10:["振り返り","めあて","次に生かす","自分の伸び","次は","目標","課題に気づ"],
+ a11:["尊重","認め合","文化の違い","受け止め","多様"],
+};
+
+/* ネガ／伸長中を示唆する手がかり */
+const GROW_HINT = ["苦手","できない","難しい","課題","が少ない","もう少し","ようになってきた","増えてきた","支援","声かけ","促す","促し","まだ","時々","ときどき","不足","忘れがち","うまくいかない","戸惑","ばらつき","めあて","今後","期待"];
+
+function analyzeMemo(){
+  const raw = document.getElementById('memo').value || "";
+  if(!raw.trim()){ showAnalysis([], "メモが空です。テキストを貼り付けてください。"); return; }
+  const text = raw.replace(/\s+/g,'');
+  const hits = [];
+  DB.forEach(g=>{
+    g.items.forEach(it=>{
+      const words = KW[it.id] || [];
+      const found = words.filter(w=>text.includes(w.replace(/\s+/g,'')));
+      if(found.length){
+        // 該当キーワード周辺40字を見て、できる/伸長中を判定
+        let lvl = "can", score = found.length;
+        for(const w of found){
+          const i = text.indexOf(w);
+          const ctx = text.slice(Math.max(0,i-25), i+w.length+25);
+          if(GROW_HINT.some(h=>ctx.includes(h))){ lvl="grow"; break; }
+        }
+        hits.push({id:it.id, txt:it.txt, cat:g.cat, lvl, score, words:found});
+      }
+    });
+  });
+  hits.sort((a,b)=>b.score-a.score);
+  showAnalysis(hits, hits.length ? "" : "該当する観点が見つかりませんでした。手動でチェックしてください。");
+}
+
+function showAnalysis(hits, msg){
+  const box = document.getElementById('analysis');
+  if(msg && !hits.length){
+    box.innerHTML = `<p class="hint" style="margin:0;">${msg}</p>`;
+    box.style.display='block';
+    return;
+  }
+  let html = `<p class="hint" style="margin:0 0 8px;">${hits.length}件の観点が見つかりました。取り込むものを選んでください。</p>`;
+  html += '<div class="anlist">';
+  hits.forEach(h=>{
+    html += `<label class="anrow">
+      <input type="checkbox" class="anchk" data-id="${h.id}" data-lvl="${h.lvl}" checked>
+      <span class="ancat">${h.cat}</span>
+      <span class="antxt">${h.txt}</span>
+      <span class="anlvl ${h.lvl}">${h.lvl==='can'?'できる':'伸長中'}</span>
+      <span class="ankw">${h.words.slice(0,3).join('・')}</span>
+    </label>`;
+  });
+  html += '</div>';
+  html += `<div class="btnrow" style="margin-top:10px;">
+    <button class="btn primary" id="applyAn">チェックした観点を反映</button>
+    <button class="btn ghost" id="anAll">全選択</button>
+    <button class="btn ghost" id="anNone">全解除</button>
+  </div>`;
+  box.innerHTML = html;
+  box.style.display='block';
+
+  document.getElementById('applyAn').onclick = ()=>{
+    let n=0;
+    box.querySelectorAll('.anchk:checked').forEach(c=>{
+      applySelection(c.dataset.id, c.dataset.lvl); n++;
+    });
+    updateCounts();
+    box.querySelector('.hint').textContent = `${n}件を反映しました。下の一覧で修正できます。`;
+  };
+  document.getElementById('anAll').onclick = ()=>box.querySelectorAll('.anchk').forEach(c=>c.checked=true);
+  document.getElementById('anNone').onclick = ()=>box.querySelectorAll('.anchk').forEach(c=>c.checked=false);
+}
+
+/* 項目リスト側のチェックを操作 */
+function applySelection(id, lvl){
+  const row = document.querySelector(`.item[data-id="${id}"]`);
+  if(!row) return;
+  row.querySelectorAll('input').forEach(inp=>{
+    inp.checked = (inp.dataset.lvl === lvl);
+  });
+  state.sel.set(id, lvl);
+  row.classList.add('sel');
+  // 親カテゴリを開く
+  const det = row.closest('details'); if(det) det.open = true;
+}
+
+document.getElementById('analyzeBtn').addEventListener('click', analyzeMemo);
+document.getElementById('memoClearBtn').addEventListener('click', ()=>{
+  document.getElementById('memo').value='';
+  const box=document.getElementById('analysis'); box.innerHTML=''; box.style.display='none';
+});
+
+</script>
+</body>
+</html>

@@ -1,0 +1,1958 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>所見文アシスト（特別支援学級・知的障害）</title>
+<style>
+  :root{
+    --ink:#2b2b28; --sub:#6b6b64; --line:#dcd8cd;
+    --bg:#f5f3ef; --panel:#ffffff; --accent:#4a5f86; --accent-soft:#e8ecf4;
+    --warn:#b06a3a; --warn-soft:#f4e9df; --gold:#b8860b;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+    line-height:1.7; font-size:15px;
+  }
+  header{
+    background:var(--panel); border-bottom:1px solid var(--line);
+    padding:16px 22px; position:sticky; top:0; z-index:10;
+  }
+  header h1{font-size:19px; margin:0; letter-spacing:.04em; display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;}
+  header h1 .ver{
+    font-size:11.5px; font-weight:700; letter-spacing:.02em;
+    color:var(--accent); background:var(--accent-soft);
+    border:1px solid var(--accent); border-radius:12px; padding:2px 9px; white-space:nowrap;
+  }
+  header h1 .ver .date{font-weight:400; color:var(--sub); margin-left:5px;}
+  header p{margin:3px 0 0; font-size:12.5px; color:var(--sub);}
+  .wrap{max-width:1120px; margin:0 auto; padding:22px; display:grid; grid-template-columns:340px 1fr; gap:22px;}
+  @media(max-width:900px){.wrap{grid-template-columns:1fr;}}
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:18px;}
+  .panel h2{font-size:13px; letter-spacing:.08em; color:var(--sub); margin:0 0 14px; font-weight:700;
+    padding-bottom:8px; border-bottom:1px solid var(--line);}
+  .field{margin-bottom:16px;}
+  .field label{display:block; font-size:13px; font-weight:700; margin-bottom:6px;}
+  .row{display:flex; gap:8px; flex-wrap:wrap;}
+  .seg{display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden;}
+  .seg button{flex:1; border:none; background:var(--panel); padding:8px 6px; font-size:13px; cursor:pointer; color:var(--sub); font-family:inherit;}
+  .seg button.on{background:var(--accent); color:#fff;}
+  input[type=number],input[type=text]{
+    width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:14px; font-family:inherit;
+  }
+  textarea{
+    width:100%; min-height:140px; padding:12px; border:1px solid var(--line); border-radius:8px;
+    font-size:14px; font-family:inherit; line-height:1.7; resize:vertical;
+  }
+  .hint{font-size:12px; color:var(--sub); margin:4px 0 0; line-height:1.6;}
+
+  /* 使う欄のチェック */
+  .uselist{display:flex; flex-wrap:wrap; gap:6px;}
+  .uselist label{display:inline-flex; align-items:center; gap:5px; border:1px solid var(--line);
+    border-radius:14px; padding:4px 10px; font-size:12px; cursor:pointer; background:var(--panel); color:var(--sub);}
+  .uselist label.on{background:var(--accent-soft); border-color:var(--accent); color:var(--accent); font-weight:700;}
+  .uselist input{margin:0;}
+
+  /* 教科タブ */
+  .subtabs{display:flex; flex-wrap:wrap; gap:7px; margin-bottom:14px;}
+  .subtab{border:1px solid var(--line); background:var(--panel); border-radius:16px;
+    padding:6px 13px; font-size:13px; cursor:pointer; font-family:inherit; color:var(--sub); position:relative;}
+  .subtab:hover{border-color:var(--accent);}
+  .subtab.on{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:700;}
+  .subtab .badge{display:inline-block; margin-left:6px; font-size:10.5px; font-weight:700;
+    background:var(--accent-soft); color:var(--accent); border-radius:8px; padding:1px 6px;}
+  .subtab.on .badge{background:rgba(255,255,255,.25); color:#fff;}
+  .subtab .done{color:#3f7d5a; font-weight:700; margin-left:5px;}
+  .subtab.on .done{color:#d6f0e0;}
+
+  .cats{display:flex; flex-direction:column; gap:8px;}
+  details.cat{border:1px solid var(--line); border-radius:8px; overflow:hidden;}
+  details.cat>summary{list-style:none; cursor:pointer; padding:10px 12px; font-weight:700; font-size:13.5px;
+    display:flex; justify-content:space-between; align-items:center; background:#faf9f5;}
+  details.cat>summary::-webkit-details-marker{display:none;}
+  details.cat>summary .count{font-size:11px; color:var(--accent); font-weight:700;}
+  .items{padding:6px 12px 12px;}
+  .item{display:flex; gap:9px; padding:8px 0; border-top:1px dashed var(--line); align-items:center; justify-content:space-between; flex-wrap:wrap;}
+  .item:first-child{border-top:none;}
+  .item .txt{font-size:13.5px; flex:1 1 200px;}
+  .item.sel .txt{font-weight:700;}
+  .lvlpick{display:flex; gap:5px; flex:none;}
+  .lvlpick label{position:relative; cursor:pointer;}
+  .lvlpick input{position:absolute; opacity:0; width:0; height:0;}
+  .lvlpick span{
+    display:inline-block; border:1px solid var(--line); border-radius:14px;
+    padding:3px 9px; font-size:11.5px; color:var(--sub); background:var(--panel);
+    white-space:nowrap; user-select:none;
+  }
+  .lvlpick input:checked + span.solo{background:#e2efe6; border-color:#3f7d5a; color:#2c6042; font-weight:700;}
+  .lvlpick input:checked + span.verbal{background:var(--accent-soft); border-color:var(--accent); color:var(--accent); font-weight:700;}
+  .lvlpick input:checked + span.together{background:var(--warn-soft); border-color:var(--warn); color:var(--warn); font-weight:700;}
+  .lvlpick input:focus-visible + span{outline:2px solid var(--accent); outline-offset:1px;}
+  .star{flex:none; border:1px solid var(--line); background:var(--panel); border-radius:14px;
+    padding:3px 8px; font-size:12px; color:#c4c0b4; cursor:pointer; font-family:inherit; line-height:1.3;}
+  .star:hover{border-color:var(--gold);}
+  .star.on{background:#fdf3dd; border-color:#c99a2e; color:var(--gold); font-weight:700;}
+  .star:disabled{opacity:.35; cursor:not-allowed;}
+  .item.pri{background:#fffdf5;}
+  .item.pri .txt{font-weight:700;}
+  .prinote{font-size:12px; color:var(--sub); margin:8px 0 0;}
+  .prinote b{color:var(--gold);}
+
+  .dropped{font-size:12px; color:var(--sub); background:#faf9f5; border:1px dashed var(--line);
+    border-radius:8px; padding:8px 10px; margin-top:10px; line-height:1.6;}
+  .nglint{font-size:12px; color:#8a3b3b; background:#fdf1f1; border:1px solid #e6c9c9;
+    border-radius:8px; padding:8px 10px; margin-top:10px; line-height:1.6;}
+  .chips{display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;}
+  .chips button{border:1px solid var(--line); background:var(--panel); border-radius:14px;
+    padding:4px 10px; font-size:11.5px; color:var(--sub); cursor:pointer; font-family:inherit;}
+  .chips button:hover{border-color:var(--accent); color:var(--accent);}
+  .chips button.on{background:var(--accent-soft); border-color:var(--accent); color:var(--accent); font-weight:700;}
+
+  .btnrow{display:flex; gap:10px; margin-top:6px; flex-wrap:wrap;}
+  .btn{flex:1; padding:12px; border:none; border-radius:8px; font-size:15px; font-weight:700; cursor:pointer; font-family:inherit;}
+  .btn.primary{background:var(--accent); color:#fff;}
+  .btn.ghost{background:var(--panel); border:1px solid var(--line); color:var(--ink); flex:none; padding:12px 16px;}
+  .out{min-height:110px; white-space:pre-wrap; font-size:15px; line-height:1.9; padding:14px;
+    background:#faf9f5; border:1px solid var(--line); border-radius:8px;}
+  .out.empty{color:var(--sub);}
+  .meta{display:flex; justify-content:space-between; align-items:center; margin-top:10px; font-size:12.5px; color:var(--sub);}
+  .meta .over{color:var(--warn); font-weight:700;}
+  .tools{display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;}
+  .tools button{padding:8px 12px; border:1px solid var(--line); border-radius:8px; background:var(--panel);
+    font-size:12.5px; cursor:pointer; font-family:inherit;}
+  .note{font-size:12px; color:var(--sub); background:var(--warn-soft); border-radius:8px; padding:10px 12px; margin-top:14px; line-height:1.6;}
+  /* バージョン表示。float:right だと本文が回り込み、文の途中に割り込んで見えるため
+     ブロック要素として本文の下に置く。 */
+  .notever{display:block; text-align:right; opacity:.7; margin-top:6px; font-size:11px;}
+
+  /* 全欄一覧 */
+  .alllist{border:1px solid var(--line); border-radius:8px; overflow:hidden;}
+  .allrow{display:flex; gap:10px; padding:9px 12px; border-bottom:1px solid var(--line); font-size:13px; align-items:flex-start;}
+  .allrow:last-child{border-bottom:none;}
+  .allname{flex:0 0 110px; font-weight:700;}
+  .alltext{flex:1; color:var(--sub); line-height:1.7;}
+  .alltext.none{opacity:.5;}
+  .alllen{flex:0 0 52px; text-align:right; font-size:11.5px; color:var(--sub);}
+
+  .saveline{font-size:12px; color:var(--sub); display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:10px;}
+  .saveline .ok{color:#2c6042;}
+  .saveline .ng{color:#8a3b3b;}
+
+  .planrow{display:flex; gap:8px; align-items:flex-start; padding:8px 10px; border-bottom:1px solid var(--line); cursor:pointer;}
+  .planrow:last-child{border-bottom:none;}
+  .planrow:hover{background:rgba(0,0,0,.03);}
+  .planrow input{margin-top:4px;}
+  .planrow .lv{flex:0 0 auto; font-size:10.5px; font-weight:700; color:var(--accent);
+    background:var(--accent-soft); border-radius:8px; padding:1px 6px; margin-top:2px;}
+  .planrow .body{flex:1;}
+  .planrow .ph{font-size:13px;}
+  .planbox{border:1px solid var(--line); border-radius:8px; max-height:300px; overflow:auto;}
+  .planchip{display:flex; align-items:center; gap:8px; border:1px solid #c99a2e; background:#fdf3dd;
+    border-radius:8px; padding:6px 10px; font-size:12.5px; margin-top:6px;}
+  .planchip .obs{font-weight:700; color:var(--gold); flex:0 0 auto;}
+  .planchip .ph2{flex:1;}
+  .planchip .subs{font-size:10.5px; color:var(--sub); flex:0 0 auto;}
+  .planchip button{border:none; background:transparent; cursor:pointer; color:var(--sub); font-size:15px; font-family:inherit; line-height:1;}
+
+  .anlist{max-height:320px; overflow:auto; border:1px solid var(--line); border-radius:8px;}
+  .anrow{display:flex; align-items:center; gap:8px; padding:7px 10px; border-bottom:1px solid var(--line); font-size:13px; cursor:pointer;}
+  .anrow:last-child{border-bottom:none;}
+  .anrow:hover{background:rgba(0,0,0,.03);}
+  .ancat{flex:0 0 auto; font-size:11px; padding:2px 6px; border-radius:4px; background:var(--accent-soft); color:var(--accent); font-weight:700;}
+  .antxt{flex:1 1 auto;}
+  .anlvl{flex:0 0 auto; font-size:11px; padding:2px 7px; border-radius:10px; font-weight:600;}
+  .anlvl.solo{background:#e2efe6; color:#2c6042;}
+  .anlvl.verbal{background:var(--accent-soft); color:var(--accent);}
+  .anlvl.together{background:var(--warn-soft); color:var(--warn);}
+  .ankw{flex:0 0 auto; font-size:11px; opacity:.55; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+</style>
+</head>
+<body>
+<header>
+  <h1>所見文アシスト（特別支援学級・知的障害）<span class="ver" id="verBadge"></span></h1>
+  <p>教科等の欄ごとに、項目のようすを「一人でできる／言葉かけがあればできる／一緒に取り組めばできる」から選ぶと、その欄の所見文の下書きを組み立てます。生成後は必ず担任が加筆・修正してください。</p>
+</header>
+
+<div class="wrap">
+  <!-- 左：設定＋メモ -->
+  <div>
+    <div class="panel">
+      <h2>基本設定</h2>
+
+      <div class="field">
+        <label>児童の呼び方（文頭）</label>
+        <input type="text" id="nameInput" placeholder="例）○○さん／空欄可">
+        <p class="hint">入力すると各欄の文頭に付きます。空欄なら名前なしで生成します。</p>
+      </div>
+
+      <div class="field">
+        <label>使う欄</label>
+        <div class="uselist" id="useList"></div>
+        <p class="hint">通知表にある欄だけにチェックを入れてください。チェックした欄だけがタブに並びます。</p>
+      </div>
+
+      <div class="field">
+        <label>この欄の文字数のめやす</label>
+        <div class="seg" id="lenSeg">
+          <button data-len="100">100字</button>
+          <button data-len="150" class="on">150字</button>
+          <button data-len="200">200字</button>
+        </div>
+        <div class="row" style="margin-top:8px; align-items:center;">
+          <input type="number" id="lenInput" value="150" min="30" max="600" style="width:90px;">
+          <span class="hint" style="margin:0;">字前後で調整</span>
+        </div>
+        <p class="hint">欄ごとに別々に覚えます（今開いている欄の設定です）。</p>
+      </div>
+
+      <div class="field" id="sceneField" style="display:none;">
+        <label>単元名・活動場面</label>
+        <input type="text" id="sceneInput" placeholder="例）お店やさんをひらこう">
+        <div class="chips" id="sceneChips">
+          <button data-scene="お店やさん">お店やさん</button>
+          <button data-scene="なかよし会">なかよし会</button>
+          <button data-scene="さつまいもを育てよう">さつまいもを育てよう</button>
+          <button data-scene="おたのしみ会">おたのしみ会</button>
+          <button data-scene="調理活動">調理活動</button>
+          <button data-scene="校外学習">校外学習</button>
+        </div>
+        <p class="hint">入力すると「『お店やさん』の学習では、〜」と単元から書き起こします。</p>
+      </div>
+
+      <div class="field">
+        <label>結びの一文（身に付いた力）</label>
+        <div class="seg" id="closeSeg">
+          <button data-close="off">付けない</button>
+          <button data-close="on" class="on">付ける</button>
+        </div>
+        <p class="hint">その欄に応じた「〜する力が育っています。」などの締めを自動で付けます。</p>
+      </div>
+
+      <div class="field">
+        <label>文のまとめ方</label>
+        <div class="seg" id="joinSeg">
+          <button data-join="off" class="on">1項目＝1文</button>
+          <button data-join="on">2項目をまとめる</button>
+        </div>
+        <p class="hint">同じ支援の程度の項目2件を「〜し、〜」で1文にまとめます。</p>
+      </div>
+
+      <div class="field">
+        <label>文末表現のばらつき</label>
+        <div class="seg" id="varSeg">
+          <button data-var="off">そろえる</button>
+          <button data-var="on" class="on">変化をつける</button>
+        </div>
+        <p class="hint">語尾や支援の言い回しの重複を避けます。</p>
+      </div>
+
+      <div class="saveline">
+        <span id="saveState">自動保存：—</span>
+        <button class="btn ghost" id="wipeBtn" style="padding:6px 10px; font-size:12px; font-weight:400;">この児童の入力を全部消す</button>
+      </div>
+      <p class="hint">入力内容はこのパソコンのブラウザ内にだけ残ります（通信はしません）。共用のパソコンでは、作業が終わったら必ず「この児童の入力を全部消す」を押してください。</p>
+    </div>
+
+    <div class="panel" style="margin-top:18px;">
+      <h2>この児童への支援　<span style="float:right; font-weight:400;" id="planCount">0/3 件</span></h2>
+      <p class="hint" style="margin:-6px 0 12px;">個別の指導計画の「支援の程度表」から、実際に行った手立てを選んでください。選んだ手立ては、所見文の「言葉かけがあればできる」「一緒に取り組めばできる」の文に具体的な形で入ります。</p>
+      <div class="seg" id="planGrpSeg"></div>
+      <div class="chips" id="planObsChips" style="margin-top:10px;"></div>
+      <div id="planLevels" style="margin-top:10px;"></div>
+      <div id="planChosen" style="margin-top:12px;"></div>
+    </div>
+
+    <div class="panel" style="margin-top:18px;">
+      <h2>観察メモを読み取る</h2>
+      <textarea id="memo" placeholder="担任の観察メモを貼り付けてください。&#10;例）名前を呼ばれると返事ができる。&#10;　　言葉かけを受けて、10までの数を数えることができた。&#10;　　教師と一緒に、はさみを使って形を切った。&#10;　　給食の準備は自分から進んで行う。"></textarea>
+      <div class="btnrow" style="margin-top:10px;">
+        <button class="btn primary" id="analyzeBtn">メモから項目を読み取る</button>
+        <button class="btn ghost" id="memoClearBtn">メモを消す</button>
+      </div>
+      <div id="analysis" style="display:none; margin-top:12px;"></div>
+      <p class="hint">使う欄すべてを対象にキーワードを照合します（AIは使わずローカル処理）。結果は必ず目視で確認・修正してください。</p>
+    </div>
+  </div>
+
+  <!-- 右：項目選択＋出力 -->
+  <div>
+    <div class="panel">
+      <h2>欄を選ぶ</h2>
+      <div class="subtabs" id="subTabs"></div>
+      <div style="display:flex; justify-content:space-between; align-items:baseline; border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:12px;">
+        <b style="font-size:14px;" id="curName">国語</b>
+        <span style="font-size:12px; color:var(--accent);" id="selCount">0件選択中</span>
+      </div>
+      <div class="cats" id="cats"></div>
+      <p class="prinote" id="priNote"></p>
+      <div class="btnrow" style="margin-top:16px;">
+        <button class="btn primary" id="genBtn">この欄の所見文をつくる</button>
+        <button class="btn ghost" id="clearBtn">この欄の選択を解除</button>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:18px;">
+      <h2>下書き（<span id="outSubName">国語</span>）</h2>
+      <div class="out empty" id="out">ここに所見文の下書きが表示されます。</div>
+      <div class="meta">
+        <span id="lenMeta">— 字</span>
+        <span id="tip"></span>
+      </div>
+      <div class="nglint" id="nglint" style="display:none;"></div>
+      <div class="dropped" id="dropped" style="display:none;"></div>
+      <div class="tools">
+        <button id="copyBtn">この欄をコピー</button>
+        <button id="regenBtn">別の言い回しで再生成</button>
+      </div>
+      <div class="note">
+        この下書きは定型文を組み合わせたものです。知的障害のある児童の評価は、他の児童と比べるのではなく、その子自身の伸びを捉える個人内評価です。「いつ・どの学習で・どのような姿だったか」という具体的な事実（単元名・エピソード・支援の内容）を加え、事実と異なる表現がないか必ず確認してから通知表に転記してください。
+        <span class="notever" id="noteVer"></span>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:18px;">
+      <h2>全欄の一覧　<span style="float:right; font-weight:400;" id="doneCount"></span></h2>
+      <div class="alllist" id="allList"></div>
+      <div class="tools">
+        <button id="copyAllBtn">全欄をまとめてコピー</button>
+      </div>
+      <p class="hint">できた欄から順にたまっていきます。「まとめてコピー」は「国語：〜」の形で全欄を書き出します。</p>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ バージョン情報 ============
+   更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
+const APP_VERSION = "SN v1.3";
+const APP_DATE    = "2026-08-03";
+const APP_HISTORY = [
+  "SN v1.3 個別の指導計画の「支援の程度表」から手立て77件を取り込み。",
+  "　　　　最大3件を登録すると、支援を要する文が具体的な手立ての表現になる。",
+  "SN v1.2 低学年の生活科（生活）を追加。13項目。既定では「使う欄」オフ。",
+  "　　　　メモ読み取りで「友達と一緒に」を教師の支援と誤判定する不具合を修正。",
+  "SN v1.1 支援の手立ての言い回しを4通りから11通りに増やし、",
+  "　　　　「言葉かけ」を含まない表現を追加。文が続いても重複しないよう、",
+  "　　　　文の順番で必ず切り替わる方式に変更。",
+  "　　　　支援の程度が変わる箇所の「また、」は1回だけに限定。",
+  "SN v1.0 外国語活動版 FL v1.3 から派生。通知表の欄ごとに所見文を作る形に変更。",
+  "　　　　「できる／伸長中」の2段階を、支援の程度による3段階に変更。",
+  "　　　　入力内容の自動保存（ブラウザ内）と全欄まとめてコピーを追加。",
+];
+document.getElementById('verBadge').innerHTML =
+  APP_VERSION + '<span class="date">' + APP_DATE + '</span>';
+document.getElementById('verBadge').title =
+  "更新履歴\n" + APP_HISTORY.join("\n");
+document.title = "所見文アシスト（特支・知的） " + APP_VERSION;
+document.getElementById('noteVer').textContent = APP_VERSION;
+
+/* ===TEXT-CORE-START=== （ここから下、===TEXT-CORE-END=== までは
+   画面に触らない純粋な処理です。単体テストはこの範囲だけを切り出して行います。） */
+
+/* ============ 支援の程度（3段階） ============
+   知的障害の所見では「できる／できない」ではなく、
+   どの程度の支援があれば取り組めるかを書き分ける。 */
+const LEVELS = [
+  {key:"solo",     label:"一人でできる",           short:"一人で"},
+  {key:"verbal",   label:"言葉かけがあればできる", short:"言葉かけ"},
+  {key:"together", label:"一緒に取り組めばできる", short:"一緒に"},
+];
+const LEVEL_ORDER = ["solo","verbal","together"];
+const LEVEL_LABEL = {solo:"一人でできる", verbal:"言葉かけがあればできる", together:"一緒に取り組めばできる"};
+
+/* 支援の手立ての言い回し。「一人でできる」には付けない（＝空）。
+   同じ欄に同じ支援の程度の文が続くと言い回しが重複するため、
+   文の順番（i）で必ず切り替わるようにしている。
+
+   head … 文頭に呼び方や単元名が付く1文目で使う言い回し。
+          「太郎さんは、」に続いても主語がねじれない受け身・並列の形だけを入れること。
+          （「太郎さんは、声をかけると、〜」は誰が誰に声をかけたのか曖昧になるため不可）
+   any  … 2文目以降で使う言い回し。条件形（「〜すると、」）も使える。 */
+const SUPPORT = {
+  solo: { head:[""], any:[""] },
+  verbal: {
+    head:[
+      "言葉かけを受けて、",
+      "促しを受けて、",
+      "教師と手順を確かめて、",
+      "教師の声かけをきっかけに、",
+    ],
+    any:[
+      "言葉かけを受けて、",
+      "声をかけると、",
+      "手順を伝えると、",
+      "促しを受けて、",
+      "教師とやり方を確かめると、",
+      "教師が言葉を添えると、",
+      "はじめに確認することで、",
+    ],
+  },
+  together: {
+    head:[
+      "教師と一緒に、",
+      "教師と手順を確かめながら、",
+      "教師に手を添えてもらいながら、",
+      "教師と同じ動きをしながら、",
+    ],
+    any:[
+      "教師と一緒に、",
+      "手を添えると、",
+      "一緒に取り組む中で、",
+      "教師がそばに付いて支えると、",
+      "見本を示して一緒に行うと、",
+      "教師と手順を確かめながら、",
+      "教師と同じ動きをしながら、",
+    ],
+  },
+};
+
+/* ============ 支援の手立て（個別の指導計画「支援の程度表」の観点にそって整理） ============
+   20の観点それぞれに、程度1〜5の手立てを所見にふさわしい肯定的な言い回しで持つ。
+   （公開版のため、指導計画の原文は含めていない。）
+
+   phrase … 文の頭に置く手立て。「〜と、」「〜すると、」の形で終えること。
+   lv     … この手立てが対応する支援の程度。
+            "verbal"（言葉かけがあればできる）／"together"（一緒に取り組めばできる）／"both"
+   subs   … この手立てを使う欄。"*" はすべての欄。 */
+const PLAN_GROUPS = ["学習","運動","認知・感覚","コミュニケーション"];
+const PLAN = [
+ {grp:"学習", key:"kiku", name:"聞く", cats:["聞く・話す"], subs:["ko","ji","ga","tk","so","gy","do"], levels:[
+   {n:1, phrase:"必要に応じて声をかけると、"},
+   {n:2, phrase:"本人の求めに応じて声をかけると、"},
+   {n:3, phrase:"名前を呼んでから伝えると、"},
+   {n:4, phrase:"短い言葉に言い換えて個別に伝えると、"},
+   {n:5, phrase:"伝えることを絞って目に見える形で示すと、"},
+ ]},
+ {grp:"学習", key:"hanasu", name:"話す", cats:["聞く・話す"], subs:["ko","ji","ga","tk","so"], levels:[
+   {n:1, phrase:"話す速さを一緒に確かめると、"},
+   {n:2, phrase:"答えを選ぶ形にしたり例を示したりすると、"},
+   {n:3, phrase:"話すことをメモにまとめてから伝えると、"},
+   {n:4, phrase:"言葉の例や絵カードを示すと、"},
+   {n:5, phrase:"書いて伝える方法を用意すると、", lv:"both"},
+ ]},
+ {grp:"学習", key:"yomu", name:"読む", cats:["読む"], subs:["ko","sa","sh","so","ri"], levels:[
+   {n:1, phrase:"読み方を一緒に確かめると、"},
+   {n:2, phrase:"読む場所を指し示すと、"},
+   {n:3, phrase:"文を意味のまとまりで区切って示すと、"},
+   {n:4, phrase:"ふりがなを付けると、"},
+   {n:5, phrase:"読んで聞かせたり分かりやすく言い換えたりすると、", lv:"together"},
+ ]},
+ {grp:"学習", key:"kaku", name:"書く", cats:["書く・言葉"], subs:["ko","sh","so","zu"], levels:[
+   {n:1, phrase:"字の形を色分けして示すと、"},
+   {n:2, phrase:"大まかな字の形をとらえることを大切にすると、"},
+   {n:3, phrase:"マス目の大きいノートを使うと、"},
+ ]},
+ {grp:"学習", key:"bansho", name:"板書", cats:["書く・言葉"], subs:["ko","sa","sh","ri","so"], levels:[
+   {n:1, phrase:"書き写す時間を十分にとると、"},
+   {n:2, phrase:"手元に見本を用意すると、"},
+   {n:3, phrase:"書く量を調整すると、"},
+ ]},
+ {grp:"学習", key:"bunkousei", name:"文構成", cats:["書く・言葉"], subs:["ko","so"], levels:[
+   {n:1, phrase:"話型や言葉の例を示すと、"},
+   {n:2, phrase:"例文をもとに言葉を選ぶと、"},
+   {n:3, phrase:"穴埋めの形で書くと、"},
+ ]},
+ {grp:"学習", key:"keisan", name:"計算", cats:["数と計算"], subs:["sa","sk","kt"], levels:[
+   {n:1, phrase:"解く時間を十分にとると、"},
+   {n:2, phrase:"式の型を示すと、"},
+   {n:3, phrase:"具体物を使って確かめると、"},
+   {n:4, phrase:"数の基礎から順に確かめると、"},
+ ]},
+ {grp:"学習", key:"suiron", name:"推論する", cats:["図形・測定","生活への活用"], subs:["sa","ri","sh","so"], levels:[
+   {n:1, phrase:"具体物を使って思い浮かべやすくすると、"},
+   {n:2, phrase:"分かりやすい言葉に置き換えると、"},
+   {n:3, phrase:"手本を示したり色分けしたりすると、"},
+   {n:4, phrase:"実際に触れて確かめると、"},
+ ]},
+
+ {grp:"運動", key:"karada", name:"体の動かし方", cats:["体を動かす","表現"], subs:["ta","on","zu","ji","se"], levels:[
+   {n:1, phrase:"動きを目で見て分かるように示すと、", lv:"both"},
+   {n:2, phrase:"練習の時間を十分にとると、"},
+   {n:3, phrase:"その子に合った目標を決めると、"},
+ ]},
+ {grp:"運動", key:"dougu", name:"道具の扱い方", cats:["つくる","見る・片付ける","家庭","生活に生かす","身近な自然・もの"], subs:["zu","kt","se","ta","sk"], levels:[
+   {n:1, phrase:"必要なところを補助すると、", lv:"both"},
+   {n:2, phrase:"作業の難しさを調整すると、"},
+   {n:3, phrase:"補助具を使って一緒に行うと、", lv:"together"},
+ ]},
+
+ {grp:"認知・感覚", key:"kioku", name:"記憶保持", subs:["ko","sa","sh","ri","so","ga"], levels:[
+   {n:1, phrase:"聞いた内容をいつでも見返せるようにすると、"},
+   {n:2, phrase:"前の学習を振り返る時間をとると、"},
+   {n:3, phrase:"これまでに学んだことを確かめてから進めると、"},
+ ]},
+ {grp:"認知・感覚", key:"shikaku", name:"視覚認知", subs:["ko","sa","zu","sh","ri","kt"], levels:[
+   {n:1, phrase:"具体物を使って形をとらえると、"},
+   {n:2, phrase:"色分けして大きく示すと、"},
+   {n:3, phrase:"余分なものを減らして示すと、"},
+   {n:4, phrase:"見るところを指し示すと、"},
+   {n:5, phrase:"置く場所に印を付けると、"},
+ ]},
+ {grp:"認知・感覚", key:"chuui", name:"注意集中", subs:["*"], levels:[
+   {n:1, phrase:"個別に確かめる時間をとると、"},
+   {n:2, phrase:"声をかけて注目を促すと、"},
+   {n:3, phrase:"伝えることを短くまとめると、"},
+   {n:4, phrase:"まわりの情報を減らして注目しやすくすると、"},
+ ]},
+ {grp:"認知・感覚", key:"mono", name:"物の管理", subs:["gy","se","tk","sk","kt","ji","zu"], levels:[
+   {n:1, phrase:"持ち物を一緒に確かめると、"},
+   {n:2, phrase:"置き場所を決めて印を付けると、"},
+   {n:3, phrase:"一緒に道具の出し入れをすると、", lv:"together"},
+   {n:4, phrase:"教師が用具を用意すると、", lv:"together"},
+ ]},
+ {grp:"認知・感覚", key:"tadou", name:"多動性", subs:["*"], levels:[
+   {n:1, phrase:"前もって約束を確かめると、"},
+   {n:2, phrase:"やることをはっきり示すと、"},
+   {n:3, phrase:"活動を短く区切ると、"},
+   {n:4, phrase:"参加する時間の目安を示すと、"},
+ ]},
+ {grp:"認知・感覚", key:"shoudou", name:"衝動性", subs:["*"], levels:[
+   {n:1, phrase:"順番の約束を決めておくと、"},
+   {n:2, phrase:"先の見通しを事前に確かめると、"},
+   {n:3, phrase:"使う道具を少しずつ渡すと、"},
+   {n:4, phrase:"落ち着いて取り組める場を用意すると、"},
+ ]},
+ {grp:"認知・感覚", key:"kankaku", name:"諸感覚", subs:["ji","ta","zu","on","sk","kt"], levels:[
+   {n:1, phrase:"前もって予告すると、"},
+   {n:2, phrase:"イヤーマフなどで音を和らげると、"},
+   {n:3, phrase:"まわりの刺激を減らして約束を決めると、"},
+   {n:4, phrase:"安全に配慮した環境を整えると、"},
+ ]},
+
+ {grp:"コミュニケーション", key:"ningen", name:"人間関係", subs:["do","ji","gy","tk","se","sk","ga","so"], levels:[
+   {n:1, phrase:"その場のようすを言葉で説明すると、"},
+   {n:2, phrase:"教師が間に入ってつなぐと、", lv:"both"},
+   {n:3, phrase:"教師が仲立ちをすると、", lv:"both"},
+   {n:4, phrase:"教師を通してやり取りをすると、", lv:"together"},
+ ]},
+ {grp:"コミュニケーション", key:"tasha", name:"他者との関わり方", subs:["do","ji","gy","tk","se","ga","so"], levels:[
+   {n:1, phrase:"そばで見守りながら支えると、", lv:"both"},
+   {n:2, phrase:"困ったときの伝え方を確かめておくと、"},
+   {n:3, phrase:"場面ごとの言い方を練習しておくと、"},
+   {n:4, phrase:"やり取りの型を練習しておくと、"},
+ ]},
+ {grp:"コミュニケーション", key:"kyoumi", name:"興味の範囲", subs:["ji","gy","se","so","sk","tk"], levels:[
+   {n:1, phrase:"楽しめる範囲を約束しておくと、"},
+   {n:2, phrase:"少しずつ慣らしていくと、"},
+   {n:3, phrase:"先の予定を目に見える形で示すと、"},
+ ]},
+];
+
+/* 手立てをIDで引けるようにする（ID＝観点キー＋程度の番号。例 "yomu4"） */
+const PLAN_BY_ID = {};
+PLAN.forEach(o=>o.levels.forEach(l=>{
+  PLAN_BY_ID[o.key + l.n] = {id:o.key+l.n, obs:o.name, grp:o.grp, subs:o.subs, cats:o.cats || null,
+                             n:l.n, phrase:l.phrase, lv:l.lv || "verbal"};
+}));
+
+/* その欄・その支援の程度・その小見出しで使える手立ての言い回しを取り出す。
+
+   cats による絞り込みの考え方：
+   「読む」の手立て（ふりがなを付ける等）が「自分の名前を書く」の文に付くと
+   かみ合わない。そこで、手立てに合う小見出し（cats）を持たせている。
+   ただし cats を無条件に必須にすると、その小見出しを持たない欄で
+   手立てが一切使えなくなる。そのため「その欄に cats のいずれかの小見出しが
+   実在する場合にだけ、一致を必須にする」という扱いにしている。
+   例：国語には「読む」があるので「読む」の手立ては読むの文にだけ付く。
+   　　算数には「読む」という小見出しがないので、絞り込みは効かせない。 */
+function planPool(subjectKey, lvl, planIds, cat){
+  if(!planIds || !planIds.length) return [];
+  const sub = SUB_BY_KEY[subjectKey];
+  const subCats = sub ? sub.groups.map(g=>g.cat) : [];
+  return planIds
+    .map(id=>PLAN_BY_ID[id])
+    .filter(p=>p)
+    .filter(p=>p.subs.includes("*") || p.subs.includes(subjectKey))
+    .filter(p=>p.lv === "both" || p.lv === lvl)
+    .filter(p=>{
+      if(!p.cats || !cat) return true;
+      const overlap = p.cats.some(c=>subCats.includes(c));
+      return overlap ? p.cats.includes(cat) : true;
+    })
+    .map(p=>p.phrase);
+}
+
+
+/* ============ 文例データベース ============
+   1つの欄（教科等）＝1つの SUBJECT。
+   SUBJECT の中に groups（小見出し）、その中に items。
+
+   items の1件は次の形：
+     {id:"ko1", txt:"名前を呼ばれて返事をする", act:"名前を呼ばれて返事をする"}
+
+   txt … 画面のチェック一覧に出る表記
+   act … 文の中核。ここに支援の言い回しと文末が前後から付く。
+          必ず「常体の動詞終止形」で終えること（「〜ている」「〜する姿」は不可）。
+          「一人でできる」「言葉かけ」「一緒に」の3段階すべてで
+          同じ act を使うので、支援の有無を含まない書き方にすること。 */
+const SUBJECTS = [
+  {key:"ko", name:"国語", defLen:150, groups:[
+    {cat:"聞く・話す", items:[
+      {id:"ko1", txt:"名前を呼ばれて返事をする",             act:"名前を呼ばれて返事をする"},
+      {id:"ko2", txt:"教師や友達の話を最後まで聞く",         act:"教師や友達の話を最後まで聞く"},
+      {id:"ko3", txt:"見たことや経験したことを言葉で伝える", act:"見たことや経験したことを自分の言葉で伝える"},
+      {id:"ko4", txt:"相手に分かるように話す",               act:"相手に分かるように言葉を選んで話す"},
+    ]},
+    {cat:"読む", items:[
+      {id:"ko5", txt:"読み聞かせを楽しんで聞く",             act:"絵本や物語の読み聞かせを楽しんで聞く"},
+      {id:"ko6", txt:"絵や写真と言葉を結び付ける",           act:"絵や写真と言葉を結び付けて意味をとらえる"},
+      {id:"ko7", txt:"教科書の文を声に出して読む",           act:"教科書の文を声に出して読む"},
+      {id:"ko8", txt:"身の回りの文字や標識を読み取る",       act:"身の回りの文字や標識を読み取る"},
+    ]},
+    {cat:"書く・言葉", items:[
+      {id:"ko9",  txt:"自分の名前を書く",                    act:"自分の名前をひらがなで書く"},
+      {id:"ko10", txt:"経験したことを短い文で書く",          act:"経験したことを短い文で書く"},
+      {id:"ko11", txt:"新しい言葉を覚えて使う",              act:"学習で出てきた言葉を覚えて使う"},
+    ]},
+  ], closers:[
+    "言葉で伝え合う力が育っています。",
+    "話を聞いて応じる力が伸びています。",
+    "言葉を使って自分の思いを表す力が育っています。",
+  ]},
+
+  {key:"sa", name:"算数", defLen:150, groups:[
+    {cat:"数と計算", items:[
+      {id:"sa1", txt:"ものの数を数える",             act:"ものの数を一つずつ数えて、いくつあるかを答える"},
+      {id:"sa2", txt:"数字と数量を結び付ける",       act:"数字とものの数を結び付ける"},
+      {id:"sa3", txt:"たし算・ひき算をする",         act:"たし算やひき算の計算をする"},
+      {id:"sa4", txt:"具体物を使って計算を考える",   act:"ブロックなどの具体物を使って計算の意味をとらえる"},
+    ]},
+    {cat:"図形・測定", items:[
+      {id:"sa5", txt:"大きさや長さを比べる",         act:"大きさや長さを比べて、違いを言葉で表す"},
+      {id:"sa6", txt:"身の回りのものの形を分ける",   act:"身の回りのものを形の特徴で仲間分けする"},
+      {id:"sa7", txt:"時計を見て時刻を読む",         act:"時計を見て時刻を読む"},
+    ]},
+    {cat:"生活への活用", items:[
+      {id:"sa8", txt:"お金を使って買い物をする",     act:"お金の種類が分かり、買い物の場面で使う"},
+      {id:"sa9", txt:"表やグラフから読み取る",       act:"表やグラフから必要な数を読み取る"},
+      {id:"sa10",txt:"学習用具を使って操作する",     act:"ものさしや数え棒などの学習用具を使って操作する"},
+    ]},
+  ], closers:[
+    "数や量を生活の中で使おうとする力が育っています。",
+    "数量や図形についての感覚が確かになってきています。",
+    "身の回りの数に関心をもって考える力が伸びています。",
+  ]},
+
+  /* 生活（低学年の生活科）。
+     知的障害の各教科の「生活」は、基本的生活習慣・安全・日課や予定・遊び・
+     人との関わり・役割・手伝いや仕事・金銭の扱い・きまり・社会の仕組みと公共施設・
+     生命や自然・ものの仕組みと働き、という内容で構成されている。
+     項目はこの区分にそって並べている。
+     低学年の児童だけが使う欄のため、「使う欄」の既定はオフ（DEFAULT_ACTIVE に入れていない）。 */
+  {key:"sk", name:"生活", defLen:150, groups:[
+    {cat:"身の回りの生活", items:[
+      {id:"sk1", txt:"身の回りの始末を自分でする",   act:"衣服や持ち物の始末を自分でする"},
+      {id:"sk2", txt:"安全に気を付けて行動する",     act:"交通のきまりを守り、安全に気を付けて行動する"},
+      {id:"sk3", txt:"一日の予定が分かって動く",     act:"一日の予定が分かって行動する"},
+    ]},
+    {cat:"人とのかかわり", items:[
+      {id:"sk4", txt:"友達と遊びを楽しむ",           act:"友達と一緒に遊びを楽しむ"},
+      {id:"sk5", txt:"身近な人とやり取りをする",     act:"身近な人とあいさつややり取りをする"},
+      {id:"sk6", txt:"自分の役割を果たす",           act:"学級の中で自分の役割を果たす"},
+      {id:"sk7", txt:"手伝いや簡単な仕事をする",     act:"家庭や学校で手伝いや簡単な仕事をする"},
+    ]},
+    {cat:"社会とのかかわり", items:[
+      {id:"sk8",  txt:"お金を使って買い物をする",    act:"お金を使って簡単な買い物をする"},
+      {id:"sk9",  txt:"みんなのものを大切に使う",    act:"みんなで使うものを大切に使う"},
+      {id:"sk10", txt:"公共の場を利用する",          act:"図書館や公園などの公共の場を利用する"},
+    ]},
+    {cat:"身近な自然・もの", items:[
+      {id:"sk11", txt:"動物や植物の世話をする",      act:"身近な動物や植物の世話をする"},
+      {id:"sk12", txt:"季節の変化に気付く",          act:"季節の変化に気付いて生活する"},
+      {id:"sk13", txt:"身の回りの道具を使う",        act:"身の回りの道具の使い方が分かって使う"},
+    ]},
+  ], closers:[
+    "身近な生活の中で、自分でできることが増えています。",
+    "身の回りの人やものにかかわる力が育っています。",
+    "生活の中で気付いたことを生かそうとする態度が育っています。",
+  ]},
+
+  {key:"on", name:"音楽", defLen:150, groups:[
+    {cat:"表現", items:[
+      {id:"on1", txt:"リズムに合わせて体を動かす",   act:"曲に合わせて体を動かし、リズムを感じ取る"},
+      {id:"on2", txt:"友達と声を合わせて歌う",       act:"友達と声を合わせて歌う"},
+      {id:"on3", txt:"歌詞を覚えて最後まで歌う",     act:"歌詞を覚えて最後まで歌う"},
+      {id:"on4", txt:"打楽器を拍に合わせて鳴らす",   act:"打楽器を使って拍に合わせて鳴らす"},
+      {id:"on5", txt:"鍵盤楽器で旋律を演奏する",     act:"鍵盤ハーモニカで簡単な旋律を演奏する"},
+    ]},
+    {cat:"鑑賞・態度", items:[
+      {id:"on6", txt:"曲の感じの違いを聴き分ける",   act:"曲の感じの違いを聴き分けて、言葉や表情で表す"},
+      {id:"on7", txt:"楽器の音色に関心をもつ",       act:"いろいろな楽器の音色に関心をもって聴く"},
+      {id:"on8", txt:"落ち着いて学習に参加する",     act:"音楽の学習に落ち着いて参加する"},
+    ]},
+  ], closers:[
+    "音楽を楽しみ、進んで表現しようとする態度が育っています。",
+    "音や音楽に親しむ心が育っています。",
+    "友達と音を合わせる楽しさを味わっています。",
+  ]},
+
+  {key:"zu", name:"図画工作", defLen:150, groups:[
+    {cat:"つくる", items:[
+      {id:"zu1", txt:"材料に触れて感触を楽しむ",     act:"いろいろな材料に触れて、感触を楽しむ"},
+      {id:"zu2", txt:"クレヨンや絵の具でかく",       act:"クレヨンや絵の具を使って思いのままにかく"},
+      {id:"zu3", txt:"はさみやのりを使う",           act:"はさみやのりを使って形をつくる"},
+      {id:"zu4", txt:"作りたいものに合わせて選ぶ",   act:"作りたいものを思い浮かべて材料を選ぶ"},
+      {id:"zu5", txt:"色の組み合わせを考える",       act:"色の組み合わせを考えて表す"},
+      {id:"zu6", txt:"最後まで作品を仕上げる",       act:"最後まで作品を仕上げる"},
+    ]},
+    {cat:"見る・片付ける", items:[
+      {id:"zu7", txt:"友達の作品のよさに気付く",     act:"友達の作品のよさに気付き、感想を伝える"},
+      {id:"zu8", txt:"用具の片付けをする",           act:"使った用具の片付けをする"},
+    ]},
+  ], closers:[
+    "つくり出す喜びを味わい、進んで表そうとする態度が育っています。",
+    "材料や形、色に関心をもって表す力が育っています。",
+    "自分の思いを形にして表す力が伸びています。",
+  ]},
+
+  {key:"ta", name:"体育", defLen:150, groups:[
+    {cat:"体を動かす", items:[
+      {id:"ta1", txt:"準備運動に取り組む",           act:"準備運動に取り組む"},
+      {id:"ta2", txt:"走る・跳ぶなどの動きをする",   act:"走る、跳ぶなどの基本的な動きをする"},
+      {id:"ta3", txt:"ボールを投げたり受けたりする", act:"ボールを投げたり受けたりする"},
+      {id:"ta4", txt:"マットや跳び箱に取り組む",     act:"マットや跳び箱の運動に取り組む"},
+      {id:"ta5", txt:"リズムに乗って体を動かす",     act:"リズムに乗って体全体を動かす"},
+    ]},
+    {cat:"きまり・態度", items:[
+      {id:"ta6", txt:"ルールを守ってゲームをする",   act:"ルールを守って友達とゲームに参加する"},
+      {id:"ta7", txt:"順番を待って活動する",         act:"順番を待って活動する"},
+      {id:"ta8", txt:"用具の準備や片付けをする",     act:"用具の準備や片付けをする"},
+      {id:"ta9", txt:"体を動かす心地よさを味わう",   act:"体を動かす心地よさを味わう"},
+    ]},
+  ], closers:[
+    "体を動かす楽しさを味わい、進んで運動しようとする態度が育っています。",
+    "友達と一緒に運動を楽しむ力が育っています。",
+    "きまりを守って運動に取り組む態度が身に付いてきています。",
+  ]},
+
+  {key:"do", name:"道徳", defLen:150, groups:[
+    {cat:"自分のこと", items:[
+      {id:"do1", txt:"あいさつや返事をする",         act:"あいさつや返事を進んでする"},
+      {id:"do2", txt:"きまりを守って生活する",       act:"きまりを守って生活する"},
+      {id:"do3", txt:"自分のよいところに気付く",     act:"自分のよいところに気付く"},
+      {id:"do4", txt:"自分のことは自分でしようとする", act:"自分のことは自分でしようとする"},
+    ]},
+    {cat:"人とのかかわり", items:[
+      {id:"do5", txt:"友達に優しく接する",           act:"友達に優しく接する"},
+      {id:"do6", txt:"友達の気持ちを考えて行動する", act:"友達の気持ちを考えて行動する"},
+      {id:"do7", txt:"感謝の気持ちを伝える",         act:"ありがとうの気持ちを言葉で伝える"},
+      {id:"do8", txt:"自分の気持ちを表す",           act:"うれしい、悲しいなどの気持ちを言葉や表情で表す"},
+    ]},
+    {cat:"生命・自然", items:[
+      {id:"do9", txt:"生き物や自然を大切にする",     act:"生き物や身の回りの自然を大切にする"},
+    ]},
+  ], closers:[
+    "自分や友達を大切にしようとする気持ちが育っています。",
+    "よりよく生活しようとする態度が育っています。",
+    "身の回りの人やものを大切にする心が育っています。",
+  ]},
+
+  {key:"ji", name:"自立活動", defLen:150, groups:[
+    {cat:"健康の保持", items:[
+      {id:"ji1", txt:"生活のリズムを整える",         act:"生活のリズムを整えて登校する"},
+      {id:"ji2", txt:"体調の変化を伝える",           act:"体調の変化を教師に伝える"},
+      {id:"ji3", txt:"身の回りの清潔を保つ",         act:"手洗いや衣服の始末など、身の回りの清潔を保つ"},
+    ]},
+    {cat:"心理的な安定", items:[
+      {id:"ji4", txt:"気持ちを落ち着ける方法を使う", act:"気持ちが高ぶったときに、自分に合った方法で落ち着く"},
+      {id:"ji5", txt:"見通しをもって取り組む",       act:"活動の見通しをもって取り組む"},
+      {id:"ji6", txt:"初めての活動にも参加する",     act:"初めての活動にも安心して参加する"},
+    ]},
+    {cat:"人間関係の形成", items:[
+      {id:"ji7", txt:"友達とかかわって活動する",     act:"友達とかかわりながら活動する"},
+      {id:"ji8", txt:"相手の様子から気持ちを読む",   act:"相手の表情や様子から気持ちを読み取る"},
+    ]},
+    {cat:"環境の把握", items:[
+      {id:"ji9",  txt:"刺激に慣れて活動する",        act:"音や光などの刺激に慣れて活動する"},
+      {id:"ji10", txt:"手がかりを見て動く",          act:"予定表や絵カードを手がかりにして動く"},
+    ]},
+    {cat:"身体の動き", items:[
+      {id:"ji11", txt:"姿勢を保って活動する",        act:"姿勢を保って活動する"},
+      {id:"ji12", txt:"手指を使った作業をする",      act:"手指を使った細かい作業をする"},
+    ]},
+    {cat:"コミュニケーション", items:[
+      {id:"ji13", txt:"自分の要求を伝える",          act:"自分の要求を言葉やカードで伝える"},
+      {id:"ji14", txt:"相手の話を聞いて応じる",      act:"相手の話を聞いて応じる"},
+      {id:"ji15", txt:"やり取りを続ける",            act:"あいさつや返事のやり取りを続ける"},
+    ]},
+  ], closers:[
+    "自分から周りにはたらきかける力が育っています。",
+    "安心して学習に向かう姿勢が身に付いてきています。",
+    "自分の力を生かして生活しようとする態度が育っています。",
+  ]},
+
+  {key:"se", name:"生活単元", defLen:150, scene:true, groups:[
+    {cat:"活動に取り組む", items:[
+      {id:"se1", txt:"目当てを知って活動に参加する", act:"活動の目当てを知って参加する"},
+      {id:"se2", txt:"手順表を見ながら進める",       act:"手順表を見ながら作業を進める"},
+      {id:"se3", txt:"道具や材料を準備する",         act:"必要な道具や材料を準備する"},
+      {id:"se4", txt:"活動を最後まで続ける",         act:"活動を最後まで続ける"},
+    ]},
+    {cat:"友達とかかわる", items:[
+      {id:"se5", txt:"役割を分担して協力する",       act:"役割を分担して友達と協力する"},
+      {id:"se6", txt:"地域や校内の人とかかわる",     act:"地域や校内の人とかかわる"},
+    ]},
+    {cat:"生活に生かす", items:[
+      {id:"se7", txt:"栽培や制作の活動を続ける",     act:"育てたりつくったりする活動を続ける"},
+      {id:"se8", txt:"買い物や調理の活動をする",     act:"買い物や調理などの生活に関わる活動に取り組む"},
+      {id:"se9", txt:"活動を振り返って伝える",       act:"活動を振り返って感想を伝える"},
+      {id:"se10",txt:"できた喜びを分かち合う",       act:"やり遂げた喜びを友達と分かち合う"},
+    ]},
+  ], closers:[
+    "生活に必要な力を、実際の活動を通して身に付けてきています。",
+    "友達と一緒にやり遂げる力が育っています。",
+    "見通しをもって活動に取り組む力が育っています。",
+  ]},
+
+  {key:"gy", name:"行動のようす", defLen:200, groups:[
+    {cat:"生活のしかた", items:[
+      {id:"gy1", txt:"決まった時刻に活動を始める",   act:"決まった時刻に活動を始める"},
+      {id:"gy2", txt:"身支度や持ち物の準備をする",   act:"身支度や持ち物の準備をする"},
+      {id:"gy3", txt:"気持ちを切り替えて次に移る",   act:"気持ちを切り替えて次の活動に移る"},
+      {id:"gy4", txt:"落ち着いて学習に向かう",       act:"落ち着いて席に着き、学習に向かう"},
+      {id:"gy5", txt:"身の回りのことをする",         act:"食事や着替えなど身の回りのことをする"},
+    ]},
+    {cat:"人とのかかわり", items:[
+      {id:"gy6", txt:"困ったときに助けを求める",     act:"困ったときに教師や友達に助けを求める"},
+      {id:"gy7", txt:"友達と一緒に過ごす",           act:"友達と一緒に過ごすことを楽しむ"},
+      {id:"gy8", txt:"当番や係の仕事を行う",         act:"当番や係の仕事を行う"},
+      {id:"gy9", txt:"約束やきまりを守る",           act:"約束やきまりを守って行動する"},
+    ]},
+  ], closers:[
+    "自分から生活を整えようとする態度が育っています。",
+    "学校生活に見通しをもち、安心して過ごしています。",
+    "友達とのかかわりを広げながら生活しています。",
+  ]},
+
+  {key:"tk", name:"特別活動", defLen:100, groups:[
+    {cat:"学級・学校の活動", items:[
+      {id:"tk1", txt:"話合いに参加する",             act:"学級の話合いに参加する"},
+      {id:"tk2", txt:"係や当番の仕事に取り組む",     act:"係や当番の仕事に取り組む"},
+      {id:"tk3", txt:"行事に参加する",               act:"学級や学校の行事に参加する"},
+      {id:"tk4", txt:"集会で友達と活動する",         act:"集会で友達と一緒に活動する"},
+      {id:"tk5", txt:"給食の準備や片付けをする",     act:"給食の準備や片付けを行う"},
+      {id:"tk6", txt:"清掃の分担に取り組む",         act:"清掃の分担に取り組む"},
+      {id:"tk7", txt:"交流学級の友達とかかわる",     act:"交流学級の友達とかかわる"},
+    ]},
+  ], closers:[
+    "集団の一員として活動しようとする態度が育っています。",
+    "友達と協力して活動する力が育っています。",
+  ]},
+
+  {key:"so", name:"総合的な学習の時間", defLen:100, groups:[
+    {cat:"課題に取り組む", items:[
+      {id:"so1", txt:"調べたいことを見付ける",       act:"調べたいことを見付ける"},
+      {id:"so2", txt:"見学や体験活動に参加する",     act:"見学や体験活動に参加する"},
+      {id:"so3", txt:"調べたことをまとめる",         act:"調べたことを写真や絵でまとめる"},
+      {id:"so4", txt:"分かったことを伝える",         act:"分かったことを友達や家の人に伝える"},
+      {id:"so5", txt:"地域の人とかかわる",           act:"地域の人とかかわる"},
+      {id:"so6", txt:"友達と協力して取り組む",       act:"友達と協力して課題に取り組む"},
+      {id:"so7", txt:"振り返って次の目標をもつ",     act:"活動を振り返って次にしたいことをもつ"},
+    ]},
+  ], closers:[
+    "自分から課題に向かおうとする態度が育っています。",
+    "体験したことを生活に結び付けて考える力が育っています。",
+  ]},
+
+  {key:"ga", name:"外国語活動", defLen:100, groups:[
+    {cat:"聞く・話す", items:[
+      {id:"ga1", txt:"英語のあいさつに応じる",       act:"英語のあいさつに応じる"},
+      {id:"ga2", txt:"歌やチャンツを楽しむ",         act:"英語の歌やチャンツを楽しむ"},
+      {id:"ga3", txt:"英語の言い方に親しむ",         act:"身の回りのものの英語の言い方に親しむ"},
+      {id:"ga4", txt:"聞こえた英語をまねて言う",     act:"聞こえた英語をまねて言う"},
+    ]},
+    {cat:"かかわる", items:[
+      {id:"ga5", txt:"ALTや友達とやり取りをする",    act:"ALTや友達とやり取りをする"},
+      {id:"ga6", txt:"身振りを使って伝える",         act:"身振りを使って伝える"},
+      {id:"ga7", txt:"外国の文化に関心をもつ",       act:"外国の文化や習慣に関心をもつ"},
+    ]},
+  ], closers:[
+    "英語を使って人とかかわろうとする態度が育っています。",
+    "英語の音声に親しみ、進んで口にしようとしています。",
+  ]},
+
+  {key:"gk", name:"学校から", defLen:150, groups:[
+    {cat:"一年の育ち", items:[
+      {id:"gk1", txt:"学校生活に慣れて過ごす",       act:"学校生活に慣れ、安心して過ごす"},
+      {id:"gk2", txt:"得意なことを生かす",           act:"得意なことを生かして活動する"},
+      {id:"gk3", txt:"できることが増えて自信をもつ", act:"できることが増え、自信をもって取り組む"},
+      {id:"gk4", txt:"友達とのかかわりを広げる",     act:"友達とのかかわりを広げる"},
+      {id:"gk5", txt:"家庭での経験を学校に生かす",   act:"家庭での経験を学校の活動に生かす"},
+      {id:"gk6", txt:"次の学期の目標をもつ",         act:"次の学期に向けて自分の目標をもつ"},
+    ]},
+  ], closers:[
+    "これからの成長がますます楽しみです。",
+    "一年間の学びが、次の学年の力につながっています。",
+    "ご家庭でのご協力に感謝いたします。",
+  ]},
+
+  /* 予備欄。通知表に社会・理科・家庭がある児童のために用意しています。
+     既定では「使う欄」のチェックが外れているため、画面には出ません。 */
+  {key:"sh", name:"社会", defLen:150, groups:[
+    {cat:"社会", items:[
+      {id:"sh1", txt:"身の回りの施設や仕事を知る",   act:"身の回りの施設や人々の仕事を知る"},
+      {id:"sh2", txt:"見学を通して調べる",           act:"見学を通して地域のことを調べる"},
+      {id:"sh3", txt:"地図や写真から読み取る",       act:"地図や写真から分かることを読み取る"},
+      {id:"sh4", txt:"きまりの意味に気付く",         act:"社会のきまりの意味に気付く"},
+    ]},
+  ], closers:["身の回りの社会に関心をもつ力が育っています。"]},
+
+  {key:"ri", name:"理科", defLen:150, groups:[
+    {cat:"理科", items:[
+      {id:"ri1", txt:"自然のものに関心をもつ",       act:"身の回りの自然のものに関心をもって観察する"},
+      {id:"ri2", txt:"変化に気付く",                 act:"植物や生き物の変化に気付く"},
+      {id:"ri3", txt:"実験や観察に取り組む",         act:"簡単な実験や観察に取り組む"},
+      {id:"ri4", txt:"気付いたことを伝える",         act:"気付いたことを言葉や絵で伝える"},
+    ]},
+  ], closers:["身の回りの自然に関心をもって調べようとする態度が育っています。"]},
+
+  {key:"kt", name:"家庭", defLen:150, groups:[
+    {cat:"家庭", items:[
+      {id:"kt1", txt:"調理の活動に取り組む",         act:"簡単な調理の活動に取り組む"},
+      {id:"kt2", txt:"用具を安全に使う",             act:"包丁やこんろなどの用具を安全に使う"},
+      {id:"kt3", txt:"衣服の始末をする",             act:"衣服の着脱や始末をする"},
+      {id:"kt4", txt:"整理整頓や掃除をする",         act:"身の回りの整理整頓や掃除をする"},
+    ]},
+  ], closers:["生活に必要な技能を身に付けてきています。"]},
+];
+
+/* 既定で「使う欄」にチェックが入る欄（高学年の通知表の様式に合わせています）。
+   生活（低学年）・社会・理科・家庭は、該当する児童のときだけチェックを入れて使います。 */
+const DEFAULT_ACTIVE = ["ko","sa","on","zu","ta","do","ji","se","gy","tk","so","ga","gk"];
+
+const SUB_BY_KEY = {};
+SUBJECTS.forEach(s=>{ SUB_BY_KEY[s.key]=s; });
+const ITEM_BY_ID = {};
+SUBJECTS.forEach(s=>s.groups.forEach(g=>g.items.forEach(it=>{ ITEM_BY_ID[it.id]={it, sub:s, cat:g.cat}; })));
+
+/* ============ 文末バリエーション ============ */
+const ENDINGS = [
+  (f)=>f+"ことができました。",
+  (f)=>f+"姿が見られました。",
+  (f)=>toTeiru(f)+"。",
+  (f)=>f+"ようになりました。",
+];
+
+/* 常体の動詞終止形 →「〜ています」 */
+function toTeiru(s){
+  s = s.replace(/。$/, "");
+  if(/(ています|でいます|ました|です)$/.test(s)) return s;
+  if(/(ている|でいる)$/.test(s)) return s.replace(/ている$/,"ています").replace(/でいる$/,"でいます");
+  if(/する$/.test(s)) return s.replace(/する$/, "しています");
+  if(/来る$/.test(s)) return s.replace(/来る$/, "来ています");
+  if(/([いえきけぎげじぜしせちてでにねひへびべみめりれ])る$/.test(s)) return s.replace(/る$/, "ています");
+  const te = {"う":"って","つ":"って","る":"って","む":"んで","ぶ":"んで","ぬ":"んで","く":"いて","ぐ":"いで","す":"して"};
+  const last = s.slice(-1);
+  if(te[last]) return s.slice(0,-1) + te[last] + "います";
+  return toPolite(s);
+}
+
+/* 常体の動詞終止形 →「連用中止形」（例：準備する→準備し／読む→読み）
+   2つの項目を1文にまとめるときの接続に使う。変換できなければ null。 */
+function toRenyou(s){
+  s = s.replace(/。$/, "");
+  const p = toPolite(s);
+  if(!/ます$/.test(p)) return null;
+  const r = p.slice(0, -2);
+  return r.length ? r : null;
+}
+
+/* 常体→敬体 変換（保険） */
+function toPolite(s){
+  s = s.replace(/。$/, "");
+  if(/(ます|ました|です|でした|ません)$/.test(s)) return s;
+  s = s.replace(/でいる$/, "でいます").replace(/ている$/, "ています");
+  if(/(ています|でいます)$/.test(s)) return s;
+  if(/(だった|た)$/.test(s)) return s.replace(/だった$/, "でした").replace(/([^で])た$/, "$1ました");
+  if(/(である|だ)$/.test(s)) return s.replace(/(である|だ)$/, "です");
+  if(/する$/.test(s)) return s.replace(/する$/, "します");
+  if(/来る$/.test(s)) return s.replace(/来る$/, "来ます");
+  s = s.replace(/([いえきけぎげじぜしせちてでにねひへびべみめりれ])る$/, "$1ます");
+  if(/ます$/.test(s)) return s;
+  const godan = {"う":"い","く":"き","ぐ":"ぎ","す":"し","つ":"ち","ぬ":"に","ぶ":"び","む":"み","る":"り"};
+  const last = s.slice(-1);
+  if(godan[last]) return s.slice(0,-1) + godan[last] + "ます";
+  if(/い$/.test(s)) return s + "です";
+  return s;
+}
+
+/* ============ 避けたい表現のチェック ============
+   能力の優劣を印象づける表現・他児との比較・「できない」ことの記述を検出する。
+   文例を学校独自のものに差し替えたときの安全網。 */
+const NG_WORDS = [
+  "できません","できないことが多い","できず","苦手です","苦手でした","不得意",
+  "消極的","意欲がない","集中力がない","落ち着きがない","乱暴","わがまま","問題行動",
+  "他の子","ほかの子","友達より","友達に比べ","クラスの中で","みんなと比べ",
+  "劣っ","遅れて","理解できません","困難です","無理です","障害のため","知的な遅れ",
+];
+function lintText(text){
+  return NG_WORDS.filter(w=>text.includes(w));
+}
+
+/* ============ 文の組み立て ============ */
+/* 支援の程度の順に並べる（一人でできる → 言葉かけ → 一緒に）。
+   所見は「できていること」から書き起こすのが定石。 */
+function order(arr){
+  return LEVEL_ORDER.flatMap(l=>arr.filter(c=>c.lvl===l));
+}
+
+const JOIN_MAX   = 52;   // まとめる2件の合計字数の上限
+const JOIN_COMMA = 2;    // まとめた文に許す読点の数の上限
+function canJoin(a, b, opt){
+  if(!opt.join || !a || !b) return false;
+  if(a.lvl !== b.lvl) return false;                       // 支援の程度が違えばつながない
+  if(ITEM_BY_ID[a.it.id].cat !== ITEM_BY_ID[b.it.id].cat) return false;  // 小見出しをまたがない
+  if(toRenyou(a.it.act) === null) return false;
+  if([...(a.it.act + b.it.act)].length > JOIN_MAX) return false;
+  const commas = (a.it.act.match(/、/g)||[]).length + (b.it.act.match(/、/g)||[]).length + 1;
+  return commas <= JOIN_COMMA;
+}
+
+/* 支援の言い回しを選ぶ。
+   pos … その文が何番目か。ここを必ず足すことで、同じ支援の程度の文が
+         続いても言い回しが重複しない（ばらつきを「そろえる」にしても同じ）。
+   isHead … 文頭に呼び方や単元名が付く1文目かどうか。
+   used … その所見文の中で既に使った言い回し。head と any には同じ語句が
+          重なって入っているため、位置をずらすだけでは離れた文で再登場することが
+          ある。使用済みを覚えて飛ばすことで、1つの欄の中では必ず全て違う言い回しになる。
+   plan … 個別の指導計画から登録した手立て。あればこちらを優先し、
+          「ふりがなを付けると、」のように具体的な言い回しになる。
+          ただし1文目（呼び方や単元名が付く文）では使わない。
+          「太郎さんは、ふりがなを付けると、〜」だと誰が付けたのかが曖昧になるため。 */
+function supportPhrase(lvl, pos, isHead, used, plan){
+  const pool = SUPPORT[lvl] || SUPPORT.solo;
+  const generic = (isHead ? pool.head : pool.any) || [""];
+  const usePlan = (lvl !== "solo") && !isHead && plan && plan.length;
+
+  // 使用済みを飛ばしながら、配列の中から1つ選ぶ。
+  // pos を起点にすることで、文が続いても同じ言い回しが並ばない。
+  const pick = (arr)=>{
+    for(let k=0; k<arr.length; k++){
+      const p = arr[(pos + k) % arr.length];
+      if(p === "" || !used || !used.has(p)){ if(used && p) used.add(p); return p; }
+    }
+    return null;
+  };
+
+  // 登録した手立てを先に使い切り、足りなくなってから汎用表現に移る。
+  // 単純に2つの配列をつないで pos で割ると、汎用表現の側に当たってしまい
+  // 手立てが使われないことがあるため、順に試す形にしている。
+  if(usePlan){
+    const p = pick(plan);
+    if(p !== null) return p;
+  }
+  const g = pick(generic);
+  if(g !== null) return g;
+  return generic[pos % generic.length];   // 全て使い切った場合は重複を許す
+}
+
+/* 項目リストから、その欄の所見文をまるごと組み立てる。
+   採用判定にもこの関数を使うので、字数の推定と実際の出力が必ず一致する。
+   opt = {name, scene, closer, join, variant, regenSeed, subject} */
+function buildText(list, opt){
+  if(!list.length) return { text:"", len:0 };
+  const ordered = order(list);
+  const seed = opt.variant ? (opt.regenSeed||0) : 0;
+
+  // 1) 文の単位にまとめる
+  const units = [];
+  for(let i=0; i<ordered.length; i++){
+    if(canJoin(ordered[i], ordered[i+1], opt)){ units.push([ordered[i], ordered[i+1]]); i++; }
+    else units.push([ordered[i]]);
+  }
+
+  // 2) 各単位を1文にする
+  const lastIdx = units.length - 1;
+  const usedSup = new Set();   // この所見文の中で使った支援の言い回し
+  // 支援の程度が最初に変わる位置。ここにだけ「また、」を入れる。
+  // 変わるたびに入れると1つの所見に「また、」が2回出て読みにくくなるため、1回に限る。
+  const firstShift = units.findIndex((u,i)=> i>0 && u[0].lvl !== units[i-1][0].lvl);
+
+  const sentences = units.map((u,i)=>{
+    const lvl = u[0].lvl;
+    let v = opt.variant ? (i + seed) : 0;
+    // 結びの一文と語尾（〜ています。）が重なるのを避ける
+    if(opt.closer && i===lastIdx && v % ENDINGS.length === 2) v++;
+
+    let core;
+    if(u.length===2){
+      core = toRenyou(u[0].it.act) + "、" + u[1].it.act;
+    }else{
+      core = u[0].it.act;
+    }
+    let sent = ENDINGS[v % ENDINGS.length](core);
+
+    // 支援の手立て。「一人でできる」には付けない。
+    // 位置（i）を必ず足すので、同じ支援の程度の文が続いても言い回しが変わる。
+    const isHead = (i===0) && !!(opt.name || opt.scene);
+    const cat  = ITEM_BY_ID[u[0].it.id] ? ITEM_BY_ID[u[0].it.id].cat : null;
+    const pool = planPool(opt.subject ? opt.subject.key : "", lvl, opt.plan, cat);
+    const sup = supportPhrase(lvl, i + seed, isHead, usedSup, pool);
+    if(sup) sent = sup + sent;
+
+    // 支援の程度が変わる切れ目は「また、」でつなぐ。
+    // 「これからは」等は「まだできていない」という印象を与えるため使わない。
+    if(i === firstShift) sent = "また、" + sent;
+
+    if(i===0){
+      let head = "";
+      if(opt.name)  head += opt.name + "は、";
+      if(opt.scene) head += "「" + opt.scene + "」の学習" + (opt.name ? "で、" : "では、");
+      sent = head + sent;
+    }
+    return sent;
+  });
+
+  // 3) 結びの一文
+  if(opt.closer && opt.subject && opt.subject.closers && opt.subject.closers.length){
+    const c = opt.subject.closers;
+    sentences.push(c[seed % c.length]);
+  }
+
+  const text = sentences.join("");
+  return { text, len:[...text].length };
+}
+
+/* 選ばれた項目から、めやす字数に最も近くなる組み合わせを選んで生成する。
+   ★重点は字数に関わらず必ず採用する。 */
+function generateFor(chosen, priSet, target, opt){
+  const isPri = c => priSet.has(c.it.id);
+  const priList  = order(chosen.filter(isPri));
+  const restList = order(chosen.filter(c=>!isPri(c)));
+
+  const adopted = [...priList];
+  let best = buildText(adopted, opt);
+  const dropped = [];
+
+  restList.forEach(c=>{
+    const cand = buildText([...adopted, c], opt);
+    if(adopted.length===0 || Math.abs(cand.len - target) < Math.abs(best.len - target)){
+      adopted.push(c); best = cand;
+    }else{
+      dropped.push(c);
+    }
+  });
+  return { text:best.text, len:best.len, dropped };
+}
+
+/* ============ キーワード辞書 ============
+   メモ読み取り機能。項目IDごとに、メモに含まれていたら反応する語。
+   DB に項目を足したら、ここにも同じIDの行を足すこと。
+   語尾は活用に対応できるよう途中で切るのがコツ（「口ずさ」→「口ずさむ／口ずさんで」）。 */
+const KW = {
+  ko1:["名前を呼","返事","呼ばれ","はい と"],
+  ko2:["話を聞","最後まで聞","聞く姿勢","傾聴"],
+  ko3:["言葉で伝え","経験したこと","出来事を話","報告"],
+  ko4:["分かるように話","相手に伝わ","言葉を選"],
+  ko5:["読み聞かせ","絵本","物語","お話を聞"],
+  ko6:["絵カード","写真と","結び付け","意味が分か","マッチング"],
+  ko7:["音読","声に出して読","教科書を読"],
+  ko8:["標識","看板","文字を読","サインを読"],
+  ko9:["名前を書","自分の名前","なぞり書き"],
+  ko10:["文を書","日記","短い文","作文"],
+  ko11:["新しい言葉","語彙","言葉を覚え"],
+
+  sa1:["数を数え","いくつ","数唱","計数"],
+  sa2:["数字と","数量","数と物","対応させ"],
+  sa3:["たし算","ひき算","計算","足し算","引き算"],
+  sa4:["ブロック","具体物","おはじき","半具体"],
+  sa5:["長さ","大きさを比","比べ","かさ","重さ"],
+  sa6:["形の","形で","仲間分け","三角","四角","丸い","分類"],
+  sa7:["時計","時刻","何時"],
+  sa8:["お金","買い物","硬貨","支払"],
+  sa9:["グラフ","表から","読み取"],
+  sa10:["ものさし","数え棒","定規","学習用具"],
+
+  sk1:["身の回りの始末","衣服の始末","持ち物の始末","自分で片付け","身支度を自分"],
+  sk2:["安全","交通","横断歩道","信号","危険"],
+  sk3:["一日の予定","日課","予定が分か","次に何を"],
+  sk4:["遊び","遊ぶ","遊具","ままごと","鬼ごっこ"],
+  sk5:["身近な人","あいさつをして","やり取りをし","近所の"],
+  sk6:["役割を果た","自分の役割","任され"],
+  sk7:["手伝い","お手伝い","仕事をす","運ぶ仕事"],
+  sk8:["買い物","お金を使","レジ","お店で"],
+  sk9:["大切に使","みんなのもの","丁寧に扱","乱暴に扱わ"],
+  sk10:["公共","図書館","公園","バス","電車"],
+  sk11:["世話","えさ","水やり","飼育","栽培して"],
+  sk12:["季節","春","夏","秋","冬","気温の変化"],
+  sk13:["道具の使い方","身の回りの道具","はさみの使い方","文房具"],
+
+  on1:["リズム","体を動かし","拍に合わせ"],
+  on2:["声を合わせ","一緒に歌","合唱"],
+  on3:["歌詞","最後まで歌","歌を覚え"],
+  on4:["打楽器","タンブリン","カスタネット","太鼓"],
+  on5:["鍵盤","ハーモニカ","演奏","キーボード"],
+  on6:["聴き分け","曲の感じ","鑑賞","静かな曲"],
+  on7:["音色","楽器の音","音に関心"],
+  on8:["音楽の時間","落ち着いて参加"],
+
+  zu1:["材料","感触","粘土","触れて"],
+  zu2:["クレヨン","絵の具","かく","描く","絵を"],
+  zu3:["はさみ","のり","切る","貼る"],
+  zu4:["材料を選","作りたい","構想"],
+  zu5:["色の組み合わせ","色を選","彩色"],
+  zu6:["仕上げ","最後まで作","完成させ"],
+  zu7:["友達の作品","鑑賞","よさに気付","感想"],
+  zu8:["片付け","用具を","後片付け"],
+
+  ta1:["準備運動","体操"],
+  ta2:["走る","跳ぶ","かけっこ","走っ"],
+  ta3:["ボール","投げ","キャッチ","受け"],
+  ta4:["マット","跳び箱","鉄棒","器械"],
+  ta5:["リズムに乗","体全体","ダンス","表現運動"],
+  ta6:["ルールを守","ゲーム","試合"],
+  ta7:["順番を待","並んで"],
+  ta8:["用具の準備","片付け","ライン引き"],
+  ta9:["心地よさ","体を動かす楽し","汗を"],
+
+  do1:["あいさつ","おはよう","返事"],
+  do2:["きまりを守","約束を守","ルール"],
+  do3:["よいところ","自分のよさ","自信"],
+  do4:["自分でしよう","自分のことは","身の回りのことを自分"],
+  do5:["優しく","親切","思いやり"],
+  do6:["気持ちを考え","相手の立場","友達の気持ち"],
+  do7:["ありがとう","感謝","お礼"],
+  do8:["うれしい","悲しい","気持ちを表","感情"],
+  do9:["生き物","自然","植物を大切","動物"],
+
+  ji1:["生活のリズム","早寝","登校","起床"],
+  ji2:["体調","具合","痛い と","不調"],
+  ji3:["手洗い","清潔","身だしなみ","衣服の始末"],
+  ji4:["落ち着く","気持ちを切り替","クールダウン","高ぶ"],
+  ji5:["見通し","スケジュール","予定を確認"],
+  ji6:["初めての","新しい活動","不安"],
+  ji7:["友達とかかわ","一緒に活動","かかわり"],
+  ji8:["表情","相手の様子","気持ちを読"],
+  ji9:["音に","刺激","感覚","まぶし"],
+  ji10:["絵カード","予定表","手がかり","視覚支援"],
+  ji11:["姿勢","座って","体幹"],
+  ji12:["手指","細かい作業","巧緻","つまむ"],
+  ji13:["要求を伝え","カードで伝え","してほしい"],
+  ji14:["聞いて応じ","やり取り","応答"],
+  ji15:["あいさつのやり取り","返事のやり取り"],
+
+  se1:["目当て","めあて","単元","活動に参加"],
+  se2:["手順表","手順","工程"],
+  se3:["道具を準備","材料を準備","用意"],
+  se4:["最後まで続け","持続","やり遂げ"],
+  se5:["役割","分担","協力"],
+  se6:["地域の人","校内の人","交流"],
+  se7:["栽培","育て","制作","作物"],
+  se8:["買い物","調理","クッキング","お店"],
+  se9:["振り返","感想を伝え","発表"],
+  se10:["喜び","達成感","できた"],
+
+  gy1:["時刻に","時間に始め","チャイム"],
+  gy2:["身支度","持ち物","ランドセル","支度"],
+  gy3:["切り替え","次の活動","移動"],
+  gy4:["席に着","落ち着いて学習","着席"],
+  gy5:["食事","着替え","排せつ","身の回りのこと"],
+  gy6:["助けを求め","困ったとき","援助要求","先生を呼"],
+  gy7:["友達と過ご","一緒に遊","休み時間"],
+  gy8:["当番","係の仕事","日直"],
+  gy9:["約束","きまりを守って行動","規範"],
+
+  tk1:["話合い","話し合い","学級会"],
+  tk2:["係","当番の仕事"],
+  tk3:["行事","運動会","学習発表会","遠足"],
+  tk4:["集会","全校"],
+  tk5:["給食","配膳","当番活動"],
+  tk6:["清掃","そうじ","掃除"],
+  tk7:["交流学級","交流及び共同学習","通常の学級"],
+
+  so1:["調べたいこと","課題を見付","テーマ"],
+  so2:["見学","体験活動","フィールド"],
+  so3:["まとめ","写真で","模造紙","新聞に"],
+  so4:["伝える","発表","家の人に"],
+  so5:["地域の人","地域と"],
+  so6:["協力して課題","グループで調べ"],
+  so7:["振り返って","次にしたい","次の目標"],
+
+  ga1:["英語のあいさつ","ハロー","Hello","グッモーニング"],
+  ga2:["歌","チャンツ","ソング"],
+  ga3:["英語の言い方","単語","英語で言"],
+  ga4:["まねて言","リピート","まねし"],
+  ga5:["ALT","外国語の先生","やり取り"],
+  ga6:["身振り","ジェスチャー","動作で"],
+  ga7:["外国の文化","世界の","異文化"],
+
+  gk1:["学校生活に慣れ","安心して過ご"],
+  gk2:["得意","強みを生か","好きなこと"],
+  gk3:["できることが増え","自信"],
+  gk4:["かかわりを広げ","友達が増え"],
+  gk5:["家庭で","おうちで","家での"],
+  gk6:["目標をもつ","次の学期","めあてをもつ"],
+
+  sh1:["施設","仕事を知","働く人"],
+  sh2:["見学して","地域を調べ"],
+  sh3:["地図","写真から"],
+  sh4:["社会のきまり","公共"],
+
+  ri1:["自然","観察","生き物を見"],
+  ri2:["変化に気付","成長を","育ち"],
+  ri3:["実験","観察に取り組"],
+  ri4:["気付いたことを","絵で伝え"],
+
+  kt1:["調理","料理","作る活動"],
+  kt2:["包丁","こんろ","安全に使"],
+  kt3:["着脱","衣服","たたむ"],
+  kt4:["整理整頓","掃除","片付け"],
+};
+
+/* ============ 支援の程度の判定（メモ読み取り） ============
+   キーワードの前後25字を見て、支援を示す語があればその程度に振り分ける。
+   「一緒に」を先に見るのは、より手厚い支援の記述を優先するため。 */
+const HINT_TOGETHER = ["一緒に","いっしょに","手を添え","手添え","介助","支援を受け","補助","手伝っても","手本を示し","教師と"];
+const HINT_VERBAL   = ["言葉かけ","声かけ","声掛け","促す","促し","うながす","ヒント","見守り","確認すると","伝えると","気付かせ"];
+
+/* 「友達と一緒に遊ぶ」のような児童どうしのかかわりは、教師の支援ではない。
+   「一緒に」だけを手がかりにすると、これを「一緒に取り組めばできる」と取り違えるため、
+   判定の前に児童どうしを表す言い回しを取り除いておく。 */
+const PEER_TOGETHER = /(友達|友だち|ともだち|みんな|クラスの子|班の子|友人|ペア|グループ|上級生|下級生)(と|で)(一緒に|いっしょに)/g;
+
+function detectLevel(seg){
+  const s = (seg||"").replace(PEER_TOGETHER, "");
+  if(HINT_TOGETHER.some(h=>s.includes(h))) return "together";
+  if(HINT_VERBAL.some(h=>s.includes(h)))   return "verbal";
+  return "solo";
+}
+
+/* メモを1文ずつに切り分ける。
+   前後◯字という窓の取り方だと、改行をまたいで隣の文の「言葉かけ」「一緒に」を
+   拾ってしまい、支援の程度を取り違える。文単位で見ることでこれを防ぐ。 */
+function splitMemo(raw){
+  return (raw||"")
+    .split(/[\n\r。．.!?！？]+/)
+    .map(s=>s.replace(/\s+/g,''))
+    .filter(Boolean);
+}
+
+/* メモ全体を走査して、該当項目と支援の程度の候補を返す。
+   activeKeys に含まれる欄だけを対象にする。
+   同じ項目が複数の文に当たった場合は、一致した語が多いほうを採る。 */
+function scanMemo(raw, activeKeys){
+  const segs = splitMemo(raw);
+  if(!segs.length) return [];
+  const map = new Map();
+  segs.forEach(seg=>{
+    const lvl = detectLevel(seg);
+    SUBJECTS.forEach(sub=>{
+      if(!activeKeys.includes(sub.key)) return;
+      sub.groups.forEach(g=>{
+        g.items.forEach(it=>{
+          const found = (KW[it.id] || []).filter(w=>seg.includes(w.replace(/\s+/g,'')));
+          if(!found.length) return;
+          const prev = map.get(it.id);
+          if(!prev || found.length > prev.score){
+            map.set(it.id, {id:it.id, txt:it.txt, sub:sub.key, subName:sub.name,
+                            cat:g.cat, lvl, score:found.length, words:found});
+          }
+        });
+      });
+    });
+  });
+  return [...map.values()].sort((a,b)=> b.score-a.score);
+}
+
+/* 起動時に文例データ全体を点検する（問題があればコンソールに警告） */
+function lintDB(){
+  const bad = [];
+  const seen = new Set();
+  SUBJECTS.forEach(s=>s.groups.forEach(g=>g.items.forEach(it=>{
+    if(seen.has(it.id)) bad.push("IDが重複しています：" + it.id);
+    seen.add(it.id);
+    if(!KW[it.id]) bad.push("キーワード未登録：" + it.id);
+    const hit = lintText(it.act);
+    if(hit.length) bad.push("避けたい表現：" + it.id + " → " + hit.join("／"));
+    if(/(ている|でいる|姿|こと|とき)$/.test(it.act)) bad.push("actが動詞終止形で終わっていません：" + it.id + " → " + it.act);
+  })));
+  // 支援の手立ての点検（所見に出る phrase を見る）
+  const seenPlan = new Set();
+  Object.values(PLAN_BY_ID).forEach(p=>{
+    if(seenPlan.has(p.id)) bad.push("手立てのIDが重複しています：" + p.id);
+    seenPlan.add(p.id);
+    const hit = lintText(p.phrase);
+    if(hit.length) bad.push("手立てに避けたい表現：" + p.id + " → " + hit.join("／"));
+    if(!/、$/.test(p.phrase)) bad.push("手立てが読点で終わっていません：" + p.id + " → " + p.phrase);
+    if(!["verbal","together","both"].includes(p.lv)) bad.push("手立ての lv が不正：" + p.id);
+  });
+  return bad;
+}
+/* ===TEXT-CORE-END=== */
+
+/* ============ 画面の状態 ============ */
+const MAX_PRI = 3;
+const STORE_KEY = "shoken_tokushi_v1";
+
+const state = {
+  name: "",
+  variant: true,
+  join: false,
+  closer: true,
+  cur: "ko",
+  active: DEFAULT_ACTIVE.slice(),
+  plan: [],         // 個別の指導計画から選んだ手立てのID（最大 MAX_PLAN 件）
+  sub: {},          // key -> {sel:Map, pri:Set, scene:"", len:Number, out:""}
+  regenSeed: 0,
+};
+SUBJECTS.forEach(s=>{
+  state.sub[s.key] = { sel:new Map(), pri:new Set(), scene:"", len:s.defLen, out:"" };
+});
+const cur = () => state.sub[state.cur];
+const curSub = () => SUB_BY_KEY[state.cur];
+
+/* ============ 保存（このパソコンのブラウザ内） ============ */
+let saveOK = true;
+function saveNow(){
+  try{
+    const data = {
+      name: state.name, variant: state.variant, join: state.join, closer: state.closer,
+      cur: state.cur, active: state.active, plan: state.plan,
+      memo: document.getElementById('memo').value,
+      sub: {},
+    };
+    SUBJECTS.forEach(s=>{
+      const st = state.sub[s.key];
+      data.sub[s.key] = { sel:[...st.sel], pri:[...st.pri], scene:st.scene, len:st.len, out:st.out };
+    });
+    localStorage.setItem(STORE_KEY, JSON.stringify(data));
+    saveOK = true;
+    setSaveState("保存しました（このパソコンのブラウザ内）", true);
+  }catch(e){
+    saveOK = false;
+    setSaveState("このブラウザでは保存できません（入力は残りません）", false);
+  }
+}
+let saveTimer = null;
+function save(){ clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 400); }
+
+function setSaveState(msg, ok){
+  const el = document.getElementById('saveState');
+  el.textContent = "自動保存：" + msg;
+  el.className = ok ? "ok" : "ng";
+}
+
+function load(){
+  let data = null;
+  try{ data = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); }
+  catch(e){ data = null; }
+  if(!data){ setSaveState("オン（入力すると保存します）", true); return; }
+  state.name    = data.name || "";
+  state.variant = data.variant !== false;
+  state.join    = !!data.join;
+  state.closer  = data.closer !== false;
+  state.active  = Array.isArray(data.active) && data.active.length ? data.active : DEFAULT_ACTIVE.slice();
+  state.plan    = (Array.isArray(data.plan) ? data.plan : []).filter(id=>PLAN_BY_ID[id]).slice(0, MAX_PLAN);
+  if(data.memo) document.getElementById('memo').value = data.memo;
+  SUBJECTS.forEach(s=>{
+    const d = data.sub && data.sub[s.key];
+    if(!d) return;
+    const st = state.sub[s.key];
+    st.sel   = new Map(d.sel || []);
+    st.pri   = new Set(d.pri || []);
+    st.scene = d.scene || "";
+    st.len   = d.len || s.defLen;
+    st.out   = d.out || "";
+  });
+  if(data.cur && state.active.includes(data.cur)) state.cur = data.cur;
+  else state.cur = state.active[0] || "ko";
+  setSaveState("前回の続きを読み込みました", true);
+}
+
+/* ============ 画面の組み立て ============ */
+function buildUseList(){
+  const el = document.getElementById('useList');
+  el.innerHTML = "";
+  SUBJECTS.forEach(s=>{
+    const on = state.active.includes(s.key);
+    const lab = document.createElement('label');
+    lab.className = on ? "on" : "";
+    lab.innerHTML = `<input type="checkbox" data-key="${s.key}" ${on?"checked":""}>${s.name}`;
+    lab.querySelector('input').addEventListener('change', e=>{
+      const k = e.target.dataset.key;
+      if(e.target.checked){ if(!state.active.includes(k)) state.active.push(k); }
+      else{
+        if(state.active.length<=1){ e.target.checked=true; alert("使う欄は1つ以上必要です。"); return; }
+        state.active = state.active.filter(x=>x!==k);
+        if(state.cur===k) state.cur = state.active[0];
+      }
+      // 元の並び順を保つ
+      state.active = SUBJECTS.map(x=>x.key).filter(k2=>state.active.includes(k2));
+      lab.className = e.target.checked ? "on" : "";
+      buildTabs(); switchTo(state.cur); renderAll(); save();
+    });
+    el.appendChild(lab);
+  });
+}
+
+function buildTabs(){
+  const el = document.getElementById('subTabs');
+  el.innerHTML = "";
+  state.active.forEach(k=>{
+    const s = SUB_BY_KEY[k], st = state.sub[k];
+    const b = document.createElement('button');
+    b.className = "subtab" + (k===state.cur ? " on" : "");
+    b.dataset.key = k;
+    const n = st.sel.size;
+    b.innerHTML = s.name
+      + (n ? `<span class="badge">${n}</span>` : "")
+      + (st.out ? `<span class="done">✓</span>` : "");
+    b.addEventListener('click', ()=>{ switchTo(k); save(); });
+    el.appendChild(b);
+  });
+}
+
+function buildItems(){
+  const catsEl = document.getElementById('cats');
+  catsEl.innerHTML = "";
+  const sub = curSub(), st = cur();
+  sub.groups.forEach(group=>{
+    const d = document.createElement('details'); d.className='cat'; d.open=true;
+    const n = group.items.length;
+    d.innerHTML = `<summary>${group.cat}<span class="count" data-cat="${group.cat}">0/${n}</span></summary>`;
+    const box = document.createElement('div'); box.className='items';
+    group.items.forEach(it=>{
+      const row=document.createElement('div'); row.className='item'; row.dataset.id=it.id;
+      let picks = "";
+      LEVELS.forEach(l=>{
+        const on = st.sel.get(it.id)===l.key ? "checked" : "";
+        picks += `<label title="${l.label}"><input type="checkbox" data-id="${it.id}" data-lvl="${l.key}" ${on}><span class="${l.key}">${l.short}</span></label>`;
+      });
+      row.innerHTML=`<span class="txt">${it.txt}</span>
+        <button type="button" class="star" data-id="${it.id}" title="重点にする（最大${MAX_PRI}件・必ず所見に入ります）">★</button>
+        <span class="lvlpick">${picks}</span>`;
+      if(st.sel.has(it.id)) row.classList.add('sel');
+      if(st.pri.has(it.id)) row.classList.add('pri');
+
+      row.querySelector('.star').addEventListener('click', ()=>{
+        const s2 = cur();
+        if(s2.pri.has(it.id)){ s2.pri.delete(it.id); }
+        else{
+          if(!s2.sel.has(it.id)){ alert("先にこの項目の支援の程度を選んでから★を付けてください。"); return; }
+          if(s2.pri.size >= MAX_PRI){ alert("★重点は1つの欄につき最大"+MAX_PRI+"件までです。他の★を外してから付けてください。"); return; }
+          s2.pri.add(it.id);
+        }
+        updateCounts(); save();
+      });
+
+      row.querySelectorAll('.lvlpick input').forEach(inp=>{
+        inp.addEventListener('change', e=>{
+          const s2 = cur();
+          const lvl = e.target.dataset.lvl;
+          if(e.target.checked){
+            row.querySelectorAll('.lvlpick input').forEach(o=>{ if(o!==e.target) o.checked=false; });
+            s2.sel.set(it.id, lvl);
+          }else{
+            s2.sel.delete(it.id);
+            s2.pri.delete(it.id);
+          }
+          row.classList.toggle('sel', s2.sel.has(it.id));
+          updateCounts(); save();
+        });
+      });
+      box.appendChild(row);
+    });
+    d.appendChild(box); catsEl.appendChild(d);
+  });
+  updateCounts();
+}
+
+function updateCounts(){
+  const sub = curSub(), st = cur();
+  document.getElementById('selCount').textContent =
+    st.sel.size+'件選択中' + (st.pri.size ? `（★${st.pri.size}）` : '');
+  sub.groups.forEach(g=>{
+    const n = g.items.filter(i=>st.sel.has(i.id)).length;
+    const el = document.querySelector(`.count[data-cat="${g.cat}"]`);
+    if(el) el.textContent = `${n}/${g.items.length}`;
+  });
+  const full = st.pri.size >= MAX_PRI;
+  document.querySelectorAll('#cats .star').forEach(b=>{
+    const on = st.pri.has(b.dataset.id);
+    b.classList.toggle('on', on);
+    b.disabled = !on && (full || !st.sel.has(b.dataset.id));
+    b.closest('.item').classList.toggle('pri', on);
+  });
+  const pn = document.getElementById('priNote');
+  pn.innerHTML = st.pri.size
+    ? `★重点 <b>${st.pri.size}/${MAX_PRI}</b> 件：字数のめやすに関わらず必ずこの欄の所見に入ります。`
+    : `★を押すと重点指定（この欄で最大${MAX_PRI}件）。★の項目は字数のめやすに関わらず必ず所見に入ります。`;
+  buildTabs();
+}
+
+function switchTo(key){
+  state.cur = key;
+  state.regenSeed = 0;
+  const sub = curSub(), st = cur();
+  document.getElementById('curName').textContent = sub.name;
+  document.getElementById('outSubName').textContent = sub.name;
+  // 単元名の欄は生活単元だけに出す
+  document.getElementById('sceneField').style.display = sub.scene ? "" : "none";
+  document.getElementById('sceneInput').value = st.scene;
+  updateSceneChips();
+  // 文字数
+  document.getElementById('lenInput').value = st.len;
+  [...document.querySelectorAll('#lenSeg button')].forEach(b=>b.classList.toggle('on', +b.dataset.len===st.len));
+  buildTabs();
+  buildItems();
+  if(st.out){ setOut(st.out, false); updateMeta(st.out, st.len); }
+  else setOut("この欄の項目を選んで「この欄の所見文をつくる」を押してください。", true);
+  showDropped([]); showLint("");
+}
+
+function updateSceneChips(){
+  const v = document.getElementById('sceneInput').value.trim();
+  document.querySelectorAll('#sceneChips button').forEach(b=>{
+    b.classList.toggle('on', b.dataset.scene === v);
+  });
+}
+
+/* ============ この児童への支援（個別の指導計画の手立て） ============ */
+const MAX_PLAN = 3;
+let planGrp = PLAN_GROUPS[0];
+let planObs = null;
+
+function renderPlanGrpSeg(){
+  const el = document.getElementById('planGrpSeg');
+  el.innerHTML = "";
+  PLAN_GROUPS.forEach(g=>{
+    const b = document.createElement('button');
+    b.textContent = g;
+    b.className = (g===planGrp ? "on" : "");
+    b.addEventListener('click', ()=>{ planGrp = g; planObs = null; renderPlan(); });
+    el.appendChild(b);
+  });
+}
+
+function renderPlanObsChips(){
+  const el = document.getElementById('planObsChips');
+  el.innerHTML = "";
+  PLAN.filter(o=>o.grp===planGrp).forEach(o=>{
+    const b = document.createElement('button');
+    const n = o.levels.filter(l=>state.plan.includes(o.key+l.n)).length;
+    b.textContent = o.name + (n ? "（★）" : "");
+    b.className = (planObs===o.key ? "on" : "");
+    b.addEventListener('click', ()=>{ planObs = (planObs===o.key ? null : o.key); renderPlan(); });
+    el.appendChild(b);
+  });
+}
+
+function renderPlanLevels(){
+  const el = document.getElementById('planLevels');
+  if(!planObs){ el.innerHTML = `<p class="hint" style="margin:0;">観点を選ぶと、程度1〜5の手立てが出ます。</p>`; return; }
+  const o = PLAN.find(x=>x.key===planObs);
+  const full = state.plan.length >= MAX_PLAN;
+  let html = '<div class="planbox">';
+  o.levels.forEach(l=>{
+    const id = o.key + l.n;
+    const on = state.plan.includes(id);
+    html += `<label class="planrow">
+      <input type="checkbox" class="planchk" data-id="${id}" ${on?"checked":""} ${(!on&&full)?"disabled":""}>
+      <span class="lv">程度${l.n}</span>
+      <span class="body">
+        <span class="ph">${l.phrase}</span>
+      </span>
+    </label>`;
+  });
+  html += '</div>';
+  el.innerHTML = html;
+  el.querySelectorAll('.planchk').forEach(c=>{
+    c.addEventListener('change', e=>{
+      const id = e.target.dataset.id;
+      if(e.target.checked){
+        if(state.plan.length >= MAX_PLAN){ e.target.checked=false; return; }
+        if(!state.plan.includes(id)) state.plan.push(id);
+      }else{
+        state.plan = state.plan.filter(x=>x!==id);
+      }
+      renderPlan(); save();
+    });
+  });
+}
+
+function renderPlanChosen(){
+  const el = document.getElementById('planChosen');
+  document.getElementById('planCount').textContent = `${state.plan.length}/${MAX_PLAN} 件`;
+  if(!state.plan.length){
+    el.innerHTML = `<p class="hint" style="margin:0;">手立てを選ばない場合は、「言葉かけを受けて、」などの一般的な言い方で生成します。</p>`;
+    return;
+  }
+  el.innerHTML = "";
+  state.plan.forEach(id=>{
+    const p = PLAN_BY_ID[id];
+    if(!p) return;
+    const names = p.subs.includes("*") ? "すべての欄"
+      : p.subs.map(k=>SUB_BY_KEY[k] ? SUB_BY_KEY[k].name : "").filter(Boolean).join("・");
+    const row = document.createElement('div');
+    row.className = "planchip";
+    row.innerHTML = `<span class="obs">${p.obs}${p.n}</span>`
+      + `<span class="ph2">${p.phrase}</span>`
+      + `<span class="subs">${names}</span>`
+      + `<button type="button" title="外す">×</button>`;
+    row.querySelector('button').addEventListener('click', ()=>{
+      state.plan = state.plan.filter(x=>x!==id); renderPlan(); save();
+    });
+    el.appendChild(row);
+  });
+}
+
+function renderPlan(){ renderPlanGrpSeg(); renderPlanObsChips(); renderPlanLevels(); renderPlanChosen(); }
+
+/* ============ 設定の操作 ============ */
+document.getElementById('nameInput').addEventListener('input', e=>{ state.name = e.target.value; save(); });
+
+document.getElementById('lenSeg').addEventListener('click',e=>{
+  if(!e.target.dataset.len) return;
+  [...e.currentTarget.children].forEach(b=>b.classList.remove('on'));
+  e.target.classList.add('on');
+  cur().len = +e.target.dataset.len;
+  document.getElementById('lenInput').value = cur().len;
+  save();
+});
+document.getElementById('lenInput').addEventListener('input',e=>{
+  cur().len = +e.target.value || 150;
+  [...document.querySelectorAll('#lenSeg button')].forEach(b=>b.classList.remove('on'));
+  save();
+});
+document.getElementById('sceneInput').addEventListener('input',e=>{
+  cur().scene = e.target.value; updateSceneChips(); save();
+});
+document.getElementById('sceneChips').addEventListener('click',e=>{
+  if(!e.target.dataset.scene) return;
+  const inp = document.getElementById('sceneInput');
+  inp.value = (inp.value.trim() === e.target.dataset.scene) ? "" : e.target.dataset.scene;
+  cur().scene = inp.value; updateSceneChips(); save();
+});
+document.getElementById('closeSeg').addEventListener('click',e=>{
+  if(!e.target.dataset.close) return;
+  [...e.currentTarget.children].forEach(b=>b.classList.remove('on'));
+  e.target.classList.add('on');
+  state.closer = e.target.dataset.close==='on'; save();
+});
+document.getElementById('joinSeg').addEventListener('click',e=>{
+  if(!e.target.dataset.join) return;
+  [...e.currentTarget.children].forEach(b=>b.classList.remove('on'));
+  e.target.classList.add('on');
+  state.join = e.target.dataset.join==='on'; save();
+});
+document.getElementById('varSeg').addEventListener('click',e=>{
+  if(!e.target.dataset.var) return;
+  [...e.currentTarget.children].forEach(b=>b.classList.remove('on'));
+  e.target.classList.add('on');
+  state.variant = e.target.dataset.var==='on'; save();
+});
+
+/* ============ 生成 ============ */
+function opts(){
+  return {
+    name: state.name.trim(),
+    scene: curSub().scene ? cur().scene.trim() : "",
+    closer: state.closer,
+    join: state.join,
+    variant: state.variant,
+    regenSeed: state.regenSeed,
+    subject: curSub(),
+    plan: state.plan,
+  };
+}
+
+function generate(){
+  const sub = curSub(), st = cur();
+  const chosen = sub.groups.flatMap(g=>g.items)
+    .filter(i=>st.sel.has(i.id))
+    .map(i=>({it:i, lvl:st.sel.get(i.id)}));
+  if(chosen.length===0){
+    setOut("この欄の項目を1つ以上選んでから「この欄の所見文をつくる」を押してください。", true);
+    return;
+  }
+  const r = generateFor(chosen, st.pri, st.len, opts());
+  st.out = r.text;
+  setOut(r.text, false);
+  updateMeta(r.text, st.len);
+  showDropped(r.dropped);
+  showLint(r.text);
+  renderAll();
+  buildTabs();
+  save();
+}
+
+function showLint(text){
+  const box = document.getElementById('nglint');
+  const hit = text ? lintText(text) : [];
+  if(!hit.length){ box.style.display='none'; box.textContent=''; return; }
+  box.innerHTML = `<b>避けたい表現が含まれています：${hit.join("／")}</b><br>`
+    + `他の児童との比較や「できない」ことの記述は避け、その子自身の伸びを表す言い方に置き換えてください。`;
+  box.style.display='block';
+}
+
+function showDropped(dropped){
+  const box = document.getElementById('dropped');
+  if(!dropped || !dropped.length){ box.style.display='none'; box.textContent=''; return; }
+  const names = dropped.map(c=>`${c.it.txt}（${LEVEL_LABEL[c.lvl]}）`).join('／');
+  box.innerHTML = `字数のめやすに収まらず、${dropped.length}件の項目は入りませんでした：${names}<br>`
+    + `必ず入れたい項目は ★ を付けてください（最大${MAX_PRI}件）。または文字数のめやすを増やしてください。`;
+  box.style.display='block';
+}
+
+function setOut(t, empty){
+  const o=document.getElementById('out');
+  o.textContent=t; o.classList.toggle('empty', !!empty);
+  if(empty){
+    document.getElementById('lenMeta').textContent='— 字';
+    document.getElementById('tip').textContent='';
+    document.getElementById('dropped').style.display='none';
+    document.getElementById('nglint').style.display='none';
+  }
+}
+function updateMeta(text, target){
+  const n=[...text].length;
+  document.getElementById('lenMeta').textContent = n+' 字（めやす '+target+'字）';
+  const tip=document.getElementById('tip');
+  const diff=n-target;
+  if(Math.abs(diff)<=target*0.2){ tip.textContent='めやすの範囲内です'; tip.className=''; }
+  else if(diff>0){ tip.innerHTML='<span class="over">やや長め：項目を減らすと近づきます</span>'; }
+  else { tip.textContent='やや短め：項目を足すと近づきます'; }
+}
+
+document.getElementById('genBtn').addEventListener('click',()=>{ state.regenSeed=0; generate(); });
+document.getElementById('regenBtn').addEventListener('click',()=>{ state.regenSeed++; generate(); });
+document.getElementById('clearBtn').addEventListener('click',()=>{
+  const st = cur();
+  st.sel.clear(); st.pri.clear(); st.out = "";
+  buildItems();
+  setOut("この欄の項目を選んで「この欄の所見文をつくる」を押してください。", true);
+  showDropped([]); showLint(""); renderAll(); buildTabs(); save();
+});
+document.getElementById('copyBtn').addEventListener('click',()=>{
+  const t=document.getElementById('out').textContent;
+  navigator.clipboard?.writeText(t).then(()=>{
+    const b=document.getElementById('copyBtn'); b.textContent='コピーしました'; setTimeout(()=>b.textContent='この欄をコピー',1400);
+  });
+});
+
+/* ============ 全欄の一覧 ============ */
+function renderAll(){
+  const el = document.getElementById('allList');
+  el.innerHTML = "";
+  let done = 0;
+  state.active.forEach(k=>{
+    const s = SUB_BY_KEY[k], st = state.sub[k];
+    if(st.out) done++;
+    const row = document.createElement('div'); row.className='allrow';
+    row.innerHTML = `<span class="allname">${s.name}</span>`
+      + `<span class="alltext${st.out?"":" none"}">${st.out || "まだ作っていません"}</span>`
+      + `<span class="alllen">${st.out ? [...st.out].length+"字" : "—"}</span>`;
+    row.style.cursor = "pointer";
+    row.addEventListener('click', ()=>{ switchTo(k); save(); window.scrollTo({top:0, behavior:'smooth'}); });
+    el.appendChild(row);
+  });
+  document.getElementById('doneCount').textContent = `${done} / ${state.active.length} 欄`;
+}
+
+document.getElementById('copyAllBtn').addEventListener('click',()=>{
+  const lines = state.active
+    .filter(k=>state.sub[k].out)
+    .map(k=>`【${SUB_BY_KEY[k].name}】\n${state.sub[k].out}`);
+  if(!lines.length){ alert("まだ所見文が1つも作られていません。"); return; }
+  const head = state.name.trim() ? state.name.trim() + "\n\n" : "";
+  navigator.clipboard?.writeText(head + lines.join("\n\n")).then(()=>{
+    const b=document.getElementById('copyAllBtn'); b.textContent='コピーしました';
+    setTimeout(()=>b.textContent='全欄をまとめてコピー',1400);
+  });
+});
+
+/* ============ 全消去 ============ */
+document.getElementById('wipeBtn').addEventListener('click',()=>{
+  if(!confirm("この児童の入力（呼び方・選択・下書き・観察メモ）をすべて消します。よろしいですか。")) return;
+  SUBJECTS.forEach(s=>{
+    state.sub[s.key] = { sel:new Map(), pri:new Set(), scene:"", len:s.defLen, out:"" };
+  });
+  state.name = ""; state.regenSeed = 0; state.plan = [];
+  renderPlan();
+  document.getElementById('nameInput').value = "";
+  document.getElementById('memo').value = "";
+  document.getElementById('analysis').style.display='none';
+  document.getElementById('analysis').innerHTML='';
+  try{ localStorage.removeItem(STORE_KEY); }catch(e){}
+  switchTo(state.active[0]); renderAll(); saveNow();
+  setSaveState("消去しました", true);
+});
+
+/* ============ 観察メモの読み取り ============ */
+document.getElementById('analyzeBtn').addEventListener('click', ()=>{
+  const raw = document.getElementById('memo').value || "";
+  if(!raw.trim()){ showAnalysis([], "メモが空です。テキストを貼り付けてください。"); return; }
+  const hits = scanMemo(raw, state.active);
+  showAnalysis(hits, hits.length ? "" : "該当する項目が見つかりませんでした。手動でチェックしてください。");
+  save();
+});
+document.getElementById('memoClearBtn').addEventListener('click', ()=>{
+  document.getElementById('memo').value='';
+  const box=document.getElementById('analysis'); box.innerHTML=''; box.style.display='none';
+  save();
+});
+
+function showAnalysis(hits, msg){
+  const box = document.getElementById('analysis');
+  if(msg && !hits.length){
+    box.innerHTML = `<p class="hint" style="margin:0;">${msg}</p>`;
+    box.style.display='block';
+    return;
+  }
+  let html = `<p class="hint" style="margin:0 0 8px;">${hits.length}件の項目が見つかりました。取り込むものを選んでください。</p>`;
+  html += '<div class="anlist">';
+  hits.forEach(h=>{
+    html += `<label class="anrow">
+      <input type="checkbox" class="anchk" data-id="${h.id}" data-sub="${h.sub}" data-lvl="${h.lvl}" checked>
+      <span class="ancat">${h.subName}</span>
+      <span class="antxt">${h.txt}</span>
+      <span class="anlvl ${h.lvl}">${LEVELS.find(l=>l.key===h.lvl).short}</span>
+      <span class="ankw">${h.words.slice(0,2).join('・')}</span>
+    </label>`;
+  });
+  html += '</div>';
+  html += `<div class="btnrow" style="margin-top:10px;">
+    <button class="btn primary" id="applyAn">チェックした項目を反映</button>
+    <button class="btn ghost" id="anAll">全選択</button>
+    <button class="btn ghost" id="anNone">全解除</button>
+  </div>`;
+  box.innerHTML = html;
+  box.style.display='block';
+
+  document.getElementById('applyAn').onclick = ()=>{
+    let n=0;
+    box.querySelectorAll('.anchk:checked').forEach(c=>{
+      const st = state.sub[c.dataset.sub];
+      if(!st) return;
+      st.sel.set(c.dataset.id, c.dataset.lvl);
+      n++;
+    });
+    buildItems(); buildTabs(); renderAll(); save();
+    box.querySelector('.hint').textContent = `${n}件を反映しました。各欄のタブを開いて確認・修正してください。`;
+  };
+  document.getElementById('anAll').onclick  = ()=>box.querySelectorAll('.anchk').forEach(c=>c.checked=true);
+  document.getElementById('anNone').onclick = ()=>box.querySelectorAll('.anchk').forEach(c=>c.checked=false);
+}
+
+/* ============ 起動 ============ */
+(function init(){
+  const bad = lintDB();
+  if(bad.length) console.warn("[所見文アシスト] 文例データの点検で問題が見つかりました：\n" + bad.join("\n"));
+
+  load();
+  document.getElementById('nameInput').value = state.name;
+  [...document.querySelectorAll('#closeSeg button')].forEach(b=>b.classList.toggle('on', (b.dataset.close==='on')===state.closer));
+  [...document.querySelectorAll('#joinSeg button')].forEach(b=>b.classList.toggle('on', (b.dataset.join==='on')===state.join));
+  [...document.querySelectorAll('#varSeg button')].forEach(b=>b.classList.toggle('on', (b.dataset.var==='on')===state.variant));
+  buildUseList();
+  renderPlan();
+  buildTabs();
+  switchTo(state.cur);
+  renderAll();
+})();
+</script>
+</body>
+</html>
