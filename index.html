@@ -1,0 +1,2618 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>所見文アシスト</title>
+<style>
+  :root{
+    --ink:#2b2b28; --sub:#6b6b64; --line:#dcd8cd;
+    --bg:#f6f4ee; --panel:#ffffff; --accent:#3f6f5a; --accent-soft:#e7efe9;
+    --warn:#b06a3a; --warn-soft:#f4e9df; --sel:#3f6f5a;
+    --grow:#8a7a3a; --grow-soft:#f3efdf;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+    line-height:1.7; font-size:15px;
+  }
+  header{
+    background:var(--panel); border-bottom:1px solid var(--line);
+    padding:16px 22px; position:sticky; top:0; z-index:10;
+  }
+  header h1{font-size:19px; margin:0; letter-spacing:.04em; display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;}
+  header h1 .ver{
+    font-size:11.5px; font-weight:700; letter-spacing:.02em;
+    color:var(--accent); background:var(--accent-soft);
+    border:1px solid var(--accent); border-radius:12px; padding:2px 9px; white-space:nowrap;
+  }
+  header h1 .ver .date{font-weight:400; color:var(--sub); margin-left:5px;}
+  header p{margin:3px 0 0; font-size:12.5px; color:var(--sub);}
+  .wrap{max-width:1080px; margin:0 auto; padding:22px; display:grid; grid-template-columns:340px 1fr; gap:22px;}
+  @media(max-width:860px){.wrap{grid-template-columns:1fr;}}
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:18px;}
+  .panel h2{font-size:13px; letter-spacing:.08em; color:var(--sub); margin:0 0 14px; font-weight:700;
+    padding-bottom:8px; border-bottom:1px solid var(--line);}
+  .field{margin-bottom:16px;}
+  .field label{display:block; font-size:13px; font-weight:700; margin-bottom:6px;}
+  .row{display:flex; gap:8px; flex-wrap:wrap;}
+  .seg{display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden;}
+  .seg button{flex:1; border:none; background:var(--panel); padding:8px 6px; font-size:13px; cursor:pointer; color:var(--sub);}
+  .seg button.on{background:var(--accent); color:#fff;}
+  input[type=number],input[type=text]{
+    width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:14px; font-family:inherit;
+  }
+  .chips{display:flex; flex-wrap:wrap; gap:7px;}
+  .chip{border:1px solid var(--line); border-radius:20px; padding:5px 12px; font-size:12.5px; cursor:pointer; background:var(--panel); color:var(--sub);}
+  .chip.on{background:var(--accent-soft); border-color:var(--accent); color:var(--accent); font-weight:700;}
+  textarea{
+    width:100%; min-height:150px; padding:12px; border:1px solid var(--line); border-radius:8px;
+    font-size:14px; font-family:inherit; line-height:1.7; resize:vertical;
+  }
+  .hint{font-size:12px; color:var(--sub); margin:4px 0 0;}
+  .cats{display:flex; flex-direction:column; gap:8px;}
+  .cat-divider{margin:10px 0 -2px; padding:0 2px;}
+  .cat-divider:first-child{margin-top:0;}
+  .cat-divider .cd-title{font-size:12px; font-weight:700; color:var(--accent);
+    border-bottom:1px solid var(--accent); display:inline-block; padding-bottom:1px;}
+  .cat-divider .cd-note{font-size:11px; color:var(--sub); margin-top:2px;}
+  details.cat{border:1px solid var(--line); border-radius:8px; overflow:hidden;}
+  details.cat>summary{list-style:none; cursor:pointer; padding:10px 12px; font-weight:700; font-size:13.5px;
+    display:flex; justify-content:space-between; align-items:center; background:#faf9f5;}
+  details.cat>summary::-webkit-details-marker{display:none;}
+  details.cat>summary .count{font-size:11px; color:var(--accent); font-weight:700;}
+  .items{padding:6px 12px 12px;}
+  .item{display:flex; gap:9px; padding:8px 0; border-top:1px dashed var(--line); align-items:center; justify-content:space-between;}
+  .item:first-child{border-top:none;}
+  .item .txt{font-size:13.5px; flex:1;}
+  .item.sel .txt{font-weight:700;}
+  .lvlpick{display:flex; gap:5px; flex:none;}
+  .lvlpick label{position:relative; cursor:pointer;}
+  .lvlpick input{position:absolute; opacity:0; width:0; height:0;}
+  .lvlpick span{
+    display:inline-block; border:1px solid var(--line); border-radius:14px;
+    padding:3px 10px; font-size:11.5px; color:var(--sub); background:var(--panel);
+    white-space:nowrap; user-select:none;
+  }
+  .lvlpick input:checked + span.can{background:var(--accent-soft); border-color:var(--accent); color:var(--accent); font-weight:700;}
+  .lvlpick input:checked + span.grow{background:var(--grow-soft); border-color:var(--grow); color:var(--grow); font-weight:700;}
+  .lvlpick input:checked + span.issue{background:var(--warn-soft); border-color:var(--warn); color:var(--warn); font-weight:700;}
+  .lvlpick input:focus-visible + span{outline:2px solid var(--accent); outline-offset:1px;}
+  /* issue を持たない項目は幅を揃えるためのすき間を置く（ボタン自体は出さない） */
+  .lvlpick .noissue{display:inline-block; width:0;}
+  .item.issue{background:#fdf7f2;}
+
+  /* できる／伸長中／課題 の使い分けガイド */
+  .guide{border:1px solid var(--line); border-radius:var(--radius);
+         background:var(--bg); padding:10px 12px; margin:0 0 14px; font-size:13px;}
+  .guide summary{cursor:pointer; color:var(--accent); font-weight:600;}
+  .guide dl{margin:10px 0 0;}
+  .guide dt{font-weight:700; margin-top:8px;}
+  .guide dd{margin:2px 0 0 1em; color:var(--sub); line-height:1.6;}
+  .guide dt.lv-can{color:var(--accent);}
+  .guide dt.lv-grow{color:var(--grow);}
+  .guide dt.lv-issue{color:var(--warn);}
+  .guide-rule{margin:12px 0 0; padding-top:10px; border-top:1px dashed var(--line);
+              color:var(--ink); line-height:1.7;}
+  .onlyissue{font-size:12.5px; color:#8a3a2a; background:#f7e6e0; border:1px solid #d9b3a6;
+             border-radius:8px; padding:9px 11px; margin-top:10px; line-height:1.6;}
+  .issuenote{font-size:12px; color:var(--warn); background:var(--warn-soft);
+             border-radius:8px; padding:8px 10px; margin:8px 0 0; line-height:1.6; display:none;}
+  .star{flex:none; border:1px solid var(--line); background:var(--panel); border-radius:14px;
+    padding:3px 8px; font-size:12px; color:#c4c0b4; cursor:pointer; font-family:inherit; line-height:1.3;}
+  .star:hover{border-color:var(--warn);}
+  .star.on{background:#fdf3dd; border-color:#c99a2e; color:#b8860b; font-weight:700;}
+  .star:disabled{opacity:.35; cursor:not-allowed;}
+  .item.pri{background:#fffdf5;}
+  .item.pri .txt{font-weight:700;}
+  .prinote{font-size:12px; color:var(--sub); margin:8px 0 0;}
+  .prinote b{color:#b8860b;}
+  .anstar{flex:0 0 auto; font-size:11px; color:#b8860b;}
+  .btnrow{display:flex; gap:10px; margin-top:6px;}
+  .btn{flex:1; padding:12px; border:none; border-radius:8px; font-size:15px; font-weight:700; cursor:pointer; font-family:inherit;}
+  .btn.primary{background:var(--accent); color:#fff;}
+  .btn.ghost{background:var(--panel); border:1px solid var(--line); color:var(--ink); flex:none; padding:12px 16px;}
+  .out{min-height:120px; white-space:pre-wrap; font-size:15px; line-height:1.9; padding:14px;
+    background:#faf9f5; border:1px solid var(--line); border-radius:8px;}
+  .out.empty{color:var(--sub);}
+  .meta{display:flex; justify-content:space-between; align-items:center; margin-top:10px; font-size:12.5px; color:var(--sub);}
+  .meta .over{color:var(--warn); font-weight:700;}
+  .tools{display:flex; gap:8px; margin-top:12px;}
+  .tools button{padding:8px 12px; border:1px solid var(--line); border-radius:8px; background:var(--panel);
+    font-size:12.5px; cursor:pointer; font-family:inherit;}
+  .tools button:disabled{opacity:.4; cursor:not-allowed;}
+  /* 観点の出し入れ（v1.12）。下書きに入っている観点と入っていない観点を並べ、
+     それぞれの実際の文を見せたうえで担任が入れ替える。 */
+  .picker{margin-top:14px;}
+  .picknote{font-size:12px; color:var(--sub); margin:0 0 8px; line-height:1.6;}
+  .picknote b{color:var(--ink);}
+  .pickgrp{border:1px solid var(--line); border-radius:8px; background:var(--panel); margin-bottom:10px;}
+  .pickhead{display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700;
+    padding:6px 10px; border-bottom:1px solid var(--line); background:#faf9f5; border-radius:8px 8px 0 0;}
+  .pickhead.in{color:var(--accent);}
+  .pickhead.out{color:var(--sub);}
+  .pickhead .n{font-weight:400; color:var(--sub); margin-left:auto;}
+  /* 未採用が10件を超えることがあるため、伸び続けないように高さを止める */
+  .picklist{max-height:320px; overflow:auto;}
+  .pickrow{display:flex; gap:8px; align-items:flex-start; padding:8px 10px; border-top:1px solid #ece7db;}
+  .pickrow:first-child{border-top:none;}
+  .picksent{flex:1; font-size:13.5px; line-height:1.75;}
+  .picksent.dim{color:var(--sub);}
+  .pickmeta{display:block; font-size:11px; color:var(--sub); margin-top:3px;}
+  .pickbtn{flex:0 0 auto; padding:5px 10px; font-size:12px; font-family:inherit; cursor:pointer;
+    border:1px solid var(--line); border-radius:6px; background:var(--panel); color:var(--ink);}
+  .pickbtn.add{border-color:var(--accent); color:var(--accent); font-weight:700;}
+  .pickbtn.add:hover{background:var(--accent-soft);}
+  .pickbtn:hover{border-color:var(--sub);}
+  .pickbtn:disabled{opacity:.4; cursor:not-allowed;}
+  .pickstar{flex:0 0 auto; font-size:11px; color:#b8860b; padding-top:6px; white-space:nowrap;}
+  .pickempty{padding:10px; font-size:12px; color:var(--sub);}
+  .note{font-size:12px; color:var(--sub); background:var(--warn-soft); border-radius:8px; padding:10px 12px; margin-top:14px; line-height:1.6;}
+  /* バージョン表示。float:right だと本文が回り込み、文の途中に割り込んで見えるため
+     ブロック要素として本文の下に置く。 */
+  .notever{display:block; text-align:right; opacity:.7; margin-top:6px; font-size:11px;}
+
+/* ---- 学級名簿（v1.9） ---- */
+.roster{max-height:260px; overflow:auto; border:1px solid var(--line); border-radius:8px; background:#fff;}
+.roster:empty::after{content:"児童がいません。「＋ 児童を追加」を押してください。";
+  display:block; padding:14px 12px; font-size:12.5px; color:var(--sub);}
+.srow{display:flex; align-items:center; gap:8px; padding:7px 10px;
+  border-bottom:1px solid var(--line); font-size:13px; cursor:pointer;}
+.srow:last-child{border-bottom:none;}
+.srow:hover{background:rgba(0,0,0,.03);}
+.srow.on{background:var(--accent-soft);}
+.srow.on .sname{font-weight:700;}
+.sno{flex:0 0 30px; font-size:11.5px; color:var(--sub); text-align:right;}
+.sname{flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.sname.blank{color:var(--sub);}
+.sdone{flex:0 0 auto; font-size:11px; padding:2px 8px; border-radius:10px;
+  background:#f0eee7; color:var(--sub);}
+.sdone.ok{background:#dff3e3; color:#1b6b34; font-weight:700;}
+.sdel{flex:0 0 auto; border:none; background:none; color:#c4c0b4; cursor:pointer;
+  font-size:15px; line-height:1; padding:2px 4px; font-family:inherit;}
+.sdel:hover{color:var(--warn);}
+.savestate{font-size:12px; margin:10px 0 0;}
+.savestate.ok{color:var(--accent);}
+.savestate.ng{color:var(--warn); font-weight:700;}
+.filerow{display:flex; flex-wrap:wrap; gap:7px; margin-top:12px;}
+.filerow button{padding:7px 10px; border:1px solid var(--line); border-radius:8px;
+  background:var(--panel); font-size:12px; cursor:pointer; font-family:inherit; color:var(--ink);}
+.filerow button:hover{border-color:var(--accent); color:var(--accent);}
+.filerow button.danger{color:var(--warn);}
+.filerow button.danger:hover{border-color:var(--warn); color:var(--warn);}
+
+/* ---- 名簿CSV読み込みダイアログ（v1.10） ---- */
+.modal{position:fixed; inset:0; background:rgba(43,43,40,.45); z-index:100;
+  display:flex; align-items:center; justify-content:center; padding:20px;}
+.modalbox{background:var(--panel); border-radius:var(--radius); border:1px solid var(--line);
+  padding:20px 22px; width:min(680px,100%); max-height:88vh; overflow:auto;
+  box-shadow:0 10px 40px rgba(0,0,0,.2);}
+.modalbox h3{margin:0 0 6px; font-size:16px;}
+.csvopts{display:flex; flex-wrap:wrap; gap:10px 14px; margin:14px 0 0;
+  padding:12px; background:var(--bg); border-radius:8px;}
+.csvopts label{font-size:12.5px; font-weight:700; display:flex; align-items:center; gap:6px;}
+.csvopts select{font-family:inherit; font-size:13px; padding:5px 7px;
+  border:1px solid var(--line); border-radius:6px; background:var(--panel); color:var(--ink);}
+.csvprev{margin-top:14px; border:1px solid var(--line); border-radius:8px; overflow:auto; max-height:280px;}
+.csvprev table{border-collapse:collapse; width:100%; font-size:13px;}
+.csvprev th,.csvprev td{padding:6px 10px; border-bottom:1px solid var(--line); text-align:left;}
+.csvprev th{background:#faf9f5; font-size:11.5px; color:var(--sub); letter-spacing:.04em; position:sticky; top:0;}
+.csvprev td.num{color:var(--sub); font-size:12px; width:60px;}
+.csvprev td.raw{color:var(--sub); font-size:12px;}
+.csvprev tr.skip td{opacity:.45; text-decoration:line-through;}
+</style>
+</head>
+<body>
+<header>
+  <h1>所見文アシスト<span class="ver" id="verBadge"></span></h1>
+  <p>チェックした項目から所見文の下書きを組み立てます。学級全員分をこのまま続けて作れます。生成後は必ず担任が加筆・修正してください。</p>
+  <div class="filerow">
+    <button id="expWorkBtn">作業ファイルを書き出す</button>
+    <button id="impWorkBtn">作業ファイルを読み込む</button>
+    <button id="expCsvBtn">所見文をCSVで書き出す</button>
+    <button id="wipeBtn" class="danger">学級をすべて消す</button>
+  </div>
+  <input type="file" id="importFile" accept=".json,application/json" style="display:none;">
+  <div class="note">
+    入力した内容は、このパソコンのブラウザに自動で保存されます。<b>共有のパソコンでは、作業が終わったら「学級をすべて消す」を押してください。</b>
+    別のパソコンで続けるとき、バックアップを残すときは「作業ファイルを書き出す」を使います。
+  </div>
+</header>
+
+<div class="wrap">
+  <!-- 左：設定 -->
+  <div>
+    <div class="panel">
+      <h2>児童（学級）　<span style="color:var(--accent); float:right;" id="rosterCount">—</span></h2>
+      <div class="field">
+        <label>学級名</label>
+        <input type="text" id="clsInput" placeholder="例）3年2組">
+        <p class="hint">書き出すファイルの名前に使います。</p>
+      </div>
+      <div class="roster" id="roster"></div>
+      <div class="btnrow" style="margin-top:10px;">
+        <button class="btn primary" id="addStuBtn">＋ 児童を追加</button>
+        <button class="btn ghost" id="impNamesBtn">名簿CSVを読み込む</button>
+      </div>
+      <p class="hint">名簿CSVは校務システムやExcelから出したものが使えます（Shift_JIS・UTF-8 のどちらでも可）。取り込む前に確認画面が出ます。出席番号と児童の名前（名簿の表示とCSV書き出しに使います）は、ここでの取り込みで決まります。所見文の文頭に児童の呼称は付きません。「＋ 児童を追加」で手入力した児童は、番号は自動採番、名前は空欄になります。</p>
+      <p class="savestate ok" id="saveState">自動保存：オン</p>
+      <input type="file" id="namesFile" accept=".csv,.txt,text/csv" style="display:none;">
+    </div>
+
+    <div class="panel" style="margin-top:18px;">
+      <h2>基本設定</h2>
+      <div class="field">
+        <label>学年帯</label>
+        <div class="seg" id="gradeSeg">
+          <button data-grade="low" class="on">低学年</button>
+          <button data-grade="mid">中学年</button>
+          <button data-grade="high">高学年</button>
+        </div>
+        <p class="hint">生活全般・学習全般・健康体力・特別活動係活動・人とのかかわりは学年共通で表示されます。教科別・行事別の観点は、ここで選んだ学年帯のものだけが表示され、所見文にも反映されます。</p>
+      </div>
+
+      <div class="field">
+        <label>文字数のめやす</label>
+        <div class="seg" id="lenSeg">
+          <button data-len="80">80字</button>
+          <button data-len="120" class="on">120字</button>
+          <button data-len="160">160字</button>
+        </div>
+        <div class="row" style="margin-top:8px; align-items:center;">
+          <input type="number" id="lenInput" value="120" min="30" max="400" style="width:90px;">
+          <span class="hint" style="margin:0;">字前後で調整</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- 右：項目選択＋出力 -->
+  <div>
+    <div class="panel">
+      <h2>観点と項目を選ぶ（各項目で「できる」／「伸長中」／「課題」を選択）　<span style="color:var(--accent); float:right;" id="selCount">0件選択中</span></h2>
+
+      <details class="guide">
+        <summary>できる／伸長中／課題 の使い分け（迷ったら開いてください）</summary>
+        <dl>
+          <dt class="lv-can">できる</dt>
+          <dd>その姿が身についています。保護者にそのまま伝えたいよさです。</dd>
+
+          <dt class="lv-grow">伸長中</dt>
+          <dd>まだ十分ではないが、伸びつつある姿です。<b>指導の予定は書きません。</b>
+              「以前よりできるようになってきた」と言えるならこちらです。</dd>
+
+          <dt class="lv-issue">課題</dt>
+          <dd>保護者に家庭でも意識してほしいことがある場合に選びます。
+              <b>課題の姿と、今後の手立てが必ずセットで出ます。</b></dd>
+        </dl>
+        <p class="guide-rule">
+          <b>迷ったら「伸長中」を選んでください。</b>
+          通知表の所見は一人一人のよさや進歩を伝えるものです。
+          「課題」は<b>1件まで</b>。2件以上入れると所見の半分以上が課題の話になります。<br>
+          なお、<b>「課題」ボタンが出ない項目があります。</b>体力や性格、思いやりのように、
+          指導で変わる行動として書けないものには、あえて課題を用意していません。
+          道徳・入学式等の儀式的行事・作品展・クラブ活動も同じ理由で課題を用意していません
+          （道徳は個人内評価の教科であり、他は技能の到達度より参加や鑑賞・興味関心が中心のため）。
+        </p>
+      </details>
+
+      <div class="field">
+        <label>表示するカテゴリ</label>
+        <div class="seg" id="topCatSeg">
+          <button data-topcat="common" class="on">全学年共通</button>
+          <button data-topcat="subject">教科別</button>
+        </div>
+        <p class="hint" id="topCatHint"></p>
+      </div>
+
+      <div class="cats" id="cats"></div>
+      <p class="prinote" id="priNote"></p>
+      <p class="issuenote" id="issueNote"></p>
+      <div class="btnrow" style="margin-top:16px;">
+        <button class="btn primary" id="genBtn">所見文をつくる</button>
+        <button class="btn ghost" id="clearBtn">選択解除</button>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:18px;">
+      <h2>下書き</h2>
+      <div class="out empty" id="out">ここに所見文の下書きが表示されます。</div>
+      <div class="meta">
+        <span id="lenMeta">— 字</span>
+        <span id="tip"></span>
+      </div>
+      <div class="onlyissue" id="onlyIssue" style="display:none;"></div>
+      <div class="tools">
+        <button id="copyBtn">コピー</button>
+        <button id="regenBtn">別の言い回しにする</button>
+      </div>
+      <div class="picker" id="picker" style="display:none;"></div>
+      <div class="note">
+        この下書きは定型文を組み合わせたものです。児童の実態に合うよう、具体的な場面・エピソードを加え、事実と異なる表現がないか必ず確認してから通知表に転記してください。
+        <span class="notever" id="noteVer"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="csvModal" style="display:none;">
+  <div class="modalbox">
+    <h3>名簿CSVの読み込み</h3>
+    <p class="hint" id="csvInfo" style="margin:0;"></p>
+    <div class="csvopts">
+      <label>番号の列
+        <select id="csvColNo"></select>
+      </label>
+      <label>氏名（姓）の列
+        <select id="csvColA"></select>
+      </label>
+      <label>名の列
+        <select id="csvColB"></select>
+      </label>
+      <label>名前に使う部分
+        <select id="csvUse">
+          <option value="full">姓と名</option>
+          <option value="given">名だけ</option>
+          <option value="family">姓だけ</option>
+        </select>
+      </label>
+      <label>敬称
+        <select id="csvSuffix">
+          <option value="さん" selected>さん</option>
+          <option value="くん">くん</option>
+          <option value="">付けない</option>
+        </select>
+      </label>
+      <label><input type="checkbox" id="csvHeader"> 1行目は見出し</label>
+    </div>
+    <div class="csvprev" id="csvPrev"></div>
+    <p class="hint" id="csvWarn" style="margin:8px 0 0;"></p>
+    <div class="btnrow" style="margin-top:14px;">
+      <button class="btn primary" id="csvApplyReplace">この名簿で学級をつくる</button>
+      <button class="btn ghost" id="csvApplyAdd">いまの学級に追加</button>
+      <button class="btn ghost" id="csvCancel">キャンセル</button>
+    </div>
+    <div class="note" style="margin-top:12px;">
+      「この名簿で学級をつくる」を押すと、<b>いま入力してある児童はすべて消えます。</b>
+      すでに所見文を作っている場合は、先に「作業ファイルを書き出す」で控えを取ってください。
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ バージョン情報 ============
+   更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
+const APP_VERSION = "v1.23";
+const APP_DATE    = "2026-09-16";
+const APP_HISTORY = [
+  {v:"v1.23", d:"2026-10-23", note:"所見文の文頭に補っていた児童の呼称（「〇〇さんは、」）を付けないようにした。buildText()の3か所（課題の1文目、can→grow因果文の前半、先頭の文）から呼称付与を削除。児童名（state.name）は名簿の表示とCSV書き出し用に残し、名簿CSV取り込み画面の文言を「名前」基準に改めた（敬称の選択は名簿表示用として残す）。DBの文例には児童名を含めない方針も確認済み（文例作成時は児童名を入れない）。"},
+  {v:"v1.22", d:"2026-09-16", note:"「基本設定」パネルの「文末表現のばらつき」（そろえる／変化をつける）の選択欄を削除し、常に「変化をつける」の動作に固定した。「そろえる」を選ぶ運用がほぼ想定されないため、選択肢自体をなくして画面を簡潔にした。(1) UI（varSegのボタン2つとヒント文）を削除。(2) state.variantを廃止し、getFragment()・can→can因果化（v1.21）内の文末バリアント計算から`state.variant ? (idx+seed) : 0`の分岐を外し、常に`idx+seed`を使う（＝常時ばらつきあり）。(3) 「言い回しを変えられません」の案内文から「そろえる」になっている場合の文言を削除し、常に「課題の文は形が決まっている」旨の文言のみ表示する。(4) 児童レコード（blankStudent／captureCurrent／applyRecord／normalizeStudent）からvariantフィールドの読み書きを削除。旧バージョンで保存したファイル（variant:falseを含む）を読み込んでも、単に無視されるだけで動作に影響しない。"},
+  {v:"v1.21", d:"2026-09-16", note:"「できる」どうしが隣接する場面の因果化。健康・体力面／体育／運動会の項目で、直前の「できる」文が取り組み方・姿勢を表す語（EFFORT_MARK、v1.18と同じ判定）を含むとき、今回の「できる」文を通常の文末（「様子が見られました」等）ではなく、自分自身のgrowフィールドを結果節にした因果文（「〜することで、〜てきました。」）に差し替えるようにした。(1) v1.18のcan→grow因果化は「直前のcanを消して1文に合体」する方式だったが、今回はcan→canのため両方とも独立文のまま残す必要があり、対象文の文末表現だけを差し替える別実装にした（前文を pop しない）。(2) 対象カテゴリはTAIIKU_CATS（健康・体力面／体育／運動会）に限定し、DB読み込み時にTAIIKU_IDSへ項目idを集約して判定する。他教科の「できる」どうしの隣接には影響しない。(3) 因果化が起きた文には、通常のcan→can接続（従来は無接続）と違い「また、」を付ける。人が読んだときに前文との接続が分かりやすいため。(4) 結果節はgrowフィールドをそのままendGrow()に通して生成する（新規の専用フィールドは追加しない。工数を抑えつつ既存データを再利用する方針）。"},
+  {v:"v1.20", d:"2026-09-16", note:"「基本設定」パネルの「出席番号と児童の呼び方（文頭）」欄（noInput／nameInput）を削除した。出席番号・呼び方（文頭の敬称）は名簿CSVの取り込みで列と敬称を指定すれば設定でき（csvApplyがrec.no／rec.nameに直接反映）、この欄は必須ではなかったため。(1) buildText()のname参照、captureCurrent()／applyRecord()のno・name受け渡しを、DOM入力（document.getElementById('noInput'/'nameInput')）ではなくstateの新フィールド（state.no／state.name）経由に変更した。DOM要素を削除しても動くようにするため。(2) 「＋ 児童を追加」で手入力する児童は、従来どおり番号は自動採番（既存の最大値+1）、名前（呼び方）は空欄のまま追加される。呼び方を空欄で使うと「空欄なら名前なしで生成します」の仕様どおり、文頭に呼称の付かない所見文になる。この呼び方をあとから個別に設定する手段は今回のバージョンには無く、設定するには名簿CSVでの取り込みが必要。(3) 名簿CSV読み込みの案内文に、出席番号・呼び方はこの取り込みで決まる旨を明記した。"},
+  {v:"v1.19", d:"2026-09-16", note:"レイアウトを3点変更した。(1) 「作業ファイルを書き出す」「作業ファイルを読み込む」「所見文をCSVで書き出す」「学級をすべて消す」を、児童（学級）パネルの中からヘッダー（タイトル直下）に移動した。学級とは独立した全体操作であるため。あわせて操作の説明文（自動保存・共有パソコンでの注意）も一緒に移動した。「名簿CSVを読み込む」ボタンと、それに使うファイル入力は児童（学級）パネルに残した（対象が学級の名簿そのものであり、性質が異なるため）。(2) 「基本設定」パネルの「文体」欄（「敬体（です・ます）」とだけ表示された、選択肢のない固定表示）を削除した。文体は現状ボタン化・選択制になっておらず表示のみで情報量がなかったため。(3) 観点一覧に「全学年共通」／「教科別」の大分類切り替え（セグメントボタン）を追加した。DBのカテゴリはgradeが\"all\"の5カテゴリ（学習面・生活・行動面・健康・体力面・特別活動・係活動・人とのかかわり＝common）と、学年帯（low/mid/high）を持つそれ以外の全カテゴリ（国語・算数などの教科別＝subject、運動会・学芸会などの行事別＝event）に分かれるが、v1.16時点ではこの3種は縦一列に並んでいるだけだった。「教科別」側にはsubjectとeventの両方を含め（ユーザーからは『それ以外』の指定だったため、行事別だけ除外する理由がなく、データを削らずに済む構成とした）、v1.16の「各教科」「特別活動・学校行事」の見出し分けはそのまま「教科別」の中で維持している。学年帯セグメント（低・中・高）による絞り込みとは独立した別軸のフィルタで、両方を同時にかける（applyGradeFilterをapplyCatFiltersに改名し、dataset.kindによる判定を追加）。選択（state.sel）や生成される所見文には影響しない、純粋な表示上の絞り込み。学年帯のように児童ごとには保存せず、画面をリロードすると既定の「全学年共通」に戻る。"},
+  {v:"v1.18", d:"2026-09-16", note:"「できる」の最後の1文と「伸長中」の最初の1文が因果関係でつながる場合に、2文に分けず1文の因果文（「〜することで、〜てきました。」）として組み立てるようにした。(1) 従来は can→grow の切れ目に必ず「また、」を挟んで独立した2文にしていたが、直前の「できる」文が『粘り強く挑戦する』のような取り組み方・姿勢を表す内容のとき、後ろの「伸長中」文とのあいだに「頑張った結果、できるようになった」という自然な因果関係が生じるケースが多く、2文に割ると読みにくいという指摘を受けた。(2) 判定はキーワード方式（EFFORT_MARK：粘り強く／進んで／意欲的／主体的／最後まで／全力で／自ら／自分から／集中し／丁寧に／一生懸命／努力／楽しみながら、のいずれかを直前の can 文が含むか）とし、観点どうしを1件ずつ紐づける個別の組み合わせ表は持たない。DB全体（174項目超）の can に同種の語がすでに広く使われているため、この方式だけで多くの組み合わせに自然にはたらく。(3) 接続点は can→grow の唯一の切れ目（firstGrowPos）に限定した。can が複数ある場合も、直前（＝最後）の can 文だけが対象で、それより前の can 文は従来どおり独立文のまま。issue（課題）の state→plan の2文構成は対象外（もともと定型の因果的な2文のため変更不要）。(4) 因果文への作り替えは frag（常体・辞書形）に「ことで、」を直接付ける方式。can の4種の文末バリエーション（ENDINGS.can）は、この合体が起きたときだけ最後の can 文には適用されない。(5) owners を単一の観点参照から配列（複数の観点を持てる形）に変更した。合体した1文は can 側・grow 側どちらの観点からも「自分の文」として一覧（下書きに入っている観点）に表示されるようにするため。sentOf() もこれに合わせて改修した。(6) 因果判定に該当しない can→grow の切れ目は、従来どおり「また、」でつなぐ。"},
+  {v:"v1.17", d:"2026-09-16", note:"教科・行事カテゴリのうち「課題」の選択肢が1件もないものを見直した。v1.8で体力・性格・思いやり等の11項目は意図的に課題を用意しない設計としたが、それとは別に、教科別カテゴリ（各3項目：知識技能／思考表現／主体的態度）と行事別カテゴリ（各2項目）では通常1項目に課題を用意する方針だったにもかかわらず、12カテゴリだけ課題が0件のままになっていた。内訳を精査し、(1) 図画工作（中学年）・音楽（高学年）・学芸会（高学年）の3カテゴリは、同じ教科・活動の他学年には課題が用意されているのに当該学年だけ抜けている単純な漏れと判断し、他学年の構成にならって課題を追加した（図画工作は知識・技能、音楽は思考・判断・表現、学芸会は役割を演じる項目）。(2) 道徳（低・中・高）、入学式等の儀式的行事（低）、作品展（低・中・高）、クラブ活動（中・高）の9カテゴリは、それぞれ全学年・全項目で一貫して課題が0件だったため意図的な設計と判断し、追加を見送った。理由は、道徳がv1.15で個人内評価科目として観点別評価の対象外とされていること、儀式的行事・作品展・クラブ活動は技能の到達度ではなく参加や鑑賞・興味関心が中心で、「課題＋手立て」という指導改善の枠組みになじみにくいこと。"},
+  {v:"v1.16", d:"2026-09-16", note:"カテゴリ一覧に「学年共通の観点」「各教科」「特別活動・学校行事」の見出しと説明を追加した。学習面・生活面などの学年共通カテゴリと、国語・算数などの教科別カテゴリが同じ並びに見えるため区別がつきにくいという声を受けたもの。(1) 各カテゴリを grade（\"all\"かどうか）と教科名リストで common／subject／event の3種に判定し、種類が変わる境目に見出し（カテゴリ名＋1〜2文の説明）を挿入する。学年共通の観点（学習面など）の説明では「教科ごとの学習内容は下の『各教科』から選べます」と明記し、両者の住み分けが一目で分かるようにした。各教科の見出しには3観点構成である旨（道徳を除く）を、特別活動・学校行事の見出しには行事名の例を添えた。(2) 見出しは学年帯セグメント（低・中・高）に連動して表示を切り替える（applyGradeFilterの対象に追加）。学年共通の見出しは常時表示。(3) 見出しはDOM生成時の表示要素のみで、DB自体やstate.selには影響しない。"},
+  {v:"v1.15", d:"2026-09-16", note:"教科別カテゴリの項目を、知識・技能／思考・判断・表現／主体的に学習に取り組む態度の3観点で必ず選べるように再構成した。(1) v1.13で追加した教科別カテゴリは各教科2項目（can/grow中心で観点の明示なし）だったが、実際の通知表評価は原則この3観点で行われるため、担任が観点を意識して選べるよう、道徳を除く25教科グループ（低学年6・中学年9・高学年10）を各3項目（知識技能／思考表現／主体的態度をちょうど1件ずつ）に再構成した（教科別の項目数は56→81に増加、全体では149→174項目）。(2) 各項目のtxtの末尾に観点名を（知識・技能）のように付記し、一覧のチェックボックスでどの観点かが分かるようにした。生成される所見文の本文（can/grow/issue）には観点名は含まれない。(3) 道徳は観点別評価ではなく個人内評価で行われる教科のため、対象外とし、従来どおり2項目のまま据え置いた。(4) 項目IDは学年・教科・観点の頭文字（例：k_l_koku_c＝低学年・国語・知識技能）に変更した。旧IDとの互換性はないため、旧バージョンで保存した選択（state.sel）を新バージョンで読み込んだ場合、教科別の選択は失われる（normalizeStudentが未知のIDとして除去する。学年共通・行事別の選択は影響を受けない）。"},
+  {v:"v1.14", d:"2026-09-16", note:"「観察メモを読み取る」機能を削除した。テキストを貼り付けてキーワード照合（KW辞書・GROW_HINT・analyzeMemo/showAnalysis/applySelection）で観点を提案する機能だったが、ユーザーの指示により削除した。UI（メモ欄・「メモから観点を読み取る」「メモを消す」ボタン・候補一覧パネル）、データモデル（rec.memo）、自動保存の配線、対応するCSS（.anlist等）まで含めて全体を取り除いた。ヘッダーの説明文と学級削除時の確認ダイアログからも「メモ」への言及を外した。"},
+  {v:"v1.13", d:"2026-09-16", note:"教科別・行事別カテゴリと学年帯セグメント（低学年／中学年／高学年）を追加した。(1) 従来のDBは学年を問わない生活・学習の一般観点（学習面／生活・行動面／健康・体力面／特別活動・係活動／人とのかかわり）のみで、教科（国語・算数等）や行事（運動会・学芸会等）ごとの観点がなかった。市販の文例集書籍（小学校低学年・中学年・高学年版）の目次構成（教科の学習／特別活動の章立て）を分析し、著作権のある本文は複製せず、その構成を参考にオリジナルで教科別・行事別の観点を新規作成した（低学年：教科7×行事7、中学年：教科10×行事7、高学年：教科11×行事10、計52カテゴリ・104項目）。学年ごとに教科構成が異なる点（生活科は低学年のみ、社会・理科は中学年から、外国語活動→外国語、家庭科は高学年のみ等）も反映した。(2) 各DBグループに grade（\"all\"=学年共通／\"low\"／\"mid\"／\"high\"）を追加。基本設定パネルに学年帯セグメントボタンを新設し、選んだ学年帯に応じて教科別・行事別カテゴリの表示を切り替える（学年共通カテゴリは常に表示）。(3) 生成対象（runAdoptionのchosen）も学年帯でフィルタし、表示されていない学年の観点が所見文に混ざらないようにした。選択（state.sel）自体は保持するため、学年帯を行き来しても以前の選択は消えない。(4) 教科名（「国語」等）が学年帯をまたいで重複するため、観点数バッジの紐付けをカテゴリ名（data-cat）から配列インデックス（data-gidx）に変更した。重複名のままだと違う学年の同名カテゴリのバッジを誤って更新するバグがあったため。(5) 学年帯は児童ごとに保存する（rec.grade）。名簿の切り替え・CSVインポート・作業ファイルの読み込みに対応し、不正な値は\"low\"に補正する。(6) 学年帯を切り替えたときは、文字数のめやすを変えたときと同様に手動モードをリセットする（学年帯が変われば選べる観点の顔ぶれ自体が変わるため）。"},
+  {v:"v1.12", d:"2026-08-08", note:"言い回しの3案表示を廃止し、未採用の観点を実際の文で見せて出し入れできるようにした。(1) v1.11の3案は文末しか違わないのに画面の三分の一を占めていた。その面積を「下書きに入っている観点／入っていない観点」の一覧に振り替えた。各観点は実際に生成される文で表示し、入れたとき・外したときの字数も添える。未採用の文は、その観点を加えた完成形を組み立てて該当の文だけを取り出すため、文頭の呼称や接続語の有無まで含めて実物と一致する。(2) 「入れる」「外す」は下書きだけの調整で、観点のチェックには触れない。(3) 一度でも「入れる」「外す」を押したら、その時点の顔ぶれを担任の決定として引き継ぎ、以後は字数による自動判定を使わない（state.manual / state.mIn）。自動判定を残したまま1件足すと、その分だけ他の観点が字数で押し出され、「入れると◯字」の予告が結果と食い違う。さらに押し出された観点を入れ直すと別の観点が出ていく堂々巡りになる。(4) 手で決めた顔ぶれはレコードに保存し、「所見文をつくる」を押し直しても児童を切り替えても残る。文字数のめやすを変えたときと「自動で選び直す」を押したときだけ白紙に戻す。(5) ★重点の観点は「外す」を押せない。★は生成前の指定、出し入れは生成後の調整として役割を分けた。(6) 「別の言い回しの案を出す」は「別の言い回しにする」に戻し、1案だけ作り直す形にした（v1.10相当）。同じ文章になるシードは飛ばし、変えられる言い回しが無いときはボタンを無効にして理由を画面に出す。(7) buildText() が文ごとの持ち主（owners）を返すようにした。(8) 字数の都合で入らなかった観点を知らせる小さな枠（showDropped）は、同じ内容を一覧が持つため廃止した。"},
+  {v:"v1.11", d:"2026-08-07", note:"言い回しの案を並べて、文ごとに選べるようにした。(1) 従来は「別の言い回しで再生成」を押すたびに下書きが丸ごと作り直され、前の案の気に入った部分も一緒に消えていた。案を最大3件同時に並べ、文をクリックするとその文だけ差し替わる方式に変更した。案をまたいで選べるので、1文目は案1・2文目は案3といった組み合わせができる。(2) 採用する観点は「所見文をつくる」の時点で確定させ、言い回しを変えても動かないようにした。v1.10までは採用判定にも言い回しのシードを使っていたため、文末の長さの違い（「ことができました。」9字と「様子が見られました。」10字）で字数計算がずれ、境目にある観点が入れ替わっていた。言い回しを変えたつもりが中身まで変わるのは担任の意図と食い違うため切り離した。副次的に、案どうしの文の数と並びが一致するので文ごとの差し替えが成立する。(3) buildText() が文ごとの配列（parts）を返すようにし、採用リストとシードを引数で受け取る形に変えた。隠れた設定だった state.regenSeed は廃止した。(4) 同じ文章になるシードは飛ばして案を作る。「課題」だけの下書きなど、案が1件しか作れない場合は理由を画面に出す。(5) v1.8で先送りしていた「伸長中」の文末バリエーションを実装した。grow の文例45件はすべて「〜てきました」か「〜になりました」で終わるため、v1.8の案（後ろに「ところです。」を足す）は「増えてきましたところです。」となって成立しない。語尾そのものを「〜てきています」「〜てきているところです」に置き換える方式に改め、想定外の語尾が来たら案1に戻す安全網を付けた。(6) 候補は保存しない。児童を切り替えると破棄され、保存されるのは選んだ結果の下書きだけ。(7) 観点・★・めやす・文末設定を変えると候補を消す。中身の合わない古い案を押せてしまうのを防ぐため。"},
+  {v:"v1.10", d:"2026-08-05", note:"名簿CSVの読み込みを追加。(1) 校務システムから出した児童名簿を取り込み、学級をまとめて作れるようにした。児童名の手入力は35人分で相当な負担になるため。(2) 文字コードを自動判別する。校務システムのCSVは Shift_JIS のことが多い一方、Excelから保存すると UTF-8 になることもある。BOMがあれば UTF-8、無ければ UTF-8 として厳密にデコードを試し、失敗したら Shift_JIS とみなす。ASCIIだけの行はどちらで読んでも同じ結果になるので誤判定にならない。(3) 列の並びは学校ごとに違うため、見出し語と中身の形（数字だけの列＝番号、日本語を含む列＝氏名）から推測したうえで、必ず確認画面を出す。推測が外れても取り込む前に気づけるようにするため。(4) 姓と名が別列の場合と1列にまとまっている場合の両方に対応し、「姓と名／名だけ／姓だけ」と敬称を選べるようにした。所見の文頭の呼び方は学校の様式で異なる。(5) 取り込みは「学級をつくり直す」と「追加」の2通り。つくり直しは所見文ができている児童の件数を示して確認する。(6) 保存キーを shoken_class_v1 に変更し、v1.9 のキー shoken_v1_9 からの引き継ぎを入れた。"},
+  {v:"v1.9", d:"2026-08-05", note:"保存機能を追加。(1) 学級全員分を1つのデータとして持つ構成に変更した。従来は1人分の状態しか持たず、児童を替えるたびに「選択解除」を押して手作業でやり直す運用だった。state（1人分の作業中の状態）と roster（学級全体）を分け、児童の切り替え時に captureCurrent() / applyRecord() で往復させる。(2) localStorage に自動保存（キー shoken_v1_9、500msのデバウンス）。うっかりタブを閉じても続きから再開できる。ただしブラウザに児童名が残るため「学級をすべて消す」ボタンを用意し、共有パソコンでの注意を画面に明記した。(3) 作業ファイルの書き出し・読み込みを追加（.json）。ブラウザは既存ファイルを上書きできないため、書き出すたびに日時入りの新しいファイルを作る方式とした。読み込みは学級まるごとの置き換えで、確認ダイアログを2度挟む。(4) 所見文のCSV書き出しを追加（番号・児童名・字数・所見文）。Excelで開くため UTF-8 BOM と CRLF を付ける。(5) 出席番号の欄を新設。児童一覧の並び順とCSVの並び順に使う。(6) 読み込んだデータは normalizeStudent() で検証する。存在しない観点ID、不正な区分、上限を超えた★・課題は取り除く。他バージョンのファイルや壊れたファイルを読んでも壊れないようにするため。"},
+  {v:"v1.8", d:"2026-08-04", note:"「できる／伸長中」の2択を「できる／伸長中/課題」の3択に変更。(1) v1.7の grow は45件中16件が「〜支援しています」という教師の指導を述べる形、17件が「〜増えてきました」という児童の進歩を述べる形で、同じ「伸長中」を選んでもどちらが出るか分からなかった。grow を進歩型に統一し、指導への言及は新設の issue に分離した。(2) issue は「課題の姿」(state) と「今後の手立て」(plan) の2フィールドを持ち、必ず2文で出力する。1文にまとめると65字前後になり、最も重い内容が最も読みにくい文になるため。(3) 課題は最大1件。issue は66〜84字あり、2件入れると所見の半分以上が課題の話になる。(4) 体力・性格・内面・交友関係など、指導で変わる行動として書けない11項目には issue を用意せず、「課題」ボタン自体を出さない。(5) can→grow の接続語を「これからは、」から「また、」に変更。grow を進歩型に統一したため「これからは、〜増えてきました」と時制が食い違うようになった。issue の前には接続語を置かない（state が場面から始まるため不要）。(6) 採用判定を、断片の長さの足し算から、候補ごとに完成形を組み立てて実測する方式に変更（FL v1.3からの移植）。従来は呼称・接続語・文末表現が字数に数えられておらず、常に実際より短く見積もっていた。(7) めやすが120字未満のときに課題を選ぶと注意を表示。(8) g5とs3の役割を「学習の質」と「生活習慣」で整理し直し、学習用具の語をs3に移した。キーワード辞書も合わせて変更。"},
+  {v:"v1.7", d:"2026-07-23", note:"「★重点」機能を追加（最大3件）。★を付けた観点は文字数のめやすに関わらず必ず所見に反映される。★は選択中の項目にのみ付けられ、3件に達すると他の★ボタンは無効化される。また、字数の都合で入りきらなかった観点を生成後に一覧表示するようにした。"},
+  {v:"v1.6", d:"2026-07-23", note:"観点の文言を修正（「宿題」→「課題」、「危険を予測し」→「危険な行動かどうかを考え」、公共マナーの観点を具体的な行動表記に変更）。対応する文例も整合。"},
+  {v:"v1.5", d:"2026-07-23", note:"観察メモの自動読み取り機能を追加。貼り付けたメモをキーワード照合し、該当する観点と「できる／伸長中」を候補提示、ワンクリックでチェックに反映できるようにした。"},
+  {v:"v1.4", d:"2026-07-23", note:"観点の表示名を「〜する」「〜できる」の具体的な行動表記に変更（観点メモの括弧内の説明を反映）。"},
+  {v:"v1.3", d:"2026-07-23", note:"項目を観点メモに合わせて全面刷新。5領域×9観点＝45項目に拡張し、各項目に「できる」／「伸長中」の文例を用意。"},
+  {v:"v1.2", d:"2026-07-23", note:"文字数のめやすに合わせて文数を決める処理を修正。実際の字数を数えながら打ち切るようにした（従来は1文35字と仮定した固定文数で、短い文例が続くと大幅に不足していた）。"},
+  {v:"v1.1", d:"2026-07-23", note:"各項目で「できる」／「伸長中」を選べるように変更。全項目に両方の文例を追加。"},
+  {v:"v1.0", d:"2026-07-23", note:"初版。項目チェックによる所見文の下書き生成。"},
+];
+document.getElementById('verBadge').innerHTML =
+  APP_VERSION + '<span class="date">' + APP_DATE + '</span>';
+document.getElementById('verBadge').title =
+  APP_HISTORY.map(h=>`${h.v}（${h.d}）${h.note}`).join("\n");
+document.title = "所見文アシスト " + APP_VERSION;
+document.getElementById('noteVer').textContent = APP_VERSION;
+
+/* ============ 文例データベース ============
+   各項目に can（できている）/ grow（伸長中）両方の文例をもつ。
+   frag: 文の中核。文頭の呼称・接続・文末は生成時に付与する。 */
+const DB = [
+ {cat:"学習面", grade:"all", items:[
+   {id:"g1", txt:"進んで挙手・発言し、主体的に授業に臨む",
+    can:"授業に主体的に臨み、進んで挙手して発言する",
+    grow:"授業で自分から手を挙げようとする姿が増えてきました",
+    issue:{state:"一斉の場面では、自分から発言することをためらってしまうことがあります",
+           plan: "ペアで話す機会を増やし、安心して考えを出せるようにしていきます"}},
+   {id:"g2", txt:"集中を切らさず、丁寧に最後までやり遂げる",
+    can:"一つ一つの課題に集中し、最後まで丁寧にやり遂げる",
+    grow:"課題に最後まで取り組める時間が少しずつ増えてきました",
+    issue:{state:"学習の途中では、集中が続かず手が止まってしまうことがあります",
+           plan: "取り組む量を短く区切り、一つずつやり遂げる経験を積めるようにしていきます"}},
+   {id:"g3", txt:"自分の考えを筋道立てて発表・記述できる",
+    can:"自分の考えをもち、筋道を立てて分かりやすく伝える",
+    grow:"自分の考えを言葉にまとめて伝える力が育ってきました",
+    issue:{state:"考えをまとめて書く場面では、書き出しに迷うことがあります",
+           plan: "話したことを短い言葉でメモしてから書く方法を一緒に練習していきます"}},
+   {id:"g4", txt:"基礎的な知識を理解し、活用することができる",
+    can:"学習した内容をしっかりと身につけ、新しい場面でも生かす",
+    grow:"学習した内容を練習問題でも活用できるようになってきました",
+    issue:{state:"既習の内容を使って考える場面では、思い出すのに時間がかかることがあります",
+           plan: "短い復習を積み重ね、確かな力として身につけられるようにしていきます"}},
+   {id:"g5", txt:"ノートや学習の記録を、見やすくまとめることができる",
+    can:"学習したことをノートに丁寧にまとめ、見返して分かるように書く",
+    grow:"学習したことを見やすくノートにまとめられるようになってきました",
+    issue:{state:"ノートにまとめる場面では、どこから書けばよいか迷うことがあります",
+           plan: "まとめ方の型を示しながら、自分で書き進められるようにしていきます"}},
+   {id:"g6", txt:"課題を期限どおり提出し、自主学習に取り組む",
+    can:"課題を毎日きちんと提出し、自主学習にも意欲的に取り組む",
+    grow:"課題に自分から取り組もうとする姿が増えてきました",
+    issue:{state:"家庭学習では、提出が遅れてしまうことがあります",
+           plan: "提出までの見通しを一緒に確かめる時間を設け、自分で管理できるようにしていきます"}},
+   {id:"g7", txt:"苦手な単元や難しい問題にも粘り強く挑戦する",
+    can:"苦手な学習や難しい問題にも粘り強く挑戦する",
+    grow:"難しい課題にも粘り強く向き合う力が育ってきました",
+    issue:{state:"難しい問題に出合った場面では、取りかかるまでに時間がかかることがあります",
+           plan: "できたところを一つずつ認めながら、最後まで取り組む自信を育てていきます"}},
+   {id:"g8", txt:"ペアやグループ学習で意見を交流し、考えを深める",
+    can:"グループ学習で友達と意見を交流し、考えを深めようとする",
+    grow:"グループ学習で自分の考えを伝える場面が増えてきました",
+    issue:{state:"グループでの話し合いでは、聞き役のまま終わってしまうことがあります",
+           plan: "話す順番や役割を決めた活動を取り入れ、考えを出しやすくしていきます"}},
+   {id:"g9", txt:"図書資料やICT機器を目的に沿って活用できる",
+    can:"図書資料やICT機器を目的に合わせて適切に活用する",
+    grow:"資料やICT機器を目的に合わせて使えるようになってきました",
+    issue:{state:"調べ学習では、必要な情報を選ぶことに迷うことがあります",
+           plan: "調べ方の手順を一緒に確かめ、目的に合わせて選べるようにしていきます"}},
+ ]},
+ {cat:"生活・行動面", grade:"all", items:[
+   {id:"s1", txt:"場に応じた気持ちのよい挨拶と返事ができる",
+    can:"気持ちのよいあいさつと、はっきりとした返事ができる",
+    grow:"自分からあいさつをしようとする姿が見られるようになりました",
+    issue:{state:"廊下や教室で先生や友達に出会ったときには、あいさつや返事の声が小さくなることがあります",
+           plan: "教師から先に声をかけながら、自分から言えたときにその場で認めていきます"}},
+   {id:"s2", txt:"チャイム着席・提出期限など、きまりを守る",
+    can:"チャイム着席や提出期限を守り、学校のきまりに沿って生活する",
+    grow:"時間やきまりを意識して行動できる場面が増えてきました",
+    issue:{state:"休み時間の後では、着席が遅れてしまうことがあります",
+           plan: "時計を見て動く習慣がつくよう、切り替えの合図を一緒に決めていきます"}},
+   {id:"s3", txt:"机まわりと学習用具を整えることができる",
+    can:"机まわりを整え、学習用具を大切に扱う",
+    grow:"机まわりや学習用具を進んで整える習慣が身についてきました",
+    issue:{state:"学習の後では、机まわりに学習用具が出したままになっていることがあります",
+           plan: "片づける時間を決めて声をかけ、自分で整えられるようにしていきます"}},
+   {id:"s4", txt:"次時の準備をし、持ち物を自分で管理できる",
+    can:"次の時間の準備や持ち物の管理を自分で確かめて行う",
+    grow:"次の時間の準備を自分から進められる日が増えてきました",
+    issue:{state:"始業までに教科書や用具の準備が間に合わないことがあります",
+           plan: "時間割を見て準備する手順を、自分で身につけられるようにしていきます"}},
+   {id:"s5", txt:"TPOに応じた丁寧な言葉遣いで行動できる",
+    can:"場に応じた丁寧な言葉遣いで、落ち着いて行動する",
+    grow:"場に応じた丁寧な言葉遣いが身についてきました",
+    issue:{state:"友達との会話が盛り上がったり気持ちが高ぶったりすると、言葉遣いが荒くなることがあります",
+           plan: "場に合った言い方を一緒に考え、落ち着いて話せるよう支えていきます"}},
+   {id:"s6", txt:"正しいことを進んで行い、自分の行動に責任をもつ",
+    can:"正しいと思うことを進んで行い、自分の行動に責任をもつ",
+    grow:"自分の行動を振り返って考えようとする力が育ってきました",
+    issue:{state:"正しいと思っても、周りの雰囲気に合わせてしまうことがあります",
+           plan: "そのときどう考えたかを一緒に振り返り、自分で判断する力を育てていきます"}},
+   {id:"s7", txt:"廊下は静かに歩き、校外学習では約束を守って行動する",
+    can:"廊下は静かに歩き、校外学習では約束を守って行動する",
+    grow:"廊下の歩き方や校外での約束を自分から守ろうとする姿が増えてきました",
+    issue:{state:"休み時間や教室を移動するときには、廊下を走ってしまうことがあります",
+           plan: "移動の前に約束を思い出せるよう声をかけ、落ち着いて動けるようにしていきます"}},
+   {id:"s8", txt:"危険な行動かどうかを考え、自分や周囲の安全を守って行動する",
+    can:"危険な行動かどうかを考え、自分や周りの安全を守って行動する",
+    grow:"危ないことに自分で気づける場面が多くなってきました",
+    issue:{state:"遊びに夢中になると、周りの安全に気づきにくくなることがあります",
+           plan: "危ないと感じた場面をその場で一緒に確かめ、自分で気づけるようにしていきます"}},
+   {id:"s9", txt:"その日の予定を把握し、計画的に動くことができる",
+    can:"その日の予定を把握し、自分で考えて計画的に動く",
+    grow:"その日の予定を確かめてから動く習慣が身についてきました",
+    issue:{state:"予定が変わった場面では、次に何をするか迷うことがあります",
+           plan: "一日の流れを黒板で確かめる時間をとり、見通しをもてるようにしていきます"}},
+ ]},
+ {cat:"健康・体力面", grade:"all", items:[
+   {id:"h1", txt:"体育や運動行事に楽しみながら全力で取り組む",
+    can:"体育の学習や運動行事に、楽しみながら全力で取り組む",
+    grow:"体育の学習に自分から取り組もうとする姿が見られるようになりました",
+    issue:{state:"体育の学習では、活動に入るまでに時間がかかることがあります",
+           plan: "取り組みやすい場から始められるようにし、体を動かす楽しさを伝えていきます"}},
+   {id:"h2", txt:"休み時間に外遊びなどで活発に体を動かす",
+    can:"休み時間には外で元気に体を動かして過ごす",
+    grow:"外で体を動かして遊ぶ機会が少しずつ増えてきました"},
+   {id:"h3", txt:"持久力や柔軟性など、体力の伸びが見られる",
+    can:"持久力や柔軟性が着実に伸び、運動する力を高めている",
+    grow:"運動する力を高めようと、こつこつと練習を重ねてきました"},
+   {id:"h4", txt:"手洗い・うがい・ハンカチ持参を心がけている",
+    can:"手洗いやうがいを習慣にし、清潔を心がけて生活する",
+    grow:"手洗いやハンカチの用意を自分で意識できるようになってきました",
+    issue:{state:"休み時間の後や給食の前には、手洗いを忘れてしまうことがあります",
+           plan: "決まった時間に声をかけながら、自分で気づけるようにしていきます"}},
+   {id:"h5", txt:"好き嫌いなく食べ、よいマナーで食事ができる",
+    can:"給食を好き嫌いなくしっかり食べ、よいマナーで食事する",
+    grow:"苦手な食べ物にも自分から挑戦しようとする姿が増えてきました"},
+   {id:"h6", txt:"給食当番として衛生的に配膳・片付けができる",
+    can:"給食当番の仕事を衛生的に、手際よくやり遂げる",
+    grow:"給食当番の仕事を手際よく進められるようになってきました",
+    issue:{state:"給食当番では、身支度が整わないまま準備を始めてしまうことがあります",
+           plan: "身支度から始める流れを毎回一緒に確かめ、習慣にしていきます"}},
+   {id:"h7", txt:"気候や室温に合わせて自分で衣服を調節できる",
+    can:"気候や室温に合わせて自分で衣服を調節する",
+    grow:"気候に合わせて自分で衣服を調節できる日が増えてきました",
+    issue:{state:"気温の変化に合わせて、衣服を調節せずに過ごすことがあります",
+           plan: "その日の気温を朝に伝え、自分で判断できるようにしていきます"}},
+   {id:"h8", txt:"準備運動を大切にし、ケガなく安全に運動する",
+    can:"準備運動の大切さを理解し、安全に気をつけて運動する",
+    grow:"準備運動の大切さが分かり、安全に運動する習慣が身についてきました",
+    issue:{state:"運動を始める場面では、準備運動を十分にしないまま動き出すことがあります",
+           plan: "準備運動の意味を場面ごとに確かめ、自分から行えるようにしていきます"}},
+   {id:"h9", txt:"少しの疲れに負けず、最後までやり抜くことができる",
+    can:"少しの疲れに負けず、最後まで活動をやり抜く",
+    grow:"最後まで活動をやり抜こうとする姿が増えてきました"},
+ ]},
+ {cat:"特別活動・係活動", grade:"all", items:[
+   {id:"t1", txt:"日直や当番の仕事を最後までやり遂げる",
+    can:"日直や掃除当番の仕事を、責任をもってやり遂げる",
+    grow:"任された仕事を最後までやり遂げられる場面が増えてきました",
+    issue:{state:"当番の仕事では、途中で手が止まってしまうことがあります",
+           plan: "仕事の手順を分かりやすく示し、終わりまで見届けて認めていきます"}},
+   {id:"t2", txt:"言われる前に自ら仕事を見つけて取り組む",
+    can:"係や委員会で自ら仕事を見つけて取り組む",
+    grow:"自分から仕事を見つけて動こうとする姿が増えてきました",
+    issue:{state:"係や委員会の活動では、声をかけられてから動き始めることがあります",
+           plan: "気づいて動けたときにその場で言葉にして伝え、自信につなげていきます"}},
+   {id:"t3", txt:"みんなが楽しめるよう、係の仕事を工夫する",
+    can:"みんなが楽しく過ごせるよう、係の仕事に工夫を加える",
+    grow:"係の仕事に自分なりの工夫を加えようとする姿が見られるようになりました"},
+   {id:"t4", txt:"学級会で建設的な意見を出し、クラスづくりに参画する",
+    can:"学級会で建設的な意見を出し、よりよい学級づくりに参加する",
+    grow:"学級会で自分の考えを伝えようとする回数が増えてきました",
+    issue:{state:"学級会では、考えをもっていても発言までいたらないことがあります",
+           plan: "議題を前もって知らせて考えを書く時間をとり、意見を出しやすくしていきます"}},
+   {id:"t5", txt:"行事に目標をもち、練習から意欲的に参加する",
+    can:"運動会や発表会に向けて、目標をもって練習から意欲的に取り組む",
+    grow:"行事の練習に自分から取り組もうとする気持ちが育ってきました",
+    issue:{state:"行事の練習では、目標をもてないまま参加していることがあります",
+           plan: "本番までの見通しと自分の目標を一緒に決め、意欲をもてるようにしていきます"}},
+   {id:"t6", txt:"行事を通して心の成長や自信の芽生えが見られる",
+    can:"行事の経験を通して自信を深め、大きく成長する",
+    grow:"行事のたびに、自信をもって取り組める場面が多くなってきました"},
+   {id:"t7", txt:"まとめる役割を担い、また協力して支えることができる",
+    can:"時には先頭に立ち、時には仲間を支えながら活動を進める",
+    grow:"仲間をまとめたり支えたりする経験を重ねてきました",
+    issue:{state:"グループをまとめる役割では、意見の違いをどうまとめるか迷うことがあります",
+           plan: "進め方の手順を一緒に確かめ、少人数の場から任せていきます"}},
+   {id:"t8", txt:"準備や後片付けを周囲と協力して進めることができる",
+    can:"準備や後片付けを周りと協力して進める",
+    grow:"友達と力を合わせて活動を進められる場面が増えてきました",
+    issue:{state:"準備や後片付けの場面では、何をすればよいか分からず動き出せないことがあります",
+           plan: "役割をはっきり決めて伝え、友達と協力して活動できるようにしていきます"}},
+   {id:"t9", txt:"目立たない仕事も進んで引き受けることができる",
+    can:"目立たない仕事も進んで引き受け、みんなのために働く",
+    grow:"みんなのために働こうとする気持ちが育ってきました"},
+ ]},
+ {cat:"人とのかかわり", grade:"all", items:[
+   {id:"r1", txt:"困っている友達に声をかけ、優しくサポートする",
+    can:"困っている友達に優しく声をかけ、進んで手を差し伸べる",
+    grow:"困っている友達に気づいて関わろうとする姿が増えてきました"},
+   {id:"r2", txt:"特定のグループにとらわれず、誰とでも温かく接する",
+    can:"分け隔てなく友達と関わり、誰とでも温かく接する",
+    grow:"いろいろな友達と関わる機会が少しずつ増えてきました"},
+   {id:"r3", txt:"自分と違う意見にも耳を傾け、受け入れることができる",
+    can:"自分と違う意見にも耳を傾け、相手の考えを受け止める",
+    grow:"友達の意見に耳を傾けることを意識できるようになってきました",
+    issue:{state:"話し合いの場面では、自分と異なる意見に耳を傾けられないことがあります",
+           plan: "相手の考えのよさを一緒に見つける時間をとり、聞く力を育てていきます"}},
+   {id:"r4", txt:"相手を傷つけない言葉で自分の気持ちを素直に伝える",
+    can:"相手を大切にする言葉を選びながら、自分の気持ちを素直に伝える",
+    grow:"自分の気持ちを言葉で伝えられる場面が増えてきました",
+    issue:{state:"自分の思いを伝えたい場面では、言葉が強くなってしまうことがあります",
+           plan: "そのとき感じたことを言葉にする練習を重ね、伝え方を一緒に考えていきます"}},
+   {id:"r5", txt:"グループ活動で自分の役割を理解し、協力して取り組む",
+    can:"グループ活動で自分の役割を果たし、仲間と目標に向かう",
+    grow:"グループの中で自分の役割を果たそうとする姿が増えてきました",
+    issue:{state:"グループ活動では、友達に任せてしまうことがあります",
+           plan: "一人一人の役割を目に見える形にし、力を出せる場をつくっていきます"}},
+   {id:"r6", txt:"意見が対立しても感情的にならず、話し合いで折り合う",
+    can:"意見が対立しても、落ち着いて話し合い折り合いをつける",
+    grow:"気持ちを落ち着けて話し合える場面が多くなってきました",
+    issue:{state:"思いが食い違った場面では、気持ちが高ぶってしまうことがあります",
+           plan: "一度落ち着いてから話す方法を一緒に決め、自分で使えるようにしていきます"}},
+   {id:"r7", txt:"友達の頑張りや長所に気づき、素直に褒めて認める",
+    can:"友達の頑張りや長所に気づき、素直に認めて褒める",
+    grow:"友達の良さに気づき、言葉にできるようになってきました"},
+   {id:"r8", txt:"下級生に優しくお世話をし、頼りになる姿を見せる",
+    can:"下級生に優しく接し、頼りになる上級生として関わる",
+    grow:"下級生に優しく関わろうとする姿が見られるようになりました"},
+   {id:"r9", txt:"「ありがとう」「ごめんなさい」を素直に言葉にできる",
+    can:"「ありがとう」「ごめんなさい」を素直に言葉にできる",
+    grow:"感謝や謝罪の言葉を自分から伝えられる日が増えてきました",
+    issue:{state:"助けてもらったときや失敗したときには、感謝や謝罪の言葉が出てこないことがあります",
+           plan: "気持ちを言葉にする場面を日常の中に増やし、自然に言えるようにしていきます"}},
+ ]},
+
+/* ============ 教科別（低学年） ============ */
+ {cat:"国語", grade:"low", items:[
+   {id:"k_l_koku_c", txt:"文字や言葉の決まりを理解し、正しく読み書きできる（知識・技能）",
+     can:"文字や言葉の決まりを理解し、正しく読んだり書いたりする",
+     grow:"文字や言葉の決まりを意識して使えるようになってきました",
+     issue:{state:"新しく習う漢字では、形を覚えるまでに時間がかかることがあります",
+            plan: "繰り返しなぞって書く練習を重ね、少しずつ定着させていきます"}},
+   {id:"k_l_koku_s", txt:"物語の内容を読み取り、思ったことを自分の言葉で表せる（思考・判断・表現）",
+     can:"物語の内容を読み取り、思ったことを自分の言葉で表す",
+     grow:"読み取ったことを自分の言葉で話そうとする姿が増えてきました"},
+   {id:"k_l_koku_t", txt:"読書や音読に、進んで取り組もうとすることができる（主体的に学習に取り組む態度）",
+     can:"読書や音読に、進んで取り組もうとする",
+     grow:"自分から本を手に取る姿が増えてきました"},
+ ]},
+ {cat:"算数", grade:"low", items:[
+   {id:"k_l_san_c", txt:"数の仕組みやたし算・ひき算の計算を正確に行うことができる（知識・技能）",
+     can:"数の仕組みを理解し、たし算・ひき算の計算を正確に行う",
+     grow:"繰り上がり・繰り下がりの計算ができる場面が増えてきました",
+     issue:{state:"繰り上がりのある計算では、指を使わないと答えが出せないことがあります",
+            plan: "10のまとまりを図で確かめる練習を重ね、頭の中で計算できるようにしていきます"}},
+   {id:"k_l_san_s", txt:"図やブロックを使って、考え方を分かりやすく説明できる（思考・判断・表現）",
+     can:"図やブロックを使って、考え方を分かりやすく説明する",
+     grow:"考え方を図で表そうとする姿が増えてきました"},
+   {id:"k_l_san_t", txt:"計算問題やまとめの問題に、意欲的に取り組もうとすることができる（主体的に学習に取り組む態度）",
+     can:"計算問題やまとめの問題に、意欲的に取り組もうとする",
+     grow:"問題に自分から取り組む姿が増えてきました"},
+ ]},
+ {cat:"生活", grade:"low", items:[
+   {id:"k_l_sei_c", txt:"身近な自然や生活の仕組みについて、気づいたことを理解している（知識・技能）",
+     can:"身近な自然や生活の仕組みについて、観察を通して理解する",
+     grow:"生き物や植物の変化に気づく力が育ってきました"},
+   {id:"k_l_sei_s", txt:"見つけたことや経験したことを、言葉や絵で分かりやすく表せる（思考・判断・表現）",
+     can:"見つけたことや経験したことを、言葉や絵で分かりやすく表す",
+     grow:"見つけたことを友達に伝えようとする姿が増えてきました",
+     issue:{state:"気づいたことを絵や言葉にまとめる場面では、何を書けばよいか迷うことがあります",
+            plan: "見つけたことをその場で一緒に言葉にし、書き表す手がかりを増やしていきます"}},
+   {id:"k_l_sei_t", txt:"学校探検や町探検などの活動に、進んで関わろうとすることができる（主体的に学習に取り組む態度）",
+     can:"学校探検や町探検などの活動に、進んで関わろうとする",
+     grow:"活動に自分から参加しようとする姿が増えてきました"},
+ ]},
+ {cat:"音楽", grade:"low", items:[
+   {id:"k_l_ong_c", txt:"歌唱や楽器演奏の基本的な技能を身につけている（知識・技能）",
+     can:"範唱をよく聴き、正しい音程やリズムで歌ったり演奏したりする",
+     grow:"鍵盤ハーモニカの指使いが少しずつ身についてきました",
+     issue:{state:"新しい旋律に取り組む場面では、指使いを覚えるまでに時間がかかることがあります",
+            plan: "短いフレーズに区切って繰り返し練習し、自信をもって吹けるようにしていきます"}},
+   {id:"k_l_ong_s", txt:"曲の感じを捉え、思ったことを声や体で表現できる（思考・判断・表現）",
+     can:"曲の感じを捉え、思ったことを声や体を使って表現する",
+     grow:"曲に合わせて表現しようとする姿が増えてきました"},
+   {id:"k_l_ong_t", txt:"歌ったり演奏したりする活動に、楽しみながら取り組もうとすることができる（主体的に学習に取り組む態度）",
+     can:"歌ったり演奏したりする活動に、楽しみながら取り組もうとする",
+     grow:"大きな声で楽しんで歌おうとする姿が増えてきました"},
+ ]},
+ {cat:"図画工作", grade:"low", items:[
+   {id:"k_l_zuk_c", txt:"クレヨンや絵の具、はさみなどの道具を正しく安全に使うことができる（知識・技能）",
+     can:"クレヨンや絵の具、はさみなどの道具を正しく安全に使う",
+     grow:"道具を安全に使う習慣が身についてきました",
+     issue:{state:"細かい作業の場面では、時間内に仕上げることが難しいことがあります",
+            plan: "作業の見通しを一緒に確かめ、少しずつ最後まで仕上げられるようにしていきます"}},
+   {id:"k_l_zuk_s", txt:"自分が表したいことを、色や形を工夫して表すことができる（思考・判断・表現）",
+     can:"自分が表したいことを、色や形を工夫して表す",
+     grow:"自分なりの表し方を工夫する姿が見られるようになりました"},
+   {id:"k_l_zuk_t", txt:"作ったりかいたりする活動に、楽しみながら取り組もうとすることができる（主体的に学習に取り組む態度）",
+     can:"作ったりかいたりする活動に、楽しみながら取り組もうとする",
+     grow:"自分から材料を選んで取り組む姿が増えてきました"},
+ ]},
+ {cat:"体育", grade:"low", items:[
+   {id:"k_l_tai_c", txt:"鉄棒やマット遊びなど、基本的な動きを身につけている（知識・技能）",
+     can:"鉄棒やマット遊びなど、基本的な動きを身につける",
+     grow:"できる技が少しずつ増えてきました"},
+   {id:"k_l_tai_s", txt:"どうすればうまくできるかを考え、体の動かし方を工夫できる（思考・判断・表現）",
+     can:"どうすればうまくできるかを考え、体の動かし方を工夫する",
+     grow:"動き方を自分で考えようとする姿が増えてきました"},
+   {id:"k_l_tai_t", txt:"運動遊びに、きまりを守りながら楽しく取り組もうとすることができる（主体的に学習に取り組む態度）",
+     can:"運動遊びに、きまりを守りながら楽しく取り組もうとする",
+     grow:"きまりを意識して運動遊びに参加する姿が増えてきました",
+     issue:{state:"勝ち負けのある運動遊びでは、思いどおりにならないと気持ちが崩れてしまうことがあります",
+            plan: "気持ちを切り替える言葉かけを重ね、最後まで参加できるようにしていきます"}},
+ ]},
+ {cat:"特別の教科　道徳", grade:"low", items:[
+   {id:"k_l_dou1", txt:"身近な出来事から、よいことと悪いことを考えることができる",
+     can:"身近な出来事をもとに、よいことと悪いことを自分なりに考える",
+     grow:"考えたことを言葉で伝えようとする姿が増えてきました"},
+   {id:"k_l_dou2", txt:"友達のよいところを見つけ、進んで伝えることができる",
+     can:"友達のよいところを見つけ、進んで言葉で伝える",
+     grow:"友達のよいところに気づく場面が増えてきました"},
+ ]},
+
+/* ============ 特別活動（低学年） ============ */
+ {cat:"学級活動・児童会活動", grade:"low", items:[
+   {id:"k_l_gak1", txt:"学級会で自分の意見を進んで発表できる",
+     can:"学級会で自分の意見を進んで発表する",
+     grow:"学級会で手を挙げようとする姿が増えてきました",
+     issue:{state:"学級会では、考えがあっても発表をためらうことがあります",
+            plan: "考えを紙に書いてから発表する練習を重ね、自信をもって話せるようにしていきます"}},
+   {id:"k_l_gak2", txt:"当番の仕事に、最後まで責任をもって取り組める",
+     can:"当番の仕事に、最後まで責任をもって取り組む",
+     grow:"当番の仕事を自分から進めようとする姿が増えてきました"},
+ ]},
+ {cat:"入学式等の儀式的行事", grade:"low", items:[
+   {id:"k_l_gis1", txt:"儀式的行事の意味を理解し、静かに参加できる",
+     can:"儀式的行事の意味を理解し、姿勢を正して静かに参加する",
+     grow:"行事の場にふさわしい態度で参加できる時間が長くなってきました"},
+   {id:"k_l_gis2", txt:"1年生を迎える会などで、下級生に温かい態度で接することができる",
+     can:"1年生を迎える会などで、下級生に温かい態度で接する",
+     grow:"下級生に優しく関わろうとする姿が見られるようになりました"},
+ ]},
+ {cat:"遠足", grade:"low", items:[
+   {id:"k_l_ens1", txt:"遠足のきまりを守り、友達と協力して活動できる",
+     can:"遠足のきまりを守り、友達と協力して楽しく活動する",
+     grow:"きまりを意識して行動する場面が増えてきました",
+     issue:{state:"遠足など校外での活動では、列から離れてしまうことがあります",
+            plan: "事前に約束を確かめ合い、安全に気をつけて行動できるようにしていきます"}},
+   {id:"k_l_ens2", txt:"自然に親しみ、見つけたものについて友達と伝え合うことができる",
+     can:"自然に親しみ、見つけたものについて友達と楽しく伝え合う",
+     grow:"見つけたことを言葉で伝えようとする姿が増えてきました"},
+ ]},
+ {cat:"運動会", grade:"low", items:[
+   {id:"k_l_und1", txt:"運動会の練習に、目標をもって意欲的に取り組める",
+     can:"運動会の練習に、目標をもって意欲的に取り組む",
+     grow:"練習に自分から取り組もうとする気持ちが育ってきました",
+     issue:{state:"運動会の練習では、うまくいかないとやる気をなくしてしまうことがあります",
+            plan: "できた部分をその場で認め、少しずつ自信をもてるようにしていきます"}},
+   {id:"k_l_und2", txt:"友達と力を合わせて、団体競技や応援に取り組むことができる",
+     can:"友達と力を合わせて、団体競技や応援に取り組む",
+     grow:"友達と息を合わせて動こうとする姿が増えてきました"},
+ ]},
+ {cat:"学芸会・学習発表会", grade:"low", items:[
+   {id:"k_l_gei1", txt:"自分の役割やせりふを覚え、堂々と発表できる",
+     can:"自分の役割やせりふを覚え、堂々と発表する",
+     grow:"人前で発表することに自信がもてるようになってきました",
+     issue:{state:"人前で発表する場面では、声が小さくなってしまうことがあります",
+            plan: "少人数の場から声を出す練習を重ね、自信をつけていきます"}},
+   {id:"k_l_gei2", txt:"友達の発表をよい姿勢で最後まで聞くことができる",
+     can:"友達の発表を、よい姿勢で最後まで聞く",
+     grow:"友達の発表を静かに聞こうとする意識が育ってきました"},
+ ]},
+ {cat:"合唱・音楽発表会", grade:"low", items:[
+   {id:"k_l_gas1", txt:"友達と声を合わせ、心を込めて歌うことができる",
+     can:"友達と声を合わせ、心を込めて歌う",
+     grow:"友達と声をそろえようとする意識が育ってきました"},
+   {id:"k_l_gas2", txt:"楽器の担当を覚え、みんなと合わせて演奏できる",
+     can:"楽器の担当を覚え、友達と合わせて演奏する",
+     grow:"演奏する部分を自分から練習する姿が増えてきました",
+     issue:{state:"合奏の練習では、周りの音を聴きながら合わせることが難しいことがあります",
+            plan: "友達の音を意識して聴く練習を重ね、少しずつ合わせられるようにしていきます"}},
+ ]},
+ {cat:"作品展", grade:"low", items:[
+   {id:"k_l_saku1", txt:"自分の作品のよさや工夫したところを言葉で伝えることができる",
+     can:"自分の作品のよさや工夫したところを、言葉で伝える",
+     grow:"自分の作品について話そうとする姿が見られるようになりました"},
+   {id:"k_l_saku2", txt:"友達の作品を見て、よいところを見つけることができる",
+     can:"友達の作品を見て、よいところを進んで見つける",
+     grow:"友達の作品のよさに気づく場面が増えてきました"},
+ ]},
+
+/* ============ 教科等の学習（中学年） ============ */
+ {cat:"国語", grade:"mid", items:[
+   {id:"k_m_koku_c", txt:"文章の内容や言葉の意味を正しく理解し、漢字や語句を活用できる（知識・技能）",
+     can:"文章の内容や言葉の意味を正しく理解し、漢字や語句を活用する",
+     grow:"習った漢字や語句を文章の中で使えるようになってきました",
+     issue:{state:"長い文章を読む場面では、内容を整理するのに時間がかかることがあります",
+            plan: "段落ごとに要点をメモする方法を一緒に確かめ、整理できるようにしていきます"}},
+   {id:"k_m_koku_s", txt:"文章の組み立てを考えながら、自分の考えを分かりやすく書くことができる（思考・判断・表現）",
+     can:"文章の組み立てを考えながら、自分の考えを分かりやすく書く",
+     grow:"調べたことを筋道立てて書けるようになってきました"},
+   {id:"k_m_koku_t", txt:"本を読んだり文章を書いたりする学習に、進んで取り組もうとすることができる（主体的に学習に取り組む態度）",
+     can:"本を読んだり文章を書いたりする学習に、進んで取り組もうとする",
+     grow:"自分から読書や作文に取り組む姿が増えてきました"},
+ ]},
+ {cat:"算数", grade:"mid", items:[
+   {id:"k_m_san_c", txt:"2桁・3桁のかけ算やわり算を、筆算を使って正確に処理できる（知識・技能）",
+     can:"2桁・3桁のかけ算やわり算を、筆算を使って正確に処理する",
+     grow:"筆算の手順を自分で確かめながら解けるようになってきました",
+     issue:{state:"位の大きい筆算では、位をそろえずに計算してしまうことがあります",
+            plan: "マス目のノートを使い、位をそろえて書く練習を重ねていきます"}},
+   {id:"k_m_san_s", txt:"図や表を使って、数量の関係を筋道立てて説明できる（思考・判断・表現）",
+     can:"図や表を使って、数量の関係を筋道立てて説明する",
+     grow:"図や表を使って考えを整理する場面が増えてきました"},
+   {id:"k_m_san_t", txt:"計算やまとめの問題に、粘り強く取り組もうとすることができる（主体的に学習に取り組む態度）",
+     can:"計算やまとめの問題に、粘り強く取り組もうとする",
+     grow:"難しい問題にも自分から取り組む姿が増えてきました"},
+ ]},
+ {cat:"社会", grade:"mid", items:[
+   {id:"k_m_sha_c", txt:"地図やグラフの読み方を理解し、地域の特色を読み取ることができる（知識・技能）",
+     can:"地図やグラフの読み方を理解し、地域の特色を読み取る",
+     grow:"資料から必要な情報を見つけられるようになってきました"},
+   {id:"k_m_sha_s", txt:"調べたことをもとに、地域の仕組みについて自分の考えをまとめられる（思考・判断・表現）",
+     can:"調べたことをもとに、地域の仕組みについて自分の考えをまとめる",
+     grow:"資料から気づいたことを発表しようとする姿が増えてきました",
+     issue:{state:"聞き取ったことをまとめる場面では、要点を絞ることに時間がかかることがあります",
+            plan: "聞く前に知りたいことを絞っておく練習を重ね、整理しやすくしていきます"}},
+   {id:"k_m_sha_t", txt:"地域の仕事や生活について、進んで調べようとすることができる（主体的に学習に取り組む態度）",
+     can:"地域の仕事や生活について、進んで調べようとする",
+     grow:"自分から見学や聞き取りに取り組む姿が増えてきました"},
+ ]},
+ {cat:"理科", grade:"mid", items:[
+   {id:"k_m_rika_c", txt:"観察や実験の方法を理解し、正確に記録することができる（知識・技能）",
+     can:"観察や実験の方法を理解し、正確に記録する",
+     grow:"観察したことを詳しく記録できるようになってきました",
+     issue:{state:"観察の記録では、気づいたことを言葉にするまでに時間がかかることがあります",
+            plan: "観察の視点を事前に一緒に確かめ、書きやすくしていきます"}},
+   {id:"k_m_rika_s", txt:"予想と結果を比べながら、気づいたことを筋道立てて考えることができる（思考・判断・表現）",
+     can:"予想と結果を比べながら、気づいたことを筋道立てて考える",
+     grow:"予想を立ててから観察や実験に取り組む姿が増えてきました"},
+   {id:"k_m_rika_t", txt:"観察や実験に、興味をもって進んで取り組もうとすることができる（主体的に学習に取り組む態度）",
+     can:"観察や実験に、興味をもって進んで取り組もうとする",
+     grow:"自分から進んで観察しようとする姿が増えてきました"},
+ ]},
+ {cat:"音楽", grade:"mid", items:[
+   {id:"k_m_ong_c", txt:"曲の感じを生かし、強弱や速さを意識して演奏する技能を身につけている（知識・技能）",
+     can:"曲の感じを生かして、強弱や速さを意識しながら演奏する",
+     grow:"曲の感じを意識して演奏しようとする姿が増えてきました"},
+   {id:"k_m_ong_s", txt:"友達と声部を合わせ、演奏の仕方を考えて表現することができる（思考・判断・表現）",
+     can:"友達と声部を合わせ、演奏の仕方を考えながら二部合唱や合奏に取り組む",
+     grow:"パートの役割を意識して演奏できるようになってきました",
+     issue:{state:"合奏の練習では、自分のパートに集中しすぎて周りの音が聞こえなくなることがあります",
+            plan: "パートごとに聴き合う時間を設け、全体の響きを意識できるようにしていきます"}},
+   {id:"k_m_ong_t", txt:"歌ったり演奏したりする活動に、進んで取り組もうとすることができる（主体的に学習に取り組む態度）",
+     can:"歌ったり演奏したりする活動に、進んで取り組もうとする",
+     grow:"練習に自分から取り組む姿が見られるようになりました"},
+ ]},
+ {cat:"図画工作", grade:"mid", items:[
+   {id:"k_m_zuk_c", txt:"材料や用具の特徴を理解し、工夫して使うことができる（知識・技能）",
+     can:"材料や用具の特徴を理解し、工夫して使う",
+     grow:"用具を工夫して使おうとする姿が増えてきました",
+     issue:{state:"初めて使う用具では、扱い方に慣れるまでに時間がかかることがあります",
+            plan: "使い方の手本を示しながら、少しずつ自分で扱えるようにしていきます"}},
+   {id:"k_m_zuk_s", txt:"材料の特徴を生かして、表したいことを工夫して表すことができる（思考・判断・表現）",
+     can:"材料の特徴を生かして、表したいことを工夫して表す",
+     grow:"表し方を自分で工夫しようとする姿が増えてきました"},
+   {id:"k_m_zuk_t", txt:"作品作りに、友達の表現からも学びながら意欲的に取り組もうとすることができる（主体的に学習に取り組む態度）",
+     can:"作品作りに、友達の表現からも学びながら意欲的に取り組もうとする",
+     grow:"友達の表現から学ぼうとする姿が見られるようになりました"},
+ ]},
+ {cat:"体育", grade:"mid", items:[
+   {id:"k_m_tai_c", txt:"基本的な運動の技能を身につけ、記録を伸ばすことができる（知識・技能）",
+     can:"基本的な運動の技能を身につけ、記録の伸びを目指して取り組む",
+     grow:"自己記録を意識して取り組む姿が増えてきました",
+     issue:{state:"新しい運動に取り組む場面では、動き方をつかむまでに時間がかかることがあります",
+            plan: "動きを細かく区切って確かめながら、少しずつできることを増やしていきます"}},
+   {id:"k_m_tai_s", txt:"チームの作戦を考え、状況に応じて動き方を工夫することができる（思考・判断・表現）",
+     can:"チームの作戦を考え、状況に応じて動き方を工夫する",
+     grow:"チームで話し合いながら動こうとする姿が増えてきました"},
+   {id:"k_m_tai_t", txt:"運動やゲームに、進んで取り組もうとすることができる（主体的に学習に取り組む態度）",
+     can:"運動やゲームに、進んで取り組もうとする",
+     grow:"体を動かす活動に自分から参加する姿が増えてきました"},
+ ]},
+ {cat:"特別の教科　道徳", grade:"mid", items:[
+   {id:"k_m_dou1", txt:"友達の考えを聞き、自分の考えと比べながら話し合いに参加できる",
+     can:"友達の考えを聞き、自分の考えと比べながら話し合いに参加する",
+     grow:"友達の意見と自分の意見を比べて考えようとする姿が増えてきました"},
+   {id:"k_m_dou2", txt:"身近な問題を自分のこととして捉え、考えを深めることができる",
+     can:"身近な問題を自分のこととして捉え、考えを深める",
+     grow:"自分ごととして考えようとする姿勢が育ってきました"},
+ ]},
+ {cat:"外国語活動", grade:"mid", items:[
+   {id:"k_m_eig_c", txt:"簡単な単語や表現を聞いたり言ったりすることができる（知識・技能）",
+     can:"簡単な単語や表現を、聞いたり言ったりする",
+     grow:"英語での言い方に慣れてきました",
+     issue:{state:"初めて聞く表現では、聞き取れずに戸惑ってしまうことがあります",
+            plan: "繰り返し聞く活動を重ね、少しずつ耳を慣らしていきます"}},
+   {id:"k_m_eig_s", txt:"友達とのやり取りの中で、伝えたいことを工夫して表すことができる（思考・判断・表現）",
+     can:"友達とのやり取りの中で、伝えたいことを身振りなどを交えて工夫して表す",
+     grow:"伝え方を自分なりに工夫しようとする姿が増えてきました"},
+   {id:"k_m_eig_t", txt:"外国語の音声や表現に親しみ、進んで触れ合おうとすることができる（主体的に学習に取り組む態度）",
+     can:"外国語の音声や表現に親しみ、進んで触れ合おうとする",
+     grow:"友達と英語でやり取りを楽しむ場面が増えてきました"},
+ ]},
+ {cat:"総合的な学習の時間", grade:"mid", items:[
+   {id:"k_m_sog_c", txt:"調べ学習の進め方や、まとめ方の基本を身につけている（知識・技能）",
+     can:"調べ学習の進め方や、まとめ方の基本を身につける",
+     grow:"調べ方やまとめ方を自分なりに使えるようになってきました"},
+   {id:"k_m_sog_s", txt:"調べたことを整理し、分かりやすくまとめて発表することができる（思考・判断・表現）",
+     can:"調べたことを整理し、分かりやすくまとめて友達に発表する",
+     grow:"発表の仕方を工夫しようとする姿が見られるようになりました",
+     issue:{state:"発表の準備では、伝えたいことを絞り込むのに時間がかかることがあります",
+            plan: "伝えたいことを一つに絞る練習を重ね、準備を進めやすくしていきます"}},
+   {id:"k_m_sog_t", txt:"テーマに沿って課題を見つけ、意欲的に調べ学習に取り組もうとすることができる（主体的に学習に取り組む態度）",
+     can:"テーマに沿って課題を見つけ、意欲的に調べ学習に取り組もうとする",
+     grow:"自分で課題を見つけようとする姿が増えてきました"},
+ ]},
+
+/* ============ 特別活動（中学年） ============ */
+ {cat:"学級活動・児童会活動", grade:"mid", items:[
+   {id:"k_m_gak1", txt:"学級会や委員会で、司会や記録などの役割を果たすことができる",
+     can:"学級会や委員会で、司会や記録などの役割を責任をもって果たす",
+     grow:"役割を任されると意欲的に取り組む姿が増えてきました"},
+   {id:"k_m_gak2", txt:"学級のためになる意見を、理由を添えて発表することができる",
+     can:"学級のためになる意見を、理由を添えて発表する",
+     grow:"理由を添えて意見を伝えようとする姿が育ってきました",
+     issue:{state:"学級会では、考えをまとめる前に発言してしまうことがあります",
+            plan: "話す前に考えを整理する時間を設け、伝え方を一緒に確かめていきます"}},
+ ]},
+ {cat:"クラブ活動", grade:"mid", items:[
+   {id:"k_m_kur1", txt:"自分の興味に合わせてクラブ活動を選び、意欲的に参加できる",
+     can:"自分の興味に合わせてクラブ活動を選び、意欲的に参加する",
+     grow:"クラブの活動を楽しみにする様子が見られるようになりました"},
+   {id:"k_m_kur2", txt:"異学年の友達と協力して、クラブの活動を進めることができる",
+     can:"異学年の友達と協力して、クラブの活動を進める",
+     grow:"上級生や下級生と関わろうとする姿が増えてきました"},
+ ]},
+ {cat:"遠足・校外学習", grade:"mid", items:[
+   {id:"k_m_ens1", txt:"見学先での約束を守り、目的をもって見学できる",
+     can:"見学先での約束を守り、目的をもって見学する",
+     grow:"見学の目的を意識して行動する場面が増えてきました",
+     issue:{state:"校外学習では、興味のあるものに気を取られて集合時間に遅れることがあります",
+            plan: "時計を意識して行動する声かけを重ね、時間を守れるようにしていきます"}},
+   {id:"k_m_ens2", txt:"見学して分かったことを、記録用紙に整理してまとめることができる",
+     can:"見学して分かったことを、記録用紙に整理してまとめる",
+     grow:"見学の記録を丁寧にまとめられるようになってきました"},
+ ]},
+ {cat:"運動会", grade:"mid", items:[
+   {id:"k_m_und1", txt:"自分の役割を理解し、リレーや団体種目に全力で取り組める",
+     can:"自分の役割を理解し、リレーや団体種目に全力で取り組む",
+     grow:"自分の役割を果たそうとする意識が育ってきました"},
+   {id:"k_m_und2", txt:"係の仕事にも進んで取り組み、運動会を支えることができる",
+     can:"係の仕事にも進んで取り組み、運動会を支える",
+     grow:"係の仕事を自分から見つけて動く場面が増えてきました",
+     issue:{state:"係の仕事では、自分の出番が終わると気が緩んでしまうことがあります",
+            plan: "最後まで係の役割を意識できるよう、場面ごとに声をかけていきます"}},
+ ]},
+ {cat:"学芸会・学習発表会", grade:"mid", items:[
+   {id:"k_m_gei1", txt:"自分の役割を工夫しながら、表現力豊かに発表できる",
+     can:"自分の役割を工夫しながら、表現力豊かに発表する",
+     grow:"表現の工夫を自分で考えようとする姿が増えてきました"},
+   {id:"k_m_gei2", txt:"友達と息を合わせて、劇や群読の練習に取り組むことができる",
+     can:"友達と息を合わせて、劇や群読の練習に取り組む",
+     grow:"友達とタイミングを合わせようとする姿が育ってきました",
+     issue:{state:"練習の場面では、自分のせりふのタイミングをつかむのに時間がかかることがあります",
+            plan: "友達と合わせる部分を繰り返し確かめ、自信をもてるようにしていきます"}},
+ ]},
+ {cat:"合唱・音楽発表会", grade:"mid", items:[
+   {id:"k_m_gas1", txt:"パートの役割を理解し、声を合わせて美しいハーモニーをつくることができる",
+     can:"パートの役割を理解し、声を合わせてハーモニーをつくる",
+     grow:"自分のパートを意識して歌えるようになってきました"},
+   {id:"k_m_gas2", txt:"楽器の練習に見通しをもって取り組み、演奏を仕上げることができる",
+     can:"楽器の練習に見通しをもって取り組み、演奏を仕上げる",
+     grow:"練習の計画を自分で立てようとする姿が見られるようになりました",
+     issue:{state:"楽器の練習では、苦手な部分を後回しにしてしまうことがあります",
+            plan: "苦手な部分から取り組む順番を一緒に決め、着実に仕上げていきます"}},
+ ]},
+ {cat:"作品展", grade:"mid", items:[
+   {id:"k_m_saku1", txt:"自分の表現のねらいを、言葉で分かりやすく説明することができる",
+     can:"自分の表現のねらいを、言葉で分かりやすく説明する",
+     grow:"自分の作品について詳しく話せるようになってきました"},
+   {id:"k_m_saku2", txt:"友達の作品を鑑賞し、感じたことを言葉で伝えることができる",
+     can:"友達の作品を鑑賞し、感じたことを言葉で伝える",
+     grow:"友達の作品のよさを見つけて伝えようとする姿が増えてきました"},
+ ]},
+
+/* ============ 教科等の学習（高学年） ============ */
+ {cat:"国語", grade:"high", items:[
+   {id:"k_h_koku_c", txt:"文章の要旨や語句の意味を正確に理解し、漢字や表現を適切に使うことができる（知識・技能）",
+     can:"文章の要旨や語句の意味を正確に理解し、漢字や表現を適切に使う",
+     grow:"習った語句や表現を文章の中で使いこなせるようになってきました"},
+   {id:"k_h_koku_s", txt:"文章の要旨をとらえ、自分の考えを根拠とともに述べることができる（思考・判断・表現）",
+     can:"文章の要旨をとらえ、自分の考えを根拠とともに述べる",
+     grow:"根拠を示しながら意見を述べようとする姿が増えてきました",
+     issue:{state:"意見文を書く場面では、自分の考えの根拠を示すことに苦労することがあります",
+            plan: "根拠となる事実を書き出してから文章にする練習を重ねていきます"}},
+   {id:"k_h_koku_t", txt:"読んだり書いたりする学習に、目的をもって主体的に取り組もうとすることができる（主体的に学習に取り組む態度）",
+     can:"読んだり書いたりする学習に、目的をもって主体的に取り組もうとする",
+     grow:"読み手を意識して文章を書こうとする姿が育ってきました"},
+ ]},
+ {cat:"算数", grade:"high", items:[
+   {id:"k_h_san_c", txt:"分数や小数の計算の仕組みを理解し、正確に処理できる（知識・技能）",
+     can:"分数や小数の計算の仕組みを理解し、正確に処理する",
+     grow:"計算の仕組みを自分の言葉で説明できるようになってきました",
+     issue:{state:"分数の計算では、通分や約分を忘れてしまうことがあります",
+            plan: "計算の手順を確認できる表を用意し、見直す習慣をつけていきます"}},
+   {id:"k_h_san_s", txt:"図形の性質などを根拠に、筋道を立てて説明することができる（思考・判断・表現）",
+     can:"図形の性質を根拠に、筋道を立てて説明する",
+     grow:"図形の性質を使って考えを説明しようとする姿が増えてきました"},
+   {id:"k_h_san_t", txt:"計算や問題解決に、粘り強く主体的に取り組もうとすることができる（主体的に学習に取り組む態度）",
+     can:"計算や問題解決に、粘り強く主体的に取り組もうとする",
+     grow:"難しい問題にも投げ出さずに取り組む姿が増えてきました"},
+ ]},
+ {cat:"社会", grade:"high", items:[
+   {id:"k_h_sha_c", txt:"複数の資料を読み取り、社会の仕組みについての知識を身につけている（知識・技能）",
+     can:"複数の資料を読み取り、社会の仕組みについての知識を身につける",
+     grow:"資料を根拠に自分の考えをまとめられるようになってきました"},
+   {id:"k_h_sha_s", txt:"調べたことをもとに、自分の考えを討論の場で伝えることができる（思考・判断・表現）",
+     can:"調べたことをもとに、自分の考えを討論の場で伝える",
+     grow:"根拠を示しながら意見を伝えようとする姿が育ってきました",
+     issue:{state:"討論の場面では、相手の意見に対してどう返せばよいか迷うことがあります",
+            plan: "相手の意見の要点をメモしながら聞く練習を重ね、返答しやすくしていきます"}},
+   {id:"k_h_sha_t", txt:"社会の出来事に関心をもち、進んで調べようとすることができる（主体的に学習に取り組む態度）",
+     can:"社会の出来事に関心をもち、進んで調べようとする",
+     grow:"ニュースや資料に自分から目を向ける姿が増えてきました"},
+ ]},
+ {cat:"理科", grade:"high", items:[
+   {id:"k_h_rika_c", txt:"実験の方法や器具の扱いを理解し、正確に実験を行うことができる（知識・技能）",
+     can:"実験の方法や器具の扱いを理解し、正確に実験を行う",
+     grow:"実験の手順を自分で確かめながら進められるようになってきました"},
+   {id:"k_h_rika_s", txt:"実験の結果から規則性を見いだし、考察をまとめることができる（思考・判断・表現）",
+     can:"実験の結果から規則性を見いだし、考察をまとめる",
+     grow:"結果をもとに考察を書けるようになってきました",
+     issue:{state:"考察をまとめる場面では、結果と考えを結び付けて書くことに苦労することがあります",
+            plan: "結果から分かったことを一言でまとめる練習を重ねていきます"}},
+   {id:"k_h_rika_t", txt:"自然の事物・現象に関心をもち、進んで探究しようとすることができる（主体的に学習に取り組む態度）",
+     can:"自然の事物・現象に関心をもち、進んで探究しようとする",
+     grow:"疑問に思ったことを自分から調べようとする姿が増えてきました"},
+ ]},
+ {cat:"音楽", grade:"high", items:[
+   {id:"k_h_ong_c", txt:"曲の構成や特徴を理解し、表現を工夫しながら演奏する技能を身につけている（知識・技能）",
+     can:"曲の構成や特徴を理解し、表現を工夫しながら演奏する",
+     grow:"曲想を意識して演奏しようとする姿が増えてきました"},
+   {id:"k_h_ong_s", txt:"パートの役割を考え、全体の響きを意識して演奏を工夫することができる（思考・判断・表現）",
+     can:"パートの役割を考え、全体の響きを意識して合唱・合奏の演奏を工夫する",
+     grow:"周りの音を聴きながら演奏しようとする姿が育ってきました",
+     issue:{state:"合奏の練習では、自分のパートの役割をつかむまでに時間がかかることがあります",
+            plan: "パート練習の音源を聞き返す機会を設け、役割を意識して演奏できるようにしていきます"}},
+   {id:"k_h_ong_t", txt:"音楽表現に、めあてをもって主体的に取り組もうとすることができる（主体的に学習に取り組む態度）",
+     can:"音楽表現に、めあてをもって主体的に取り組もうとする",
+     grow:"自分のめあてをもって練習に取り組む姿が育ってきました"},
+ ]},
+ {cat:"図画工作", grade:"high", items:[
+   {id:"k_h_zuk_c", txt:"用具を目的に応じて使い分け、仕上げまで丁寧に表すことができる（知識・技能）",
+     can:"用具を目的に応じて使い分け、仕上げまで丁寧に取り組む",
+     grow:"用具を工夫して使い分けようとする姿が増えてきました",
+     issue:{state:"制作の終盤では、仕上げを急いで丁寧さに欠けることがあります",
+            plan: "仕上げの時間を区切って確かめ、最後まで丁寧に取り組めるようにしていきます"}},
+   {id:"k_h_zuk_s", txt:"伝えたいことを意識して、構成や配色を工夫して表現することができる（思考・判断・表現）",
+     can:"伝えたいことを意識して、構成や配色を工夫して表現する",
+     grow:"表現のねらいをもって取り組む姿が見られるようになりました"},
+   {id:"k_h_zuk_t", txt:"表現活動に、自分のよさを生かして主体的に取り組もうとすることができる（主体的に学習に取り組む態度）",
+     can:"表現活動に、自分のよさを生かして主体的に取り組もうとする",
+     grow:"自分らしい表現を目指して取り組む姿が増えてきました"},
+ ]},
+ {cat:"家庭", grade:"high", items:[
+   {id:"k_h_kate_c", txt:"調理や製作の手順を理解し、安全に気をつけて実習することができる（知識・技能）",
+     can:"調理や製作の手順を理解し、安全に気をつけて実習に取り組む",
+     grow:"手順を確かめながら実習を進める姿が育ってきました"},
+   {id:"k_h_kate_s", txt:"生活の中の課題を見つけ、解決の方法を工夫して考えることができる（思考・判断・表現）",
+     can:"生活の中の課題を見つけ、解決の方法を工夫して考える",
+     grow:"身の回りの課題に自分から気づく場面が増えてきました",
+     issue:{state:"家庭科の実習では、計画どおりに進まないと戸惑ってしまうことがあります",
+            plan: "見通しが崩れたときの対処法を一緒に確かめ、落ち着いて進められるようにしていきます"}},
+   {id:"k_h_kate_t", txt:"生活をよりよくすることに関心をもち、実践に生かそうとすることができる（主体的に学習に取り組む態度）",
+     can:"生活をよりよくすることに関心をもち、学んだことを実践に生かそうとする",
+     grow:"学んだことを家庭でも生かそうとする姿が見られるようになりました"},
+ ]},
+ {cat:"体育", grade:"high", items:[
+   {id:"k_h_tai_c", txt:"自己の課題に応じた技能を身につけ、記録の向上を目指すことができる（知識・技能）",
+     can:"自己の課題に応じた技能を身につけ、記録の向上を目指して取り組む",
+     grow:"自分の課題を意識して練習に取り組む姿が育ってきました"},
+   {id:"k_h_tai_s", txt:"作戦を立て、仲間と役割を分担してゲームを進めることができる（思考・判断・表現）",
+     can:"作戦を立て、仲間と役割を分担してゲームを進める",
+     grow:"チームの作戦を考えようとする姿が増えてきました",
+     issue:{state:"作戦を立てる場面では、自分の考えを出すことをためらうことがあります",
+            plan: "少人数で意見を出し合う時間を設け、発言しやすくしていきます"}},
+   {id:"k_h_tai_t", txt:"運動やスポーツに、公正な態度で主体的に取り組もうとすることができる（主体的に学習に取り組む態度）",
+     can:"運動やスポーツに、公正な態度で主体的に取り組もうとする",
+     grow:"ルールを守って取り組もうとする意識が育ってきました"},
+ ]},
+ {cat:"外国語", grade:"high", items:[
+   {id:"k_h_eig_c", txt:"聞いたり読んだりした内容から、必要な情報を聞き取ったり読み取ったりする技能を身につけている（知識・技能）",
+     can:"聞いたり読んだりした内容から、必要な情報を聞き取ったり読み取ったりする",
+     grow:"聞き取れる語句や表現が増えてきました",
+     issue:{state:"初めて聞く長めの文では、要点を聞き取ることに苦労することがあります",
+            plan: "キーワードを意識して聞く練習を重ね、聞き取る力を育てていきます"}},
+   {id:"k_h_eig_s", txt:"自分の考えや気持ちを、状況に応じて簡単な英語で伝えることができる（思考・判断・表現）",
+     can:"自分の考えや気持ちを、状況に応じて簡単な英語で伝える",
+     grow:"英語で自分の思いを伝えようとする姿が増えてきました"},
+   {id:"k_h_eig_t", txt:"外国語によるコミュニケーションに、進んで取り組もうとすることができる（主体的に学習に取り組む態度）",
+     can:"外国語によるコミュニケーションに、進んで取り組もうとする",
+     grow:"英語で話しかけようとする姿が増えてきました"},
+ ]},
+ {cat:"特別の教科　道徳", grade:"high", items:[
+   {id:"k_h_dou1", txt:"多様な価値観に触れ、自分の考えを広げたり深めたりすることができる",
+     can:"多様な価値観に触れ、自分の考えを広げたり深めたりする",
+     grow:"友達の考えから自分の考えを見直そうとする姿が育ってきました"},
+   {id:"k_h_dou2", txt:"誰に対しても公正な態度で接し、行動しようとすることができる",
+     can:"誰に対しても公正な態度で接し、行動しようとする",
+     grow:"公正に判断しようとする意識が育ってきました"},
+ ]},
+ {cat:"総合的な学習の時間", grade:"high", items:[
+   {id:"k_h_sog_c", txt:"課題解決に必要な情報の集め方やまとめ方を身につけている（知識・技能）",
+     can:"課題解決に必要な情報の集め方やまとめ方を身につける",
+     grow:"情報の集め方やまとめ方を自分で選べるようになってきました"},
+   {id:"k_h_sog_s", txt:"調べたことを整理し、根拠を示しながら筋道立てて発表することができる（思考・判断・表現）",
+     can:"調べたことを整理し、根拠を示しながら筋道立てて発表する",
+     grow:"発表の内容を筋道立てて組み立てられるようになってきました",
+     issue:{state:"発表の準備では、情報を整理して筋道立てることに時間がかかることがあります",
+            plan: "伝える順番を一緒に確かめ、組み立て方を身につけられるようにしていきます"}},
+   {id:"k_h_sog_t", txt:"課題を設定し、見通しをもって主体的に探究しようとすることができる（主体的に学習に取り組む態度）",
+     can:"課題を設定し、見通しをもって主体的に探究しようとする",
+     grow:"課題に対する見通しを自分でもてるようになってきました"},
+ ]},
+
+/* ============ 特別活動（高学年） ============ */
+ {cat:"学級活動", grade:"high", items:[
+   {id:"k_h_gak1", txt:"学級の課題を見つけ、解決に向けた話し合いに主体的に参加できる",
+     can:"学級の課題を見つけ、解決に向けた話し合いに主体的に参加する",
+     grow:"学級のことを自分の課題として考えようとする姿が育ってきました"},
+   {id:"k_h_gak2", txt:"学級会で、互いの意見を尊重しながら合意形成を図ることができる",
+     can:"学級会で、互いの意見を尊重しながら合意形成を図る",
+     grow:"意見の違いを受け止めようとする姿が増えてきました",
+     issue:{state:"学級会では、自分の意見が通らないと納得できないまま終わってしまうことがあります",
+            plan: "折り合いをつけた経験をその都度振り返り、納得の仕方を一緒に考えていきます"}},
+ ]},
+ {cat:"児童会活動", grade:"high", items:[
+   {id:"k_h_jido1", txt:"委員会活動で、学校全体のために役割を果たすことができる",
+     can:"委員会活動で、学校全体のために自分の役割を果たす",
+     grow:"学校全体のことを考えて行動しようとする姿が育ってきました"},
+   {id:"k_h_jido2", txt:"高学年として、下級生の手本となる行動を意識できる",
+     can:"高学年として、下級生の手本となる行動を意識して過ごす",
+     grow:"下級生を意識した行動が増えてきました",
+     issue:{state:"下級生の前でも、つい気が緩んでしまうことがあります",
+            plan: "高学年としての役割をその都度確かめ、意識できるようにしていきます"}},
+ ]},
+ {cat:"クラブ活動", grade:"high", items:[
+   {id:"k_h_kur1", txt:"クラブ長やリーダーとして、活動をまとめることができる",
+     can:"クラブ長やリーダーとして、話し合いを進め活動をまとめる",
+     grow:"まとめ役としての意識が育ってきました"},
+   {id:"k_h_kur2", txt:"異学年の仲間の気持ちを考えながら、活動を進めることができる",
+     can:"異学年の仲間の気持ちを考えながら、活動を進める",
+     grow:"下級生の気持ちを考えて声をかける場面が増えてきました"},
+ ]},
+ {cat:"遠足・校外学習", grade:"high", items:[
+   {id:"k_h_ens1", txt:"見通しをもって計画を立て、自分たちで行動することができる",
+     can:"見通しをもって計画を立て、自分たちで考えて行動する",
+     grow:"自分たちで判断して行動しようとする姿が育ってきました"},
+   {id:"k_h_ens2", txt:"集団生活のきまりを守り、周りと協力して過ごすことができる",
+     can:"集団生活のきまりを守り、周りと協力して過ごす",
+     grow:"周りを意識して行動する場面が増えてきました",
+     issue:{state:"校外学習では、自分のペースを優先して周りと行動がそろわないことがあります",
+            plan: "全体の動きを確かめる声かけを重ね、周りと合わせて行動できるようにしていきます"}},
+ ]},
+ {cat:"運動会", grade:"high", items:[
+   {id:"k_h_und1", txt:"高学年として、係の仕事や下級生の指導に責任をもって取り組める",
+     can:"高学年として、係の仕事や下級生の指導に責任をもって取り組む",
+     grow:"下級生をリードしようとする姿が育ってきました"},
+   {id:"k_h_und2", txt:"自分の種目に向けて、目標をもって計画的に練習できる",
+     can:"自分の種目に向けて、目標をもって計画的に練習する",
+     grow:"目標に向けて練習を重ねる姿が見られるようになりました",
+     issue:{state:"思うように記録が伸びないと、練習への意欲が下がってしまうことがあります",
+            plan: "小さな伸びを一緒に確かめ、練習を続ける自信につなげていきます"}},
+ ]},
+ {cat:"宿泊学習（5年）", grade:"high", items:[
+   {id:"k_h_shuku1", txt:"集団生活の中で、自分の役割に責任をもって行動できる",
+     can:"集団生活の中で、自分の役割に責任をもって行動する",
+     grow:"役割を果たそうとする意識が育ってきました"},
+   {id:"k_h_shuku2", txt:"友達と協力し、決まりを守って宿泊学習を過ごすことができる",
+     can:"友達と協力し、決まりを守って宿泊学習を過ごす",
+     grow:"友達と譲り合って過ごそうとする姿が増えてきました",
+     issue:{state:"初めての宿泊学習では、環境の変化に気持ちが落ち着かないことがあります",
+            plan: "見通しを事前に伝え、安心して過ごせるように支えていきます"}},
+ ]},
+ {cat:"修学旅行（6年）", grade:"high", items:[
+   {id:"k_h_shuga1", txt:"見学先の歴史や文化を、目的をもって調べ学ぶことができる",
+     can:"見学先の歴史や文化を、目的をもって調べ学ぶ",
+     grow:"見学の目的を意識して行動する姿が増えてきました"},
+   {id:"k_h_shuga2", txt:"最高学年として、集団をまとめながら行動することができる",
+     can:"最高学年として、集団をまとめながら行動する",
+     grow:"周りをまとめようとする意識が育ってきました",
+     issue:{state:"班をまとめる場面では、意見の違う友達への対応に悩むことがあります",
+            plan: "まとめ方の一例を一緒に考え、経験を積めるようにしていきます"}},
+ ]},
+ {cat:"学芸会・学習発表会", grade:"high", items:[
+   {id:"k_h_gei1", txt:"自分の役割を最後まで責任をもって演じ切ることができる",
+     can:"自分の役割を最後まで責任をもって演じ切る",
+     grow:"役になりきろうと工夫する姿が育ってきました",
+     issue:{state:"大きな役を任される場面では、緊張から本来の力を出しきれないことがあります",
+            plan: "少人数の場での練習を重ね、自信をもって本番に臨めるようにしていきます"}},
+   {id:"k_h_gei2", txt:"仲間と演出を話し合い、発表をよりよくする工夫ができる",
+     can:"仲間と演出を話し合い、発表をよりよくする工夫をする",
+     grow:"自分たちで発表をよくしようとする姿が増えてきました"},
+ ]},
+ {cat:"合唱・音楽発表会", grade:"high", items:[
+   {id:"k_h_gas1", txt:"全体の響きを聴きながら、自分のパートを歌い上げることができる",
+     can:"全体の響きを聴きながら、自分のパートを歌い上げる",
+     grow:"周りの声を聴いて合わせようとする姿が育ってきました"},
+   {id:"k_h_gas2", txt:"練習の課題を見つけ、仲間と話し合いながら演奏を高めることができる",
+     can:"練習の課題を見つけ、仲間と話し合いながら演奏を高める",
+     grow:"課題を自分たちで見つけようとする姿が増えてきました",
+     issue:{state:"合奏の練習では、課題を指摘し合うことに気まずさを感じることがあります",
+            plan: "よい点も伝え合う話し合い方を提案し、前向きに練習できるようにしていきます"}},
+ ]},
+ {cat:"作品展", grade:"high", items:[
+   {id:"k_h_saku1", txt:"作品に込めた思いやテーマを、自分の言葉で語ることができる",
+     can:"作品に込めた思いやテーマを、自分の言葉で語る",
+     grow:"作品について詳しく語れるようになってきました"},
+   {id:"k_h_saku2", txt:"友達の作品を、表現の工夫に着目して鑑賞することができる",
+     can:"友達の作品を、表現の工夫に着目して鑑賞する",
+     grow:"表現の工夫に目を向けて鑑賞しようとする姿が増えてきました"},
+ ]},
+];
+
+/* v1.21：can→can 因果化（下記）の対象カテゴリ（体育・運動系）。
+   ここに含まれる項目のcanだけが、直前のcan文の効果として
+   自分自身のgrowフィールドを結果節にした因果文になりうる。 */
+const TAIIKU_CATS = new Set(["健康・体力面","体育","運動会"]);
+const TAIIKU_IDS = new Set(
+  DB.filter(g=>TAIIKU_CATS.has(g.cat)).flatMap(g=>g.items).map(i=>i.id)
+);
+function isTaiikuItem(it){ return TAIIKU_IDS.has(it.id); }
+
+/* ============ 文末バリエーション ============ */
+const ENDINGS = {
+  can:[
+    // 「〜できる」で終わる文例（s1・r2の2件）にそのまま付けると
+    // 「返事ができることができました。」と「できる」が重なる。語尾を活用させて回避する。
+    // v1.10以前からあった不具合。案を並べて表示するようになり目につきやすくなったため直した。
+    (f)=>/できる$/.test(f) ? f.replace(/できる$/,"できました。") : f+"ことができました。",
+    (f)=>f+"様子が見られました。",
+    (f)=>toTeiru(f)+"。",
+    (f)=>f+"姿が印象的でした。",
+  ],
+  /* grow の文例45件は、すべて「〜てきました」（41件）か「〜になりました」（4件）で
+     終わる進歩型の敬体文である（v1.8で統一）。そのため「ところです。」を後ろに足す
+     v1.8の案は「増えてきましたところです。」となって成立しない。
+     語尾そのものを進行の形に置き換える方式に改めた（v1.11）。
+     変換できない形が来たら null を返し、endGrow が案1に戻す。 */
+  grow:[
+    (f)=>f+"。",
+    (f)=>{ const c=growCont(f); return c ? c+"。" : null; },
+    (f)=>{ const c=growCont(f); return c ? c.replace(/ています$/,"ているところです")+"。" : null; },
+  ]
+};
+/* 「〜てきました」→「〜てきています」／「〜になりました」→「〜になってきています」 */
+function growCont(s){
+  s = s.replace(/。$/, "");
+  if(/てきました$/.test(s))   return s.replace(/てきました$/,   "てきています");
+  if(/になりました$/.test(s)) return s.replace(/になりました$/, "になってきています");
+  return null;
+}
+/* 常体の動詞終止形 →「〜ています」 */
+function toTeiru(s){
+  s = s.replace(/。$/, "");
+  if(/(ています|でいます|ました|です)$/.test(s)) return s;
+  if(/(ている|でいる)$/.test(s)) return s.replace(/ている$/,"ています").replace(/でいる$/,"でいます");
+  if(/する$/.test(s)) return s.replace(/する$/, "しています");
+  if(/来る$/.test(s)) return s.replace(/来る$/, "来ています");
+  if(/([いえきけぎげじぜしせちてでにねひへびべみめりれ])る$/.test(s)) return s.replace(/る$/, "ています");
+  const te = {"う":"って","つ":"って","る":"って","む":"んで","ぶ":"んで","ぬ":"んで","く":"いて","ぐ":"いで","す":"して"};
+  const last = s.slice(-1);
+  if(te[last]) return s.slice(0,-1) + te[last] + "います";
+  return toPolite(s);
+}
+
+/* can→grow を因果文でつなぐかどうかの判定（v1.18）。
+   直前の「できる」文が取り組み方・姿勢（努力・意欲）を表す語を含む場合、
+   後ろに続く「伸長中」文とのあいだに「頑張った結果、できるようになった」という
+   自然な因果関係が読み取れることが多い。観点どうしを個別に紐づける表は持たず、
+   frag の語彙だけで判定する（DBのcanに同種の語が広く使われているため）。 */
+const EFFORT_MARK = /(粘り強く|進んで|意欲的|主体的|最後まで|全力で|自ら|自分から|集中し|丁寧に|一生懸命|努力|楽しみながら)/;
+function isEffortCan(frag){
+  return EFFORT_MARK.test(frag);
+}
+/* 常体・辞書形のcan fragを、そのまま「ことで、」に接続できる形に整える。
+   ENDINGS.can と同じく frag は辞書形（「〜する」「〜できる」等）で登録されているため、
+   末尾にそのまま付けるだけでよい（例：「粘り強く挑戦する」→「粘り強く挑戦することで、」）。 */
+function toCausalClause(frag){
+  return frag + "ことで、";
+}
+
+/* 「できる」系fragはそのまま文末付与、「伸長中」fragは既に語尾を含む場合が多いので調整 */
+function endCan(frag, variant){
+  const opts = ENDINGS.can;
+  const fn = opts[variant % opts.length];
+  return fn(frag);
+}
+function endGrow(frag, variant){
+  // grow系fragは敬体で登録済み。念のため常体で来た場合は敬体化する。
+  const f = toPolite(frag);
+  const opts = ENDINGS.grow;
+  const r = opts[variant % opts.length](f);
+  return r === null ? f + "。" : r;   // 想定外の語尾は案1（そのまま）に戻す
+}
+
+/* 常体→敬体 変換（保険。fragが常体で書かれていた場合に備える） */
+function toPolite(s){
+  s = s.replace(/。$/, "");
+  if(/(ます|ました|です|でした|ません)$/.test(s)) return s;          // 既に敬体
+  s = s.replace(/でいる$/, "でいます").replace(/ている$/, "ています"); // 〜ている
+  if(/(ています|でいます)$/.test(s)) return s;
+  if(/(だった|た)$/.test(s)) return s.replace(/だった$/, "でした").replace(/([^で])た$/, "$1ました");
+  if(/(である|だ)$/.test(s)) return s.replace(/(である|だ)$/, "です");
+  if(/する$/.test(s)) return s.replace(/する$/, "します");            // サ変
+  if(/来る$/.test(s)) return s.replace(/来る$/, "来ます");            // カ変
+  s = s.replace(/([いえきけぎげじぜしせちてでにねひへびべみめりれ])る$/, "$1ます"); // 一段動詞
+  if(/ます$/.test(s)) return s;
+  const godan = {"う":"い","く":"き","ぐ":"ぎ","す":"し","つ":"ち","ぬ":"に","ぶ":"び","む":"み","る":"り"};
+  const last = s.slice(-1);
+  if(godan[last]) return s.slice(0,-1) + godan[last] + "ます";        // 五段動詞
+  if(/い$/.test(s)) return s + "です";                                // 形容詞
+  return s;
+}
+
+/* ============ UI構築 ============ */
+/* sel: Map<id, "can"|"grow"|"issue">  /  pri: Set<id>（★重点。最大 MAX_PRI 件）
+   課題（issue）は所見全体で MAX_ISSUE 件まで。issue は66〜84字あり、
+   2件入れると所見の半分以上が課題の話になるため。 */
+const MAX_PRI = 3;
+const MAX_ISSUE = 1;
+/* issue を選んだときに注意を出す、めやす字数の下限 */
+const ISSUE_WARN_LEN = 120;
+/* 文末は can が4種・grow が3種なので、シードは12で一周する。
+   これ以上探しても新しい言い回しは出てこない。 */
+const SEED_CYCLE = 12;
+
+/* state は「いま画面に出ている1人分」の作業状態。
+
+   adopted / unused / seed は「いま画面に出ている下書き」の一時データで、
+   児童を切り替えると破棄する（保存しない）。作り直せば同じものが得られる。
+
+   manual / mIn は担任が手で決めた顔ぶれ（v1.12）。担任の判断そのものなので
+   レコードに保存し、「所見文をつくる」を押し直しても児童を切り替えても残る。
+     manual … true なら字数による自動判定を使わず、mIn だけで組み立てる
+     mIn    … 下書きに入れる観点のID（★重点は別枠で必ず入るので含めなくてよい）
+
+   「入れる」を1回でも押したら自動判定をやめる、という形にしている理由：
+   自動判定を残したまま1件足すと、その分だけ他の観点が字数で押し出される。
+   一覧に出した「入れると◯字」という予告が結果と合わなくなり、
+   さらに押し出された観点を入れ直すと別の観点が出ていく堂々巡りになる。
+   担任が手を出した時点でその顔ぶれを決定として引き継げば、押した通りの結果になる。 */
+const state = { len:120, sel:new Map(), pri:new Set(),
+                adopted:[], unused:[], seed:0,
+                manual:false, mIn:new Set(),
+                no:"", name:"",   // v1.20：出席番号・呼び方の手入力欄を削除したため、DOM入力の代わりに保持する
+                grade:"low" };   // v1.13：学年帯（low/mid/high）。教科別・行事別の表示と生成に使う。
+
+/* v1.19：「全学年共通」／「教科別」の大分類切り替え。学年帯とは別のただの表示フィルタで、
+   選択（state.sel）や生成には影響しない。児童ごとには保存しない（学年帯のように所見文の
+   中身に関わる設定ではなく、単に一覧のどこを見ているかという画面の状態のため）。
+   'common' は grade:"all" の5カテゴリ（学習面・生活・行動面・健康・体力面・特別活動・係活動・
+   人とのかかわり）、'subject' はそれ以外すべて（教科別・行事別カテゴリの両方）を指す。 */
+let topCat = 'common';
+
+/* v1.16：カテゴリの一覧に「学年共通の観点」「各教科」「特別活動・学校行事」の
+   見出しと説明を差し込む。学習面などの学年共通カテゴリと、教科別カテゴリ（国語・算数等）が
+   並んで見えると区別がつきにくいという声を受けて追加した。
+   区分の判定は grade（"all"＝学年共通）と、教科名かどうかで行う（行事別カテゴリは教科名に含まれない）。 */
+const SUBJECT_CAT_NAMES = new Set([
+  "国語","算数","社会","理科","音楽","図画工作","体育",
+  "外国語活動","外国語","家庭","生活","特別の教科　道徳","総合的な学習の時間"
+]);
+function groupKind(group){
+  if((group.grade || 'all') === 'all') return 'common';
+  return SUBJECT_CAT_NAMES.has(group.cat) ? 'subject' : 'event';
+}
+function gradeLabel(grade){
+  return grade === 'mid' ? '中学年' : grade === 'high' ? '高学年' : '低学年';
+}
+function dividerInfo(kind, grade){
+  if(kind === 'common') return {
+    title: "学年共通の観点（学習面・生活面など）",
+    note: "教科を問わず、学び方や日々の生活の姿勢についての所見です。国語・算数など教科ごとの学習内容は、下の「各教科」から選べます。"
+  };
+  if(kind === 'subject') return {
+    title: `各教科（${gradeLabel(grade)}）`,
+    note: "教科ごとの学習内容に関する所見です。多くの教科で「知識・技能」「思考・判断・表現」「主体的に学習に取り組む態度」の3観点から選べます（道徳は除く）。"
+  };
+  return {
+    title: `特別活動・学校行事（${gradeLabel(grade)}）`,
+    note: "学級活動や儀式的行事、運動会・学芸会など、学校行事や特別活動での取り組みの様子です。"
+  };
+}
+
+const catsEl = document.getElementById('cats');
+let prevDividerKey = null;
+DB.forEach((group, gidx)=>{
+  const kind = groupKind(group);
+  const grade = group.grade || 'all';
+  const dividerKey = kind + ':' + grade;
+  if(dividerKey !== prevDividerKey){
+    const {title, note} = dividerInfo(kind, grade);
+    const div = document.createElement('div');
+    div.className = 'cat-divider'; div.dataset.grade = grade; div.dataset.kind = kind;
+    div.innerHTML = `<div class="cd-title">${title}</div><div class="cd-note">${note}</div>`;
+    catsEl.appendChild(div);
+    prevDividerKey = dividerKey;
+  }
+  const d = document.createElement('details'); d.className='cat'; d.open=true;
+  d.dataset.grade = group.grade || 'all';   // v1.13：学年帯フィルタで使う
+  d.dataset.kind = kind;   // v1.19：全学年共通／教科別の切り替えで使う
+  const n = group.items.length;
+  d.innerHTML = `<summary>${group.cat}<span class="count" data-gidx="${gidx}">0/${n}</span></summary>`;
+  const box = document.createElement('div'); box.className='items';
+  group.items.forEach(it=>{
+    const row=document.createElement('div'); row.className='item'; row.dataset.id=it.id;
+    // 「課題」ボタンは issue を持つ項目にだけ出す。
+    // 体力・性格・内面など、指導で変わる行動として書けない項目には issue がない。
+    const issueBtn = it.issue
+      ? `<label title="家庭でも意識してほしいことがある"><input type="checkbox" data-id="${it.id}" data-lvl="issue"><span class="issue">課題</span></label>`
+      : `<span class="noissue"></span>`;
+    row.innerHTML=`<span class="txt">${it.txt}</span>
+      <button type="button" class="star" data-id="${it.id}" title="重点にする（最大${MAX_PRI}件・必ず所見に入ります）">★</button>
+      <span class="lvlpick">
+        <label title="できている"><input type="checkbox" data-id="${it.id}" data-lvl="can"><span class="can">できる</span></label>
+        <label title="伸びつつある"><input type="checkbox" data-id="${it.id}" data-lvl="grow"><span class="grow">伸長中</span></label>
+        ${issueBtn}
+      </span>`;
+    row.querySelector('.star').addEventListener('click', ()=>{
+      if(state.pri.has(it.id)){
+        state.pri.delete(it.id);
+      }else{
+        if(!state.sel.has(it.id)){
+          alert("先にこの項目の「できる」または「伸長中」を選んでから★を付けてください。");
+          return;
+        }
+        if(state.pri.size >= MAX_PRI){
+          alert("★重点は最大"+MAX_PRI+"件までです。他の★を外してから付けてください。");
+          return;
+        }
+        state.pri.add(it.id);
+      }
+      updateCounts();
+    });
+    row.querySelectorAll('input').forEach(inp=>{
+      inp.addEventListener('change', e=>{
+        const lvl = e.target.dataset.lvl;
+        if(e.target.checked){
+          // 課題は所見全体で MAX_ISSUE 件まで。他の項目で既に選ばれていたら受け付けない。
+          if(lvl==='issue'){
+            const already = [...state.sel].filter(([id,l])=>l==='issue' && id!==it.id).length;
+            if(already >= MAX_ISSUE){
+              e.target.checked = false;
+              alert("「課題」は"+MAX_ISSUE+"件までです。\n所見は一人一人のよさや進歩を伝えるものなので、"
+                  + "課題は最も伝えたい一つに絞ってください。\n先に他の項目の「課題」を外してください。");
+              return;
+            }
+          }
+          // 排他：同じ項目の他の選択を外す
+          row.querySelectorAll('input').forEach(o=>{ if(o!==e.target) o.checked=false; });
+          state.sel.set(it.id, lvl);
+        }else{
+          state.sel.delete(it.id);
+          state.pri.delete(it.id);   // 選択を外したら★も外す
+        }
+        row.classList.toggle('sel', state.sel.has(it.id));
+        row.classList.toggle('issue', state.sel.get(it.id)==='issue');
+        updateCounts();
+      });
+    });
+    box.appendChild(row);
+  });
+  d.appendChild(box); catsEl.appendChild(d);
+});
+setTimeout(updateCounts, 0);   // ★ボタンの初期状態を反映
+
+/* v1.13：学年帯フィルタ。学年共通（grade:"all"）は常に表示し、
+   教科別・行事別（grade:"low"/"mid"/"high"）は選んだ学年帯だけを表示する。
+   選択そのもの（state.sel）は消さない。他学年に切り替えている間は非表示・
+   生成対象外になるだけで、その学年帯に戻せば選択は残っている。 */
+function applyCatFilters(){
+  // v1.16：カテゴリ本体（.cat）に加え、見出し（.cat-divider）も同じ学年帯フィルタで出し分ける。
+  // v1.19：それに加えて「全学年共通」／「教科別」の大分類フィルタも重ねてかける。
+  document.querySelectorAll('#cats > .cat, #cats > .cat-divider').forEach(d=>{
+    const g = d.dataset.grade;
+    const gradeOk = (g==='all' || g===state.grade);
+    const catOk = (topCat==='common') ? (d.dataset.kind==='common') : (d.dataset.kind!=='common');
+    d.style.display = (gradeOk && catOk) ? '' : 'none';
+  });
+  const hint = document.getElementById('topCatHint');
+  if(hint){
+    hint.textContent = topCat==='common'
+      ? '学習面・生活面など、教科を問わない観点です。国語・算数など教科ごとの内容は「教科別」から選べます。'
+      : '国語・算数など教科ごとの学習内容と、運動会・学芸会などの学校行事・特別活動をまとめて表示します。学年帯の切り替えはそのまま使えます。';
+  }
+}
+applyCatFilters();
+
+document.getElementById('topCatSeg').addEventListener('click', e=>{
+  if(!e.target.dataset.topcat) return;
+  [...e.currentTarget.children].forEach(b=>b.classList.remove('on'));
+  e.target.classList.add('on');
+  topCat = e.target.dataset.topcat;
+  applyCatFilters();
+});
+
+function issueCount(){
+  return [...state.sel.values()].filter(l=>l==='issue').length;
+}
+
+function updateCounts(){
+  const ic = issueCount();
+  document.getElementById('selCount').textContent =
+    state.sel.size+'件選択中'
+    + (state.pri.size ? `（★${state.pri.size}）` : '')
+    + (ic ? `（課題${ic}）` : '');
+
+  // 課題は2文で66〜84字ある。めやすが小さいと所見の大半を占めてしまう。
+  const inote = document.getElementById('issueNote');
+  if(inote){
+    if(ic && state.len < ISSUE_WARN_LEN){
+      inote.innerHTML = `めやすが <b>${state.len}字</b> です。「課題」は課題の姿と今後の手立てで`
+        + ` <b>約70〜85字</b> になるため、所見の大半が課題の話になります。`
+        + `めやすを${ISSUE_WARN_LEN}字以上にするか、課題を外すことを検討してください。`;
+      inote.style.display='block';
+    }else{
+      inote.style.display='none';
+    }
+  }
+  DB.forEach((g,gidx)=>{
+    const n = g.items.filter(i=>state.sel.has(i.id)).length;
+    const el = document.querySelector(`.count[data-gidx="${gidx}"]`);
+    if(el) el.textContent = `${n}/${g.items.length}`;
+  });
+  // ★ボタンの表示と、上限に達したときの無効化
+  const full = state.pri.size >= MAX_PRI;
+  document.querySelectorAll('#cats .star').forEach(b=>{
+    const on = state.pri.has(b.dataset.id);
+    b.classList.toggle('on', on);
+    b.disabled = !on && (full || !state.sel.has(b.dataset.id));
+    b.closest('.item').classList.toggle('pri', on);
+  });
+  const pn = document.getElementById('priNote');
+  if(pn){
+    pn.innerHTML = state.pri.size
+      ? `★重点 <b>${state.pri.size}/${MAX_PRI}</b> 件：字数のめやすに関わらず必ず所見に入ります。`
+      : `★を押すと重点指定（最大${MAX_PRI}件）。★の観点は字数のめやすに関わらず必ず所見に入ります。`;
+  }
+  // 観点・★・めやすが変わると、いま出ている一覧は中身が合わなくなる。
+  // 古い「入れる」を押せてしまうほうが危ないので、その場で片づける。
+  invalidatePicker();
+  save();   // v1.9：選択・★・字数が変わるたびに自動保存する
+}
+
+/* 学年帯セグメント（v1.13） */
+document.getElementById('gradeSeg').addEventListener('click',e=>{
+  if(e.target.dataset.grade){
+    [...e.currentTarget.children].forEach(b=>b.classList.remove('on'));
+    e.target.classList.add('on');
+    state.grade = e.target.dataset.grade;
+    applyCatFilters();
+    // 学年帯を変えるのは「この学年帯の観点で選び直してほしい」という意思表示なので、
+    // 文字数のめやすを変えたときと同様、手で決めた顔ぶれは自動判定に戻す。
+    resetManual();
+    updateCounts();
+    save();
+  }
+});
+
+/* 文字数セグメント */
+document.getElementById('lenSeg').addEventListener('click',e=>{
+  if(e.target.dataset.len){
+    [...e.currentTarget.children].forEach(b=>b.classList.remove('on'));
+    e.target.classList.add('on');
+    state.len=+e.target.dataset.len;
+    document.getElementById('lenInput').value=state.len;
+    // めやすを変えるのは「この長さで選び直してほしい」という意思表示なので、
+    // 手で決めた顔ぶれは捨てて自動判定に戻す（v1.12）。
+    resetManual();
+    updateCounts();   // 課題選択時の注意表示を更新する
+  }
+});
+document.getElementById('lenInput').addEventListener('input',e=>{
+  state.len=+e.target.value||120;
+  [...document.querySelectorAll('#lenSeg button')].forEach(b=>b.classList.remove('on'));
+  resetManual();
+  updateCounts();
+});
+/* ============ 生成ロジック ============ */
+/* seed は「言い回しの番号」。v1.10までは state.regenSeed という隠れた設定を
+   読んでいたが、v1.11で引数に変えた。v1.12でも引数のまま残している。
+   採用判定は必ず seed=0 で行い、表示だけ state.seed を使う。
+   こうしないと文末の長さの違いで採用・不採用が入れ替わる。 */
+function getFragment(it, lvl, idx, seed){
+  const variant = idx + seed;
+  return lvl==='can' ? endCan(it.can, variant) : endGrow(it.grow, variant);
+}
+
+/* 「できる」→「伸長中」→「課題」の順に並べる（所見の定石）。
+   同じ段の中では、もとの項目の並び順を保つ。 */
+const order = arr => ['can','grow','issue'].flatMap(l=>arr.filter(c=>c.lvl===l));
+
+/* 観点リストから所見文をまるごと組み立てる。
+   採用判定にもこの関数を使うため、字数の見積もりと実際の出力が必ず一致する。
+   v1.7までは断片の長さを足し算していたため、呼称・接続語・文末表現が
+   字数に数えられず、常に実際より短く見積もっていた。 */
+function buildText(list, seed){
+  seed = seed || 0;
+  if(!list.length) return { text:"", len:0, parts:[], owners:[] };
+  const ordered = order(list);
+  const firstGrowPos = ordered.findIndex(c=>c.lvl==='grow');
+  const parts  = [];
+  const owners = [];   // parts[i] がどの観点から出た文かを記録する（v1.12）
+
+  ordered.forEach((c,i)=>{
+    if(c.lvl==='issue'){
+      // 課題は必ず2文。1文にまとめると65字前後になり読みにくいため。
+      // state は「〜場面では、」と場面から始まるので、前に接続語は置かない。
+      const head = toPolite(c.it.issue.state) + "。";
+      parts.push(head);   owners.push([c]);
+      parts.push("今後は、" + toPolite(c.it.issue.plan) + "。");   owners.push([c]);
+      return;
+    }
+    // can→can の因果化（v1.21）。健康・体力面／体育／運動会の項目に限り、
+    // 直前の can 文が取り組み方・姿勢を表す語（EFFORT_MARK）を含む場合、
+    // この can 文を通常の文末（「様子が見られました」等）にはせず、
+    // 自分自身の grow フィールドを結果節にした因果文（「〜することで、〜てきました。」）
+    // にする。v1.18のcan→grow因果化と違い、直前の文はそのまま独立文として残す
+    // （popしない）。can→can はもともと無接続で並べていたため、この文には
+    // 「また、」を付けて前文とのつながりを示す。
+    if(c.lvl==='can' && i>0){
+      const prev = ordered[i-1];
+      if(prev.lvl==='can' && isEffortCan(prev.it.can) && isTaiikuItem(c.it) && c.it.grow){
+        const variant = i + seed;
+        const sent = "また、" + toCausalClause(c.it.can) + endGrow(c.it.grow, variant);
+        parts.push(sent);   owners.push([c]);
+        return;
+      }
+    }
+
+    let sent = getFragment(c.it, c.lvl, i, seed);   // v1.23：文頭に児童の呼称は付けない
+
+    // can→grow の切れ目（v1.18）。直前の can 文が取り組み方・姿勢を表す語を
+    // 含む場合は、2文に割らず「〜することで、〜てきました。」の因果文にまとめる。
+    // それ以外は従来どおり「また、」でつなぐ（v1.7は「これからは、」だったが、
+    // v1.8で grow を進歩型に統一したため時制が食い違い「また、」に変更した）。
+    if(i===firstGrowPos && i>0){
+      const prev = ordered[i-1];   // firstGrowPos の直前は必ず最後の can（order()による整列のため）
+      if(prev.lvl==='can' && isEffortCan(prev.it.can)){
+        const clause = toCausalClause(prev.it.can);
+        parts.pop();   owners.pop();   // 直前に積んだ独立文（can）を取り除き、この文に合体させる
+        sent = clause + sent;
+        parts.push(sent);   owners.push([prev, c]);   // 因果文はcan側・grow側どちらの観点にも属する
+        return;
+      }
+      sent = "また、" + sent;
+    }
+    parts.push(sent);   owners.push([c]);
+  });
+
+  // owners は「この文はどの観点から出たか」の対応表（観点ごとの配列。v1.18で
+  // 因果文が can・grow 両方の観点に属せるよう単一参照から配列に変更した）。
+  // 観点を1件足した完成形を作り、その観点が持つ文だけを取り出す用途に使う（v1.12）。
+  // 断片を単独で組み立てる方式にしないのは、文頭の呼称や「また、」・因果接続の有無が
+  // 前後の文に左右され、単独では実際の出力と一致しないため。
+  const text = parts.join("");
+  return { text, len:[...text].length, parts, owners };
+}
+
+/* 組み立て結果 b の中から、観点 c が持つ文だけをつなげて返す。
+   課題は2文なので2つつながる。can→grow の因果文（v1.18）は、can側・grow側
+   どちらの観点から呼んでも同じ1文（合体後の文）が返る。 */
+function sentOf(b, c){
+  return b.parts.filter((_,i)=>b.owners[i].includes(c)).join("");
+}
+
+function generate(){
+  // 「所見文をつくる」は作り直し。言い回しは最初のものに戻す。
+  // 手で決めた顔ぶれ（state.manual / state.mIn）は担任の判断なので引き継ぐ。
+  state.seed = 0;
+  runAdoption();
+}
+
+/* 採用リストを決め直して画面に出す。
+   「所見文をつくる」からも、一覧の「入れる」「外す」からも、必ずここを通る。 */
+function runAdoption(){
+  // v1.13：教科別・行事別は学年帯ごとに項目が分かれている。選んだ学年帯（または
+  // 学年共通＝grade:"all"）の観点だけを対象にする。他学年で選んだままの観点が
+  // 残っていても、学年帯を切り替えている間は所見文に反映されない。
+  const chosen = DB.filter(g=>(g.grade||'all')==='all' || g.grade===state.grade)
+    .flatMap(g=>g.items)
+    .filter(i=>state.sel.has(i.id))
+    .map(i=>({it:i, lvl:state.sel.get(i.id)}));
+  if(chosen.length===0){
+    clearPicker();
+    setOut("項目の「できる」「伸長中」「課題」のいずれかを1つ以上選んでから「所見文をつくる」を押してください。", true);
+    return;
+  }
+  const isPri = c => state.pri.has(c.it.id);
+  let adopted;
+
+  if(state.manual){
+    // 担任が決めた顔ぶれ。字数による判定はしない。
+    // ★重点は担任が別の場所で指定したものなので、mIn に無くても必ず入れる。
+    adopted = order(chosen.filter(c => isPri(c) || state.mIn.has(c.it.id)));
+  }else{
+    // 自動判定。★重点を無条件に入れ、残りは1件ずつ
+    // 「加えたほうがめやす字数に近づくか」を試す。
+    // 判定は必ずシード0で行う（v1.11から）。state.seed を使うと、文末の長さの違い
+    //（「ことができました。」9字と「様子が見られました。」10字）で字数計算がずれ、
+    // 境目にある観点が入れ替わる。言い回しを変えたつもりが中身まで変わってしまう。
+    const target = state.len;
+    adopted = order(chosen.filter(isPri));
+    let best = buildText(adopted, 0);
+    order(chosen.filter(c=>!isPri(c))).forEach(c=>{
+      const cand = buildText([...adopted, c], 0);
+      if(adopted.length===0 || Math.abs(cand.len - target) < Math.abs(best.len - target)){
+        adopted.push(c); best = cand;
+      }
+    });
+  }
+
+  state.adopted = adopted;
+  state.unused  = order(chosen.filter(c=>adopted.indexOf(c) < 0));
+
+  render();
+  renderRoster();   // 「所見済み」の表示を追従させる
+  saveNow();
+}
+
+/* ============ 下書きと観点一覧の表示（v1.12） ============
+   v1.11は文末だけを変えた3案を並べていたが、案どうしの違いが文末に限られるため、
+   画面の面積に対して得られる情報が少なかった。
+   v1.12では、その面積を「どの観点が入っていて、どれが入っていないか」に充てる。
+   未採用の観点も実際に生成される文で見せ、入れたとき・外したときの字数も出す。 */
+
+function render(){
+  if(!state.adopted.length){
+    // 担任がすべて外した状態。下書きは空だが、一覧は出したままにして戻せるようにする。
+    setOut("下書きに入れる観点がありません。下の「入っていない観点」から入れてください。", true);
+    renderPicker(null);
+    return;
+  }
+  const b = buildText(state.adopted, state.seed);
+  setOut(b.text, false);
+  updateMeta(b.text, state.len);
+  showOnlyIssueWarning(state.adopted);
+  renderPicker(b);
+}
+
+function clearPicker(){
+  state.adopted = []; state.unused = []; state.seed = 0;
+  const box = document.getElementById('picker');
+  if(box){ box.style.display='none'; box.innerHTML=''; }
+  const rb = document.getElementById('regenBtn');
+  if(rb) rb.disabled = false;
+}
+
+/* 観点のチェックが外れた観点は、手で決めた顔ぶれからも消す。
+   観点を増やしても手で決めた顔ぶれは残る（新しい観点は「入っていない観点」に出る）。 */
+function pruneManual(){
+  [...state.mIn].forEach(id=>{ if(!state.sel.has(id)) state.mIn.delete(id); });
+}
+
+function invalidatePicker(){ pruneManual(); clearPicker(); }
+
+/* 手で決めた顔ぶれを捨て、自動判定に戻す。
+   文字数のめやすを変えたときと、「自動で選び直す」を押したときに呼ぶ。 */
+function resetManual(){ state.manual = false; state.mIn.clear(); }
+
+/* 「入れる」「外す」。観点のチェック（state.sel）には触れない。 */
+function setManual(id, mode){
+  if(!state.manual){
+    // 最初に手を出した時点の顔ぶれを、担任の決定として引き継ぐ。
+    // 以後は字数による自動判定をやめるので、押した通りの結果になる。
+    state.manual = true;
+    state.mIn = new Set(state.adopted.map(c=>c.it.id));
+  }
+  if(mode === 'in') state.mIn.add(id);
+  else              state.mIn.delete(id);
+  runAdoption();
+}
+
+/* いまと違う文章になるシードを探す。無ければ null。
+   「課題」だけの下書きは変えられない。 */
+function otherSeed(){
+  if(!state.adopted.length) return null;
+  const cur = buildText(state.adopted, state.seed).text;
+  for(let k=1; k<=SEED_CYCLE; k++){
+    const s2 = (state.seed + k) % SEED_CYCLE;
+    if(buildText(state.adopted, s2).text !== cur) return s2;
+  }
+  return null;
+}
+
+function makeGroup(kind, title, n){
+  const el = document.createElement('div'); el.className = 'pickgrp';
+  const h  = document.createElement('div'); h.className = 'pickhead ' + kind;
+  h.innerHTML = title + '<span class="n">' + n + '件</span>';
+  el.appendChild(h);
+  const list = document.createElement('div'); list.className = 'picklist';
+  el.appendChild(list);
+  return { el, list };
+}
+
+function makeRow(sentence, meta, dim){
+  const row = document.createElement('div'); row.className = 'pickrow';
+  const sp  = document.createElement('div'); sp.className = 'picksent' + (dim ? ' dim' : '');
+  sp.textContent = sentence;              // 児童名を含むので必ず textContent で入れる
+  if(meta){
+    const m = document.createElement('span'); m.className = 'pickmeta'; m.textContent = meta;
+    sp.appendChild(m);
+  }
+  row.appendChild(sp);
+  return row;
+}
+
+/* b は state.adopted から組み立てた結果。採用が0件のときは null。 */
+function renderPicker(b){
+  const box = document.getElementById('picker');
+  if(!box) return;
+  if(!state.adopted.length && !state.unused.length){
+    box.style.display = 'none'; box.innerHTML = ''; return;
+  }
+  box.innerHTML = '';
+
+  const noSeed = otherSeed() === null;
+  const rb = document.getElementById('regenBtn');
+  if(rb) rb.disabled = noSeed;
+
+  const note = document.createElement('p');
+  note.className = 'picknote';
+  note.innerHTML = '下書きに入れる観点を、実際の文を見ながら入れ替えられます。'
+    + '<b>「入れる」「外す」は下書きだけの調整で、左の観点のチェックは変わりません。</b>'
+    + 'この調整は「所見文をつくる」を押し直しても残ります。'
+    + (state.manual
+        ? '<br>いまは<b>手で決めた顔ぶれ</b>で組み立てています。'
+          + '文字数のめやすによる自動の選び直しは止まっています。'
+          + '文字数のめやすを変えると、自動の判定に戻ります。'
+        : '')
+    + (noSeed && state.adopted.length
+        ? '<br>この下書きは言い回しを変えられません。文末を変えられるのは「できる」「伸長中」の文だけで、「課題」の文は形が決まっています。'
+        : '');
+  box.appendChild(note);
+
+  if(state.manual){
+    // 手で触ったあとに自動判定へ戻す道を必ず用意しておく。
+    // これが無いと、観点を足しても入ってこない理由が担任に分からなくなる。
+    const back = document.createElement('button');
+    back.type = 'button'; back.className = 'pickbtn'; back.textContent = '自動で選び直す';
+    back.title = '手で決めた出し入れを捨て、文字数のめやすで選び直します。';
+    back.addEventListener('click', ()=>{ resetManual(); runAdoption(); });
+    note.appendChild(document.createElement('br'));
+    note.appendChild(back);
+  }
+
+  if(state.adopted.length && b){
+    const g = makeGroup('in', '下書きに入っている観点', state.adopted.length);
+    state.adopted.forEach(c=>{
+      const star  = state.pri.has(c.it.id);
+      // その観点を外した場合の字数。担任が結果を見てから決められるようにする。
+      const after = buildText(state.adopted.filter(x=>x!==c), state.seed);
+      const row = makeRow(sentOf(b, c),
+        star ? '★重点：必ず入ります' : '外すと ' + after.len + '字', false);
+      if(star){
+        const sm = document.createElement('span'); sm.className = 'pickstar'; sm.textContent = '★';
+        row.appendChild(sm);
+      }
+      const btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'pickbtn'; btn.textContent = '外す';
+      if(star){
+        // ★は「生成前の指定」、出し入れは「生成後の調整」。役割が違うので混ぜない。
+        btn.disabled = true;
+        btn.title = '★重点は外せません。左の★を解除してから外してください。';
+      }else{
+        btn.addEventListener('click', ()=>setManual(c.it.id, 'out'));
+      }
+      row.appendChild(btn);
+      g.list.appendChild(row);
+    });
+    box.appendChild(g.el);
+  }
+
+  if(state.unused.length){
+    const g = makeGroup('out', '入っていない観点', state.unused.length);
+    state.unused.forEach(c=>{
+      // 入れた場合の完成形を組み立て、その観点が持つ文だけを取り出す。
+      // 文頭の呼称や「また、」が付くかは前後の文で決まるため、断片単独では実物と一致しない。
+      const cand = buildText([...state.adopted, c], state.seed);
+      const why  = state.manual ? '入れていません' : '字数のめやすに収まりませんでした';
+      const row  = makeRow(sentOf(cand, c), why + '／入れると ' + cand.len + '字', true);
+      const btn  = document.createElement('button');
+      btn.type = 'button'; btn.className = 'pickbtn add'; btn.textContent = '入れる';
+      btn.addEventListener('click', ()=>setManual(c.it.id, 'in'));
+      row.appendChild(btn);
+      g.list.appendChild(row);
+    });
+    box.appendChild(g.el);
+  }
+
+  box.style.display = 'block';
+}
+
+/* 所見が課題だけで構成されたときに知らせる。
+   所見は一人一人のよさや進歩を伝えるものなので、
+   課題から始まって課題で終わる所見は、そのまま通知表に載せるべきではない。 */
+function showOnlyIssueWarning(adopted){
+  const box = document.getElementById('onlyIssue');
+  if(!box) return;
+  const hasGood = adopted.some(c=>c.lvl==='can' || c.lvl==='grow');
+  if(adopted.length && !hasGood){
+    box.innerHTML = 'この下書きは<b>課題だけ</b>で構成されています。'
+      + '所見は一人一人のよさや進歩を伝えるものです。'
+      + '<b>「できる」または「伸長中」の観点を必ず先に加えてください。</b>';
+    box.style.display='block';
+  }else{
+    box.style.display='none';
+  }
+}
+
+function setOut(t, empty){
+  const o=document.getElementById('out');
+  o.textContent=t; o.classList.toggle('empty', !!empty);
+  if(empty){
+    document.getElementById('lenMeta').textContent='— 字';
+    document.getElementById('tip').textContent='';
+    const o2=document.getElementById('onlyIssue'); if(o2){ o2.style.display='none'; o2.innerHTML=''; }
+    // ここで一覧は片づけない。観点を全部外して下書きが空になった状態でも、
+    // 一覧が残っていないと戻せなくなるため。片づけが要る経路では clearPicker() を明示的に呼ぶ。
+  }
+}
+function updateMeta(text, target){
+  const n=[...text].length;
+  const meta=document.getElementById('lenMeta');
+  meta.textContent = n+' 字（めやす '+target+'字）';
+  const tip=document.getElementById('tip');
+  const diff=n-target;
+  if(Math.abs(diff)<=target*0.2){ tip.textContent='めやすの範囲内です'; tip.className=''; }
+  else if(diff>0){ tip.innerHTML='<span class="over">やや長め：項目を減らすと近づきます</span>'; }
+  else { tip.textContent='やや短め：項目を足すと近づきます'; }
+}
+
+document.getElementById('genBtn').addEventListener('click', generate);
+
+/* 別の言い回し。採用リストは動かさず、文末だけを作り直す。
+   まだ一度も生成していなければ、ふつうに生成する。
+   変えられる言い回しが無いときはボタンを無効にしてあるので、ここには来ない。 */
+document.getElementById('regenBtn').addEventListener('click',()=>{
+  if(!state.adopted.length){ generate(); return; }
+  const s2 = otherSeed();
+  if(s2 === null) return;
+  state.seed = s2;
+  render(); renderRoster(); saveNow();
+});
+document.getElementById('clearBtn').addEventListener('click',()=>{
+  state.sel.clear();
+  state.pri.clear();
+  document.querySelectorAll('#cats input[type=checkbox]').forEach(c=>c.checked=false);
+  document.querySelectorAll('#cats .item').forEach(r=>r.classList.remove('sel','pri','issue'));
+  resetManual();
+  updateCounts();
+  clearPicker();
+  setOut("ここに所見文の下書きが表示されます。", true);
+});
+document.getElementById('copyBtn').addEventListener('click',()=>{
+  const t=document.getElementById('out').textContent;
+  navigator.clipboard?.writeText(t).then(()=>{
+    const b=document.getElementById('copyBtn'); b.textContent='コピーしました'; setTimeout(()=>b.textContent='コピー',1400);
+  });
+});
+updateCounts();
+
+/* ==================================================================
+   学級名簿・自動保存・ファイル入出力（v1.9）
+   ------------------------------------------------------------------
+   state  … いま画面に出ている「1人分」の作業中の状態（v1.8までと同じ）
+   roster … 学級全員分。児童を切り替えるたびに state と往復させる
+   ================================================================== */
+
+const STORE_KEY = "shoken_class_v1";
+/* v1.9 で使っていたキー。次のバージョンでも読めるよう、起動時に引き継ぐ。 */
+const STORE_KEY_OLD = "shoken_v1_9";
+const roster = { cls:"", students:[], curId:null };
+
+/* var で宣言している理由：
+   updateCounts() は、この節より前（UI構築の直後）に一度呼ばれる。
+   let だと一時的死角（TDZ）に入って ReferenceError になるため、
+   巻き上げで undefined（＝偽）になる var を使い、初期化前の保存を防ぐ。 */
+var ready = false;
+var saveTimer = null;
+
+/* 有効な観点ID。読み込んだファイルの検証に使う。 */
+const VALID_IDS = new Set(DB.flatMap(g=>g.items).map(i=>i.id));
+const HAS_ISSUE = new Set(DB.flatMap(g=>g.items).filter(i=>i.issue).map(i=>i.id));
+
+function newId(){ return "s" + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+/* 新しい児童。字数と文体のばらつきは学級で共通のことが多いので、
+   いま画面に出ている設定を引き継ぐ。 */
+function blankStudent(){
+  return { id:newId(), no:"", name:"", len:state.len, grade:state.grade,
+           sel:{}, pri:[], manual:false, mIn:[], out:"", updated:"" };
+}
+
+/* ---- 画面 ⇄ レコード ---- */
+
+/* 画面の内容を、いま選ばれている児童のレコードに書き戻す */
+function captureCurrent(){
+  const rec = roster.students.find(s=>s.id===roster.curId);
+  if(!rec) return;
+  rec.no      = state.no;
+  rec.name    = state.name;
+  rec.len     = state.len;
+  rec.grade   = state.grade;
+  rec.sel     = Object.fromEntries(state.sel);
+  rec.pri     = [...state.pri];
+  // 手で決めた顔ぶれは担任の判断なので保存する（v1.12）。
+  // 採用リストそのもの（state.adopted）は保存しない。同じ入力から作り直せば同じものになる。
+  rec.manual  = state.manual;
+  rec.mIn     = [...state.mIn];
+  const o = document.getElementById('out');
+  rec.out     = o.classList.contains('empty') ? "" : o.textContent;
+  rec.updated = new Date().toISOString();
+}
+
+/* レコードの内容を画面に反映する */
+function applyRecord(rec){
+  if(!rec) return;
+  state.sel  = new Map(Object.entries(rec.sel || {}));
+  state.pri  = new Set(rec.pri || []);
+  state.manual = !!rec.manual;
+  state.mIn    = new Set(rec.mIn || []);
+  state.len = rec.len || 120;
+  state.grade = ['low','mid','high'].includes(rec.grade) ? rec.grade : 'low';
+  // 採用リストと言い回しは保存しない。児童を切り替えたら破棄し、
+  // 保存されている下書き（rec.out）だけを復元する。一覧が要るなら作り直してもらう。
+  clearPicker();
+
+  state.no   = rec.no   || "";
+  state.name = rec.name || "";
+
+  document.getElementById('lenInput').value = state.len;
+  document.querySelectorAll('#lenSeg button').forEach(b=>{
+    b.classList.toggle('on', +b.dataset.len === state.len);
+  });
+  document.querySelectorAll('#gradeSeg button').forEach(b=>{
+    b.classList.toggle('on', b.dataset.grade === state.grade);
+  });
+  applyCatFilters();
+
+  document.querySelectorAll('#cats .item').forEach(row=>{
+    const lvl = state.sel.get(row.dataset.id);
+    row.querySelectorAll('input[type=checkbox]').forEach(inp=>{
+      inp.checked = (inp.dataset.lvl === lvl);
+    });
+    row.classList.toggle('sel', !!lvl);
+    row.classList.toggle('issue', lvl==='issue');
+  });
+
+  // 前の児童の警告表示が残らないよう、いったん全部消してから復元する
+  const oi = document.getElementById('onlyIssue');
+  if(oi){ oi.style.display='none'; oi.innerHTML=''; }
+  if(rec.out){
+    setOut(rec.out, false);
+    updateMeta(rec.out, state.len);
+  }else{
+    setOut("ここに所見文の下書きが表示されます。", true);
+  }
+  updateCounts();
+}
+
+/* ---- 児童一覧 ---- */
+
+/* 番号順（数字として）。番号が空の児童は末尾にまわす。 */
+function sortedStudents(){
+  return roster.students.map((s,i)=>({s,i})).sort((a,b)=>{
+    const na = parseInt(a.s.no,10), nb = parseInt(b.s.no,10);
+    const va = isNaN(na), vb = isNaN(nb);
+    if(va && vb) return a.i - b.i;
+    if(va) return 1;
+    if(vb) return -1;
+    if(na !== nb) return na - nb;
+    return a.i - b.i;
+  }).map(x=>x.s);
+}
+
+function renderRoster(){
+  captureCurrent();   // 一覧は必ず最新のレコードから描く
+  const el = document.getElementById('roster');
+  el.innerHTML = '';
+  sortedStudents().forEach(s=>{
+    const row = document.createElement('div');
+    row.className = 'srow' + (s.id===roster.curId ? ' on' : '');
+    const nm = (s.name||'').trim();
+    row.innerHTML = `<span class="sno">${(s.no||'').trim() || '—'}</span>`
+      + `<span class="sname${nm?'':' blank'}"></span>`
+      + `<span class="sdone${s.out?' ok':''}">${s.out ? '所見済み' : '未作成'}</span>`
+      + `<button type="button" class="sdel" title="この児童を削除">×</button>`;
+    row.querySelector('.sname').textContent = nm || '（名前未入力）';
+    row.addEventListener('click', e=>{
+      if(e.target.classList.contains('sdel')) return;
+      switchTo(s.id);
+    });
+    row.querySelector('.sdel').addEventListener('click', e=>{
+      e.stopPropagation(); delStudent(s.id);
+    });
+    el.appendChild(row);
+  });
+  const done = roster.students.filter(s=>s.out).length;
+  document.getElementById('rosterCount').textContent =
+    `${roster.students.length}人／所見済み ${done}人`;
+}
+
+function switchTo(id){
+  if(id === roster.curId) return;
+  captureCurrent();
+  roster.curId = id;
+  applyRecord(roster.students.find(s=>s.id===id));
+  renderRoster();
+  saveNow();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function addStudent(){
+  captureCurrent();
+  const rec = blankStudent();
+  const nums = roster.students.map(s=>parseInt(s.no,10)).filter(n=>!isNaN(n));
+  rec.no = String(nums.length ? Math.max(...nums)+1 : 1);
+  roster.students.push(rec);
+  roster.curId = rec.id;
+  applyRecord(rec);
+  renderRoster();
+  saveNow();
+}
+
+function delStudent(id){
+  const rec = roster.students.find(s=>s.id===id);
+  if(!rec) return;
+  const nm = (rec.name||'').trim() || '（名前未入力）';
+  if(!confirm(nm + " の入力（選択・下書き）をすべて削除します。よろしいですか。")) return;
+  const i = roster.students.indexOf(rec);
+  roster.students.splice(i,1);
+  if(!roster.students.length) roster.students.push(blankStudent());
+  if(roster.curId === id){
+    const next = roster.students[Math.min(i, roster.students.length-1)];
+    roster.curId = next.id;
+    applyRecord(next);
+  }
+  renderRoster();
+  saveNow();
+}
+
+/* ---- 自動保存（このパソコンのブラウザ内） ---- */
+
+function setSaveState(msg, ok){
+  const el = document.getElementById('saveState');
+  el.textContent = "自動保存：" + msg;
+  el.className = "savestate " + (ok ? "ok" : "ng");
+}
+
+function serialize(){
+  captureCurrent();
+  roster.cls = document.getElementById('clsInput').value;
+  return { app:"所見文アシスト", ver:APP_VERSION, saved:new Date().toISOString(),
+           cls:roster.cls, curId:roster.curId, students:roster.students };
+}
+
+function saveNow(){
+  if(!ready) return;
+  try{
+    localStorage.setItem(STORE_KEY, JSON.stringify(serialize()));
+    setSaveState("保存しました（このパソコンのブラウザ内）", true);
+  }catch(e){
+    // プライベートウィンドウや容量超過。作業自体は続けられるので止めない。
+    setSaveState("このブラウザには保存できません。「作業ファイルを書き出す」で控えを取ってください。", false);
+  }
+}
+function save(){ clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 500); }
+
+/* 読み込んだデータの検証。他バージョンのファイルや壊れたファイルを読んでも
+   画面が壊れないよう、知らない観点IDや上限超過はここで取り除く。 */
+function normalizeStudent(s){
+  s = s || {};
+  const sel = {};
+  let issues = 0;
+  Object.entries(s.sel || {}).forEach(([id,lvl])=>{
+    if(!VALID_IDS.has(id)) return;
+    if(!['can','grow','issue'].includes(lvl)) return;
+    if(lvl==='issue'){
+      if(!HAS_ISSUE.has(id)) return;      // 課題を持たない項目
+      if(++issues > MAX_ISSUE) return;    // 課題は MAX_ISSUE 件まで
+    }
+    sel[id] = lvl;
+  });
+  const pri = (Array.isArray(s.pri) ? s.pri : [])
+    .filter(id => sel[id])                // 選択されていない項目に★は付けない
+    .slice(0, MAX_PRI);
+  // 手で決めた顔ぶれ（v1.12）。選択されていない観点の指定は捨てる。
+  const mIn = (Array.isArray(s.mIn) ? s.mIn : []).filter(id => sel[id]);
+  const len = Math.min(400, Math.max(30, parseInt(s.len,10) || 120));
+  const grade = ['low','mid','high'].includes(s.grade) ? s.grade : 'low';
+  return { id: s.id || newId(), no: String(s.no||""), name: String(s.name||""),
+           len, grade, sel, pri, manual: !!s.manual, mIn,
+           out: String(s.out||""), updated: s.updated||"" };
+}
+
+function loadData(data){
+  if(!data || !Array.isArray(data.students) || !data.students.length) return false;
+  roster.cls = String(data.cls || "");
+  roster.students = data.students.map(normalizeStudent);
+  roster.curId = roster.students.some(s=>s.id===data.curId)
+    ? data.curId : roster.students[0].id;
+  document.getElementById('clsInput').value = roster.cls;
+  applyRecord(roster.students.find(s=>s.id===roster.curId));
+  renderRoster();
+  return true;
+}
+
+/* ---- ファイルの書き出し・読み込み ---- */
+
+/* ブラウザは既存のファイルを上書きできない。書き出すたびに
+   日時入りの新しいファイルがダウンロードフォルダに増える。 */
+function stamp(){
+  const d = new Date(), p = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`;
+}
+function safeName(s){ return String(s||'').replace(/[\\\/:*?"<>|]/g,'_').trim(); }
+
+function download(filename, text, mime){
+  const url = URL.createObjectURL(new Blob([text], {type:mime}));
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+
+function exportWork(){
+  saveNow();
+  const cls = safeName(roster.cls) || '学級';
+  download(`所見文アシスト_作業_${cls}_${stamp()}.json`,
+           JSON.stringify(serialize(), null, 1), 'application/json');
+  setSaveState(`作業ファイルを書き出しました（${roster.students.length}人分）`, true);
+}
+
+/* CSV は Excel で開くため、先頭に BOM を付け、改行を CRLF にする。
+   BOM がないと日本語が文字化けする。 */
+function csvCell(v){ return '"' + String(v==null ? '' : v).replace(/"/g,'""') + '"'; }
+function exportCsv(){
+  saveNow();
+  const list = sortedStudents();
+  const blank = list.filter(s=>!s.out).length;
+  if(blank && !confirm(`所見文がまだできていない児童が ${blank}人 います。\nその分は空欄のまま書き出しますか。`)) return;
+  const rows = [['番号','児童名','字数','所見文']];
+  list.forEach(s=>rows.push([s.no, s.name, s.out ? [...s.out].length : 0, s.out]));
+  const csv = rows.map(r=>r.map(csvCell).join(',')).join('\r\n') + '\r\n';
+  download(`所見文_${safeName(roster.cls)||'学級'}_${stamp()}.csv`,
+           '\uFEFF' + csv, 'text/csv;charset=utf-8');
+  setSaveState(`CSVを書き出しました（${list.length}人分）`, true);
+}
+
+function importWork(file){
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    let data = null;
+    try{ data = JSON.parse(reader.result); }
+    catch(e){
+      alert("このファイルは読み込めませんでした。\n書き出した作業ファイル（.json）を選んでください。");
+      return;
+    }
+    if(!data || !Array.isArray(data.students) || !data.students.length){
+      alert("作業ファイルの形式ではありません。\n書き出した作業ファイル（.json）を選んでください。");
+      return;
+    }
+    if(!confirm(`いま画面にある学級（${roster.students.length}人）を、`
+      + `読み込むファイルの内容（${data.students.length}人）で置き換えます。\n`
+      + `いまの内容は消えます。よろしいですか。\n\n`
+      + `※ 残しておきたい場合は、いったん「キャンセル」して`
+      + `「作業ファイルを書き出す」で控えを取ってください。`)) return;
+    if(loadData(data)){
+      saveNow();
+      setSaveState(`読み込みました（${roster.students.length}人分）`, true);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function wipeAll(){
+  if(!confirm(`この学級の入力をすべて消します（${roster.students.length}人分）。\n元に戻せません。よろしいですか。`)) return;
+  if(!confirm("本当に消してよろしいですか。\n必要なら先に「作業ファイルを書き出す」で控えを取ってください。")) return;
+  try{ localStorage.removeItem(STORE_KEY); localStorage.removeItem(STORE_KEY_OLD); }catch(e){}
+  roster.cls = "";
+  roster.students = [blankStudent()];
+  roster.curId = roster.students[0].id;
+  document.getElementById('clsInput').value = '';
+  applyRecord(roster.students[0]);
+  renderRoster();
+  saveNow();
+  setSaveState("消去しました", true);
+}
+
+/* ---- 画面のつなぎこみ ---- */
+
+document.getElementById('addStuBtn').addEventListener('click', addStudent);
+document.getElementById('expWorkBtn').addEventListener('click', exportWork);
+document.getElementById('expCsvBtn').addEventListener('click', exportCsv);
+document.getElementById('wipeBtn').addEventListener('click', wipeAll);
+document.getElementById('impWorkBtn').addEventListener('click', ()=>{
+  document.getElementById('importFile').click();
+});
+document.getElementById('importFile').addEventListener('change', e=>{
+  const f = e.target.files[0];
+  e.target.value = '';        // 同じファイルを続けて選べるようにする
+  if(f) importWork(f);
+});
+
+/* 番号・呼び方は一覧の表示にも関わるので、入力のたびに一覧を描き直す */
+document.getElementById('clsInput').addEventListener('input', save);
+
+/* 生成・選択解除のあとは「所見済み」の表示が変わる */
+['genBtn','regenBtn','clearBtn'].forEach(id=>{
+  document.getElementById(id).addEventListener('click', ()=>{ renderRoster(); saveNow(); });
+});
+
+/* ==================================================================
+   名簿CSVの読み込み（v1.10）
+   ------------------------------------------------------------------
+   校務システムから出した児童名簿を取り込み、学級をまとめて作る。
+   列の並びも文字コードも学校ごとに違うので、こちらで推測したうえで
+   必ず画面で確認してもらう（推測が外れても気づけるようにするため）。
+   ================================================================== */
+
+const csvState = { rows:[], enc:"", file:"" };
+
+/* 校務システムのCSVは Shift_JIS のことが多い。
+   BOM → UTF-8、UTF-8として厳密に読めれば UTF-8、駄目なら Shift_JIS と判断する。
+   ASCIIだけのファイルはどちらで読んでも同じ結果になるので問題ない。 */
+function decodeText(buf){
+  const b = new Uint8Array(buf);
+  if(b[0]===0xEF && b[1]===0xBB && b[2]===0xBF){
+    return { text:new TextDecoder('utf-8').decode(b.subarray(3)), enc:'UTF-8' };
+  }
+  try{
+    return { text:new TextDecoder('utf-8',{fatal:true}).decode(b), enc:'UTF-8' };
+  }catch(e){ /* UTF-8 として不正 → Shift_JIS とみなす */ }
+  try{
+    return { text:new TextDecoder('shift_jis').decode(b), enc:'Shift_JIS' };
+  }catch(e){
+    return { text:new TextDecoder().decode(b), enc:'不明' };
+  }
+}
+
+/* CSVを行×列に分解する。引用符の中のカンマ・改行・二重引用符に対応する。 */
+function parseCsv(text){
+  const rows = [];
+  let row = [], cell = "", quoted = false;
+  const s = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+  for(let i=0;i<s.length;i++){
+    const c = s[i];
+    if(quoted){
+      if(c === '"'){
+        if(s[i+1] === '"'){ cell += '"'; i++; }
+        else quoted = false;
+      }else cell += c;
+    }else{
+      if(c === '"' && cell === '') quoted = true;
+      else if(c === ','){ row.push(cell); cell = ""; }
+      else if(c === '\n'){ row.push(cell); rows.push(row); row = []; cell = ""; }
+      else cell += c;
+    }
+  }
+  if(cell !== "" || row.length){ row.push(cell); rows.push(row); }
+  // 全部空欄の行は落とす
+  return rows.filter(r=>r.some(v=>String(v).trim() !== ""));
+}
+
+const HEAD_NO   = ["番号","出席番号","出席No","No","no","NO","#","児童番号","整理番号"];
+const HEAD_NAME = ["氏名","名前","児童名","生徒名","姓","名字","苗字","氏名（姓）","name"];
+const HEAD_GIVEN= ["名","氏名（名）","下の名前","given"];
+
+function looksLikeHeader(row){
+  return row.some(v=>{
+    const t = String(v).trim();
+    return HEAD_NO.includes(t) || HEAD_NAME.includes(t) || HEAD_GIVEN.includes(t);
+  });
+}
+
+/* 列の推測。見出しがあれば見出し名から、無ければ中身の形から決める。 */
+function guessCols(rows, hasHeader){
+  const head = hasHeader ? rows[0].map(v=>String(v).trim()) : null;
+  const body = hasHeader ? rows.slice(1) : rows;
+  let no = -1, a = -1, b = -1;
+  if(head){
+    head.forEach((h,i)=>{
+      if(no<0 && HEAD_NO.includes(h)) no = i;
+      if(a <0 && HEAD_NAME.includes(h)) a = i;
+      else if(a>=0 && b<0 && HEAD_GIVEN.includes(h)) b = i;
+    });
+  }
+  if(a < 0){
+    // 数字だけの列を番号、日本語が入っている最初の列を氏名とみなす
+    const cols = Math.max(...body.map(r=>r.length), 0);
+    for(let i=0;i<cols;i++){
+      const vals = body.map(r=>String(r[i]||'').trim()).filter(Boolean);
+      if(!vals.length) continue;
+      const allNum = vals.every(v=>/^\d{1,3}$/.test(v));
+      if(allNum && no<0){ no = i; continue; }
+      if(!allNum && a<0){ a = i; continue; }
+    }
+  }
+  if(a < 0) a = 0;
+  return { no, a, b };
+}
+
+/* 1行から「番号」と「呼び方」を作る */
+function csvRowToStudent(r, opt){
+  const raw = (i)=> i>=0 ? String(r[i]||'').trim() : '';
+  let family = raw(opt.a), given = raw(opt.b);
+  if(!given){
+    // 姓名が1列にまとまっている場合は空白で割る
+    const parts = family.split(/[\s　]+/).filter(Boolean);
+    if(parts.length >= 2){ family = parts[0]; given = parts.slice(1).join(''); }
+    else { family = parts[0] || ''; given = ''; }
+  }
+  let base;
+  if(opt.use === 'given')       base = given || family;
+  else if(opt.use === 'family') base = family;
+  else                          base = family + given;
+  return { no: raw(opt.no), name: base ? base + opt.suffix : '' };
+}
+
+function csvOpts(){
+  return {
+    no: +document.getElementById('csvColNo').value,
+    a:  +document.getElementById('csvColA').value,
+    b:  +document.getElementById('csvColB').value,
+    use: document.getElementById('csvUse').value,
+    suffix: document.getElementById('csvSuffix').value,
+    header: document.getElementById('csvHeader').checked,
+  };
+}
+
+function csvBody(){
+  const o = csvOpts();
+  return (o.header ? csvState.rows.slice(1) : csvState.rows)
+    .map(r=>csvRowToStudent(r, o))
+    .filter(s=>s.name);           // 名前が作れない行は取り込まない
+}
+
+function csvRenderPreview(){
+  const o = csvOpts();
+  const src = o.header ? csvState.rows.slice(1) : csvState.rows;
+  let html = '<table><thead><tr><th>番号</th><th>名前（名簿に表示されます）</th><th>もとの行</th></tr></thead><tbody>';
+  src.slice(0,12).forEach(r=>{
+    const s = csvRowToStudent(r, o);
+    html += `<tr class="${s.name?'':'skip'}"><td class="num"></td><td></td><td class="raw"></td></tr>`;
+  });
+  html += '</tbody></table>';
+  const box = document.getElementById('csvPrev');
+  box.innerHTML = html;
+  // 名簿の文字はそのまま表示する（HTMLとして解釈させない）
+  box.querySelectorAll('tbody tr').forEach((tr,i)=>{
+    const s = csvRowToStudent(src[i], o);
+    tr.children[0].textContent = s.no || '—';
+    tr.children[1].textContent = s.name || '（取り込めません）';
+    tr.children[2].textContent = src[i].join(' / ').slice(0,40);
+  });
+  const n = csvBody().length;
+  const skipped = src.length - n;
+  document.getElementById('csvWarn').innerHTML =
+    `取り込む児童は <b>${n}人</b> です。`
+    + (skipped ? `（名前が作れない ${skipped}行 は飛ばします）` : '')
+    + (src.length > 12 ? `　※上の表は先頭12行だけの確認用です。` : '')
+    + (n > 45 ? `<br><b>45人を超えています。</b>列の選び方が合っているか確かめてください。` : '');
+}
+
+function openCsvModal(rows, enc, fname){
+  csvState.rows = rows; csvState.enc = enc; csvState.file = fname;
+  const cols = Math.max(...rows.map(r=>r.length));
+  const hasHeader = looksLikeHeader(rows[0]);
+  document.getElementById('csvHeader').checked = hasHeader;
+
+  const head = hasHeader ? rows[0] : null;
+  const label = i => `${i+1}列目` + (head && String(head[i]||'').trim() ? `（${String(head[i]).trim()}）` : '');
+  const fill = (id, allowNone) => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = (allowNone ? '<option value="-1">なし</option>' : '')
+      + Array.from({length:cols}, (_,i)=>`<option value="${i}"></option>`).join('');
+    [...sel.options].forEach(op=>{ if(+op.value>=0) op.textContent = label(+op.value); });
+  };
+  fill('csvColNo', true); fill('csvColA', false); fill('csvColB', true);
+
+  const g = guessCols(rows, hasHeader);
+  document.getElementById('csvColNo').value = g.no;
+  document.getElementById('csvColA').value  = Math.max(0, g.a);
+  document.getElementById('csvColB').value  = g.b;
+  document.getElementById('csvUse').value   = 'full';
+
+  document.getElementById('csvInfo').textContent =
+    `${fname}　文字コード：${enc}　${rows.length}行 × ${cols}列　`
+    + `列の選び方が合っているか、下の「名前」で確かめてください。`;
+  csvRenderPreview();
+  document.getElementById('csvModal').style.display = 'flex';
+}
+
+function closeCsvModal(){
+  document.getElementById('csvModal').style.display = 'none';
+  csvState.rows = [];
+}
+
+function csvApply(mode){
+  const list = csvBody();
+  if(!list.length){
+    alert("取り込める行がありませんでした。\n「氏名（姓）の列」の選び方を確かめてください。");
+    return;
+  }
+  if(mode === 'replace'){
+    const cur = roster.students.filter(s=>s.out).length;
+    const msg = `${list.length}人の名簿で学級をつくり直します。\n`
+      + `いま入力してある${roster.students.length}人分は消えます。`
+      + (cur ? `\n\n所見文ができている児童が ${cur}人 います。本当によろしいですか。` : '\nよろしいですか。');
+    if(!confirm(msg)) return;
+    roster.students = list.map(s=>{
+      const rec = blankStudent();
+      rec.no = s.no; rec.name = s.name;
+      return rec;
+    });
+    roster.curId = roster.students[0].id;
+    applyRecord(roster.students[0]);
+  }else{
+    captureCurrent();
+    // いまの学級が「まっさらな1人」だけなら、それは置き換えてよい
+    const only = roster.students.length===1 && !roster.students[0].name
+      && !roster.students[0].out
+      && !Object.keys(roster.students[0].sel).length;
+    if(only) roster.students = [];
+    const nums = roster.students.map(s=>parseInt(s.no,10)).filter(n=>!isNaN(n));
+    let next = nums.length ? Math.max(...nums)+1 : 1;
+    list.forEach(s=>{
+      const rec = blankStudent();
+      rec.no = s.no || String(next++);
+      rec.name = s.name;
+      roster.students.push(rec);
+    });
+    if(!roster.students.some(s=>s.id===roster.curId)){
+      roster.curId = roster.students[0].id;
+      applyRecord(roster.students[0]);
+    }
+  }
+  renderRoster();
+  saveNow();
+  closeCsvModal();
+  setSaveState(`名簿から${list.length}人を取り込みました`, true);
+}
+
+document.getElementById('impNamesBtn').addEventListener('click', ()=>{
+  document.getElementById('namesFile').click();
+});
+document.getElementById('namesFile').addEventListener('change', e=>{
+  const f = e.target.files[0];
+  e.target.value = '';
+  if(!f) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    const { text, enc } = decodeText(reader.result);
+    const rows = parseCsv(text);
+    if(!rows.length){
+      alert("このファイルからは名簿を読み取れませんでした。\nCSV形式（カンマ区切り）のファイルを選んでください。");
+      return;
+    }
+    openCsvModal(rows, enc, f.name);
+  };
+  reader.readAsArrayBuffer(f);
+});
+['csvColNo','csvColA','csvColB','csvUse','csvSuffix','csvHeader'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', csvRenderPreview);
+});
+document.getElementById('csvApplyReplace').addEventListener('click', ()=>csvApply('replace'));
+document.getElementById('csvApplyAdd').addEventListener('click', ()=>csvApply('add'));
+document.getElementById('csvCancel').addEventListener('click', closeCsvModal);
+document.getElementById('csvModal').addEventListener('click', e=>{
+  if(e.target.id === 'csvModal') closeCsvModal();
+});
+document.addEventListener('keydown', e=>{
+  if(e.key === 'Escape' && document.getElementById('csvModal').style.display !== 'none') closeCsvModal();
+});
+
+/* ---- 起動 ---- */
+(function boot(){
+  let data = null;
+  try{
+    data = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
+    if(!data) data = JSON.parse(localStorage.getItem(STORE_KEY_OLD) || "null");  // v1.9 からの引き継ぎ
+  }catch(e){}
+  const restored = loadData(data);
+  if(!restored){
+    roster.students = [blankStudent()];
+    roster.students[0].no = "1";
+    roster.curId = roster.students[0].id;
+    applyRecord(roster.students[0]);
+    renderRoster();
+  }
+  ready = true;
+  setSaveState(restored
+    ? `前回の続きを読み込みました（${roster.students.length}人分）`
+    : "オン（入力すると自動で保存します）", true);
+})();
+
+</script>
+</body>
+</html>
