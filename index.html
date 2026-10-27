@@ -202,6 +202,19 @@
 .csvprev td.num{color:var(--sub); font-size:12px; width:60px;}
 .csvprev td.raw{color:var(--sub); font-size:12px;}
 .csvprev tr.skip td{opacity:.45; text-decoration:line-through;}
+/* ---- 評価一覧の読み込みダイアログ（v1.23） ---- */
+.evalmap{font-size:12px; color:var(--sub); margin:10px 0 0; line-height:1.6;}
+.evalmap b{color:var(--ink);}
+.csvprev td.cnt{text-align:right; width:64px; font-variant-numeric:tabular-nums;}
+.csvprev td.cnt.can{color:var(--accent); font-weight:700;}
+.csvprev td.cnt.grow{color:var(--grow); font-weight:700;}
+.csvprev td .gaiji{display:block; font-size:11px; color:var(--warn);}
+.csvprev td.iss{color:var(--warn); font-size:12px; white-space:nowrap;}
+.csvprev td.iss.dim{color:var(--sub);}
+/* C4thからの出力手順（v1.24） */
+.c4th{font-size:12px; color:var(--ink); background:var(--accent-soft); border:1px solid #c9dccf;
+  border-radius:8px; padding:8px 12px; margin:8px 0 0; line-height:1.6;}
+.c4th ol{margin:4px 0 0; padding-left:1.4em;}
 </style>
 </head>
 <body>
@@ -237,8 +250,21 @@
         <button class="btn ghost" id="impNamesBtn">名簿CSVを読み込む</button>
       </div>
       <p class="hint">名簿CSVは校務システムやExcelから出したものが使えます（Shift_JIS・UTF-8 のどちらでも可）。取り込む前に確認画面が出ます。出席番号と児童の名前（名簿の表示とCSV書き出しに使います）は、ここでの取り込みで決まります。所見文の文頭に児童の呼称は付きません。「＋ 児童を追加」で手入力した児童は、番号は自動採番、名前は空欄になります。</p>
+      <div class="btnrow" style="margin-top:12px;">
+        <button class="btn ghost" id="impEvalBtn" style="flex:1;">評価一覧（Excel）から観点を選ぶ</button>
+      </div>
+      <p class="hint">校務システムから出した「学習の記録（ABC）・行動の記録（○・△）」の一覧（.xls または CSV）を読み込み、各児童の観点に自動でチェックを付けます。Aと○は「できる」、△は「課題」になります（課題は1人1件まで）。名簿がまだなければ、この一覧から学級もつくれます。</p>
+      <div class="c4th">
+        <b>C4thでの出力方法</b>
+        <ol>
+          <li>「児童生徒」→「成績出力」→「成績Excel出力」を開く</li>
+          <li>追加する項目は「通年　必修観点」と「通年　行動の記録」</li>
+          <li>出力方法は「学年毎にシートを分ける」を選択</li>
+        </ol>
+      </div>
       <p class="savestate ok" id="saveState">自動保存：オン</p>
       <input type="file" id="namesFile" accept=".csv,.txt,text/csv" style="display:none;">
+      <input type="file" id="evalFile" accept=".xls,.csv,.txt,application/vnd.ms-excel,text/csv" style="display:none;">
     </div>
 
     <div class="panel" style="margin-top:18px;">
@@ -383,12 +409,68 @@
   </div>
 </div>
 
+<div class="modal" id="evalModal" style="display:none;">
+  <div class="modalbox">
+    <h3>評価一覧の読み込み（観点の自動選択）</h3>
+    <p class="hint" id="evalInfo" style="margin:0;"></p>
+    <div class="csvopts">
+      <label>取り込み方
+        <select id="evalMode">
+          <option value="match">いまの学級に、出席番号で照合して取り込む</option>
+          <option value="create">この一覧の名簿で学級をつくり直す</option>
+        </select>
+      </label>
+      <label id="evalMergeWrap">選択済みの項目
+        <select id="evalMerge">
+          <option value="add">足し合わせる（選んである項目はそのまま）</option>
+          <option value="replace">置き換える（対応する項目は一覧の内容にする）</option>
+        </select>
+      </label>
+      <label>「C」の扱い
+        <select id="evalC">
+          <option value="none">選択しない</option>
+          <option value="grow">「伸長中」にする</option>
+        </select>
+      </label>
+      <span id="evalNameOpts" style="display:contents;">
+        <label>名前に使う部分
+          <select id="evalUse">
+            <option value="full">姓と名</option>
+            <option value="given">名だけ</option>
+            <option value="family">姓だけ</option>
+          </select>
+        </label>
+        <label>敬称
+          <select id="evalSuffix">
+            <option value="さん" selected>さん</option>
+            <option value="くん">くん</option>
+            <option value="">付けない</option>
+          </select>
+        </label>
+      </span>
+    </div>
+    <p class="evalmap" id="evalMap"></p>
+    <div class="csvprev" id="evalPrev"></div>
+    <p class="hint" id="evalWarn" style="margin:8px 0 0;"></p>
+    <div class="btnrow" style="margin-top:14px;">
+      <button class="btn primary" id="evalApply">取り込む</button>
+      <button class="btn ghost" id="evalCancel">キャンセル</button>
+    </div>
+    <div class="note" style="margin-top:12px;">
+      <b>A</b>と<b>○</b>は「できる」、<b>△</b>は「課題」として選びます。B・空欄の観点は選びません（Cは上の設定に従います）。課題は1人1件までのため、<b>△が2つ以上ある児童には自動で付けません</b>（一覧の「課題」欄を見て担任が選んでください）。課題の文例がない観点（創意工夫・生命尊重・自然愛護・勤労・奉仕・公正・公平）の△も選びません。すでに課題を付けてある児童にも付けません。
+      取り込んだあとも、各児童の観点と下書きは担任が確認してください。
+      名前は名簿の表示とCSV書き出しに使います（所見文の文頭には付きません）。「この一覧の名簿で学級をつくり直す」を選ぶと、<b>いま入力してある児童はすべて消えます。</b>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "v1.24";
-const APP_DATE    = "2026-10-23";
+const APP_VERSION = "v1.25";
+const APP_DATE    = "2026-10-27";
 const APP_HISTORY = [
+  {v:"v1.25", d:"2026-10-27", note:"評価一覧（校務システムC4thの「成績Excel出力」で出した、学習の記録ABC・行動の記録○△の一覧。.xls または CSV）を読み込み、各児童の観点を自動で選択する機能を追加した。(1) .xls（Excel 97-2003形式・BIFF8）を読む最小限の処理（複合ファイル・共有文字列表・文字列/数値セル）を外部の部品なしでアプリ内に実装した。単一HTML・オフライン動作を保つため。CSVも読める。.xlsx は保存し直しを案内する。(2) 列は位置ではなく見出し（「番号」「氏名」の行と、その上の教科名の行）で特定し、教科名＋観点名を学年帯ごとの教科別カテゴリの3項目（_c/_s/_t）に対応させる。学年帯は「学年」列から判定する。(3) 行動の記録10項目は対応表（BEHAVIOR_MAP）で学年共通の観点に対応させる。『生命尊重・自然愛護』に当たる項目がなかったため、生活・行動面に s10 を新設した（課題は持たない）。(4) A・○→できる、B・空欄→選ばない、Cは既定で選ばない（取り込み画面で『伸長中』にもできる）。△→課題。課題は1人1件までのため、△がちょうど1つの児童だけ付け、△が2つ以上の児童には自動で付けない（確認画面に件数を表示）。課題の文例を持たない観点（t3・s10・t9・r2）の△は選ばない。すでに課題がある児童にも付けない。3/2/1 表記の評価も読める。(5) 照合は出席番号で行う（C4thの氏名には外字が含まれることがあるため）。取り込み方は『いまの学級に番号で照合』（足し合わせる／置き換える）と『この一覧の名簿で学級をつくり直す』。取り込み前に確認画面を必ず出す。(6) ボタンの近くにC4thでの出力手順（児童生徒→成績出力→成績Excel出力、追加する項目は『通年　必修観点』と『通年　行動の記録』、出力方法は『学年毎にシートを分ける』）を表示した。(7) 取り込みはチェックを付けるところまでで、下書きへの採用は従来どおり（字数による自動判定と担任の出し入れ）。選択が変わった児童は手で決めた顔ぶれ（manual）を解除する。"},
   {v:"v1.24", d:"2026-10-23", note:"所見文の文の並びを領域ごとにまとめた。v1.23までは「できる」→「伸長中」→「課題」の段ごとに全カテゴリを並べていたため、学習面→生活面→学習面のように同じ領域の文が離れて生成されていた。(1) 項目を学習系（「学習面」と教科別カテゴリ）と生活系（生活・行動面／健康・体力面／特別活動・係活動／人とのかかわり／行事別）に分け、学習系→生活系の順に並べる。領域の中では「できる」→「伸長中」の順。(2) 「課題」は従来どおり所見全体の最後に置く。(3) can→grow の切れ目（「また、」または因果文化、v1.18）は領域ごとに判定する。直前が別の領域の文の場合は因果化せず「また、」でつなぐ。can→can の因果化（v1.21）も同じ領域の can どうしに限った。(4) 字数による採用判定もこの並び順で行う。"},
   {v:"v1.23", d:"2026-10-23", note:"所見文の文頭に補っていた児童の呼称（「〇〇さんは、」）を付けないようにした。buildText()の3か所（課題の1文目、can→grow因果文の前半、先頭の文）から呼称付与を削除。児童名（state.name）は名簿の表示とCSV書き出し用に残し、名簿CSV取り込み画面の文言を「名前」基準に改めた（敬称の選択は名簿表示用として残す）。DBの文例には児童名を含めない方針も確認済み（文例作成時は児童名を入れない）。"},
   {v:"v1.22", d:"2026-09-16", note:"「基本設定」パネルの「文末表現のばらつき」（そろえる／変化をつける）の選択欄を削除し、常に「変化をつける」の動作に固定した。「そろえる」を選ぶ運用がほぼ想定されないため、選択肢自体をなくして画面を簡潔にした。(1) UI（varSegのボタン2つとヒント文）を削除。(2) state.variantを廃止し、getFragment()・can→can因果化（v1.21）内の文末バリアント計算から`state.variant ? (idx+seed) : 0`の分岐を外し、常に`idx+seed`を使う（＝常時ばらつきあり）。(3) 「言い回しを変えられません」の案内文から「そろえる」になっている場合の文言を削除し、常に「課題の文は形が決まっている」旨の文言のみ表示する。(4) 児童レコード（blankStudent／captureCurrent／applyRecord／normalizeStudent）からvariantフィールドの読み書きを削除。旧バージョンで保存したファイル（variant:falseを含む）を読み込んでも、単に無視されるだけで動作に影響しない。"},
@@ -519,6 +601,11 @@ const DB = [
     grow:"その日の予定を確かめてから動く習慣が身についてきました",
     issue:{state:"予定が変わった場面では、次に何をするか迷うことがあります",
            plan: "一日の流れを黒板で確かめる時間をとり、見通しをもてるようにしていきます"}},
+   /* v1.25：行動の記録「生命尊重・自然愛護」に対応する項目がなかったため新設。
+      思いやり（r1）と同じく内面に関わる観点のため、課題（issue）は用意しない。 */
+   {id:"s10", txt:"生き物や植物を大切にし、命あるものに優しく接する",
+    can:"生き物や植物を大切に世話し、命あるものに優しく接する",
+    grow:"生き物や植物を大切にしようとする姿が増えてきました"},
  ]},
  {cat:"健康・体力面", grade:"all", items:[
    {id:"h1", txt:"体育や運動行事に楽しみながら全力で取り組む",
@@ -2615,6 +2702,674 @@ document.getElementById('csvModal').addEventListener('click', e=>{
 });
 document.addEventListener('keydown', e=>{
   if(e.key === 'Escape' && document.getElementById('csvModal').style.display !== 'none') closeCsvModal();
+});
+
+/* ==================================================================
+   評価一覧の読み込み（v1.25）
+   ------------------------------------------------------------------
+   校務システム（C4th）から出した「学習の記録（ABC）・行動の記録（○・△）」の
+   一覧を読み込み、各児童の観点に自動でチェックを付ける。
+   A・○→できる、△→課題（1人1件まで）、Cは設定により伸長中。
+   単一HTML・オフライン動作を保つため、外部の部品は使わず、
+   .xls（Excel 97-2003形式）を読む最小限の処理をここに持つ。
+   ================================================================== */
+
+/* ---- .xls（BIFF8）の読み取り ----
+   .xls は「複合ファイル」という入れ物の中に Workbook というデータ列が入っている。
+   (1) 入れ物を開いて Workbook を取り出し、(2) その中のレコードからセルの値を拾う。
+   拾うのは文字列（共有文字列表・LABEL）と数値（NUMBER・RK・MULRK・数式の結果）だけで、
+   書式や結合セルなどは読まない。評価一覧の取り込みにはそれで足りる。 */
+function xlsParse(buf){
+  const u8 = new Uint8Array(buf);
+  const dv = new DataView(buf);
+  const sig = [0xD0,0xCF,0x11,0xE0,0xA1,0xB1,0x1A,0xE1];
+  if(u8.length < 512 || sig.some((b,i)=>u8[i]!==b)) throw new Error("xls形式ではありません");
+
+  const u16 = o => dv.getUint16(o, true);
+  const u32 = o => dv.getUint32(o, true);
+  const secSize  = 1 << u16(0x1E);
+  const miniSize = 1 << u16(0x20);
+  const nFat     = u32(0x2C);
+  const dirStart = u32(0x30);
+  const cutoff   = u32(0x38);
+  const miniFatStart = u32(0x3C);
+  const difatStart   = u32(0x44);
+  const nDifat       = u32(0x48);
+  const END = 0xFFFFFFFE;
+  // ヘッダーは512バイト（セクタ512バイトの版）。セクタ4096バイトの版ではヘッダーも4096バイト分を占める。
+  const hdr = secSize === 4096 ? 4096 : 512;
+  const offOf = s => hdr + s * secSize;
+
+  // FAT（セクタのつながり表）を組み立てる
+  const fatSecs = [];
+  for(let i=0;i<109 && fatSecs.length<nFat;i++){
+    const s = u32(0x4C + i*4);
+    if(s < 0xFFFFFFFA) fatSecs.push(s);
+  }
+  let d = difatStart, guard = 0;
+  while(fatSecs.length < nFat && d < 0xFFFFFFFA && guard++ < 10000){
+    const base = offOf(d), per = secSize/4 - 1;
+    for(let i=0;i<per && fatSecs.length<nFat;i++){
+      const s = u32(base + i*4);
+      if(s < 0xFFFFFFFA) fatSecs.push(s);
+    }
+    d = u32(base + per*4);
+  }
+  const fat = [];
+  fatSecs.forEach(fs=>{
+    const base = offOf(fs);
+    for(let i=0;i<secSize/4;i++) fat.push(u32(base + i*4));
+  });
+
+  const chain = (start, table)=>{
+    const out = []; let s = start, g = 0;
+    while(s !== END && s < 0xFFFFFFFA && g++ < 1000000){
+      out.push(s);
+      if(s >= table.length) break;
+      s = table[s];
+    }
+    return out;
+  };
+  const readChain = (start, size)=>{
+    const secs = chain(start, fat);
+    const out = new Uint8Array(secs.length * secSize);
+    secs.forEach((s,i)=>{
+      const o = offOf(s);
+      out.set(u8.subarray(o, Math.min(o + secSize, u8.length)), i*secSize);
+    });
+    return size == null ? out : out.subarray(0, Math.min(size, out.length));
+  };
+
+  // ディレクトリ（入れ物の目次）
+  const dirBytes = readChain(dirStart);
+  const ddv = new DataView(dirBytes.buffer, dirBytes.byteOffset, dirBytes.byteLength);
+  const entries = [];
+  for(let o=0; o+128<=dirBytes.length; o+=128){
+    const nlen = ddv.getUint16(o+0x40, true);
+    let name = "";
+    for(let i=0;i+1<nlen-1 && i<64;i+=2) name += String.fromCharCode(ddv.getUint16(o+i, true));
+    entries.push({ name, type:dirBytes[o+0x42],
+                   start:ddv.getUint32(o+0x74, true), size:ddv.getUint32(o+0x78, true) });
+  }
+  const root = entries[0];
+  const wb = entries.find(e=>e.type===2 && (e.name==="Workbook" || e.name==="Book"));
+  if(!wb) throw new Error("Workbook が見つかりません");
+  if(wb.name === "Book") throw new Error("古い形式（Excel 5.0/95）のため読めません");
+
+  let data;
+  if(wb.size < cutoff){
+    // 小さいデータ列は「ミニストリーム」に64バイト単位で入っている
+    const ministream = readChain(root.start, root.size);
+    const mfBytes = readChain(miniFatStart);
+    const mdv = new DataView(mfBytes.buffer, mfBytes.byteOffset, mfBytes.byteLength);
+    const miniFat = [];
+    for(let i=0;i+4<=mfBytes.length;i+=4) miniFat.push(mdv.getUint32(i, true));
+    const secs = chain(wb.start, miniFat);
+    data = new Uint8Array(secs.length * miniSize);
+    secs.forEach((s,i)=>data.set(ministream.subarray(s*miniSize, s*miniSize+miniSize), i*miniSize));
+    data = data.subarray(0, wb.size);
+  }else{
+    data = readChain(wb.start, wb.size);
+  }
+  return biffParse(data);
+}
+
+/* BIFF8 のレコード列からシートごとのセル値（文字列の2次元配列）を取り出す */
+function biffParse(data){
+  const dv = new DataView(data.buffer, data.byteOffset, data.byteLength);
+  const u16 = o => dv.getUint16(o, true);
+  const u32 = o => dv.getUint32(o, true);
+
+  // 1パス目：レコードの一覧を作る
+  const recs = [];
+  for(let p=0; p+4<=data.length; ){
+    const type = u16(p), len = u16(p+2);
+    recs.push({ type, off:p+4, len });
+    p += 4 + len;
+  }
+
+  // 共有文字列表（SST）。CONTINUE レコードにまたがって続くことがある。
+  let sst = [];
+  const iSst = recs.findIndex(r=>r.type===0x00FC);
+  if(iSst >= 0){
+    const segs = [recs[iSst]];
+    for(let j=iSst+1; j<recs.length && recs[j].type===0x003C; j++) segs.push(recs[j]);
+    sst = sstParse(data, segs);
+  }
+
+  // シートの一覧（BOUNDSHEET）
+  const sheets = [];
+  recs.forEach(r=>{
+    if(r.type !== 0x0085) return;
+    const pos = u32(r.off), kind = data[r.off+5];
+    const cch = data[r.off+6], hi = data[r.off+7] & 1;
+    let name = "";
+    for(let i=0;i<cch;i++){
+      name += hi ? String.fromCharCode(u16(r.off+8+i*2)) : String.fromCharCode(data[r.off+8+i]);
+    }
+    if(kind === 0) sheets.push({ name, pos });   // 0 = ワークシート
+  });
+
+  const rk = v=>{
+    let n;
+    if(v & 2){ n = (v | 0) >> 2; }
+    else{
+      const b = new DataView(new ArrayBuffer(8));
+      b.setUint32(4, v & 0xFFFFFFFC, true); b.setUint32(0, 0, true);
+      n = b.getFloat64(0, true);
+    }
+    return (v & 1) ? n / 100 : n;
+  };
+  const num = n => Number.isInteger(n) ? String(n) : String(+n.toFixed(10));
+
+  return sheets.map(sh=>{
+    const rows = [];
+    const put = (r,c,v)=>{ (rows[r] || (rows[r] = []))[c] = v; };
+    let k = recs.findIndex(r=>r.off-4 === sh.pos);
+    if(k < 0) return { name:sh.name, rows:[] };
+    let pendingStr = null;
+    for(k=k+1; k<recs.length; k++){
+      const r = recs[k], o = r.off;
+      if(r.type === 0x000A) break;                       // EOF
+      if(r.type === 0x00FD){ put(u16(o), u16(o+2), sst[u32(o+6)] ?? ""); }          // LABELSST
+      else if(r.type === 0x0203){ put(u16(o), u16(o+2), num(dv.getFloat64(o+6, true))); } // NUMBER
+      else if(r.type === 0x027E){ put(u16(o), u16(o+2), num(rk(u32(o+6)))); }        // RK
+      else if(r.type === 0x00BD){                                                    // MULRK
+        const row = u16(o), c0 = u16(o+2), n = (r.len - 6) / 6;
+        for(let i=0;i<n;i++) put(row, c0+i, num(rk(u32(o+4+i*6+2))));
+      }
+      else if(r.type === 0x0204){                                                    // LABEL
+        const cch = u16(o+6), hi = data[o+8] & 1;
+        let s = "";
+        for(let i=0;i<cch;i++) s += hi ? String.fromCharCode(u16(o+9+i*2)) : String.fromCharCode(data[o+9+i]);
+        put(u16(o), u16(o+2), s);
+      }
+      else if(r.type === 0x0006){                                                    // FORMULA（結果だけ使う）
+        const row = u16(o), col = u16(o+2);
+        if(u16(o+12) === 0xFFFF){
+          if(data[o+6] === 0) pendingStr = [row, col];   // 結果の文字列は直後の STRING レコードにある
+        }else{
+          put(row, col, num(dv.getFloat64(o+6, true)));
+        }
+      }
+      else if(r.type === 0x0207 && pendingStr){                                      // STRING
+        const cch = u16(o), hi = data[o+2] & 1;
+        let s = "";
+        for(let i=0;i<cch;i++) s += hi ? String.fromCharCode(u16(o+3+i*2)) : String.fromCharCode(data[o+3+i]);
+        put(pendingStr[0], pendingStr[1], s);
+        pendingStr = null;
+      }
+    }
+    // 穴あきの配列を、空文字で埋めた長方形にそろえる
+    const width = Math.max(0, ...rows.filter(Boolean).map(r=>r.length));
+    const out = [];
+    for(let i=0;i<rows.length;i++){
+      const r = rows[i] || [];
+      out.push(Array.from({length:width}, (_,j)=> r[j]==null ? "" : String(r[j])));
+    }
+    return { name:sh.name, rows:out };
+  });
+}
+
+/* 共有文字列表を読む。文字列の途中で CONTINUE レコードに切り替わる場合、
+   切り替わった先の先頭1バイトが「2バイト文字かどうか」の印になっている点に注意する。 */
+function sstParse(data, segs){
+  let si = 0, pos = segs[0].off, end = segs[0].off + segs[0].len;
+  const next = ()=>{ si++; if(si >= segs.length) throw new Error("SST"); pos = segs[si].off; end = pos + segs[si].len; };
+  const byte = ()=>{ if(pos >= end) next(); return data[pos++]; };
+  const u16 = ()=> byte() | (byte() << 8);
+  const u32 = ()=> (u16() | (u16() << 16)) >>> 0;
+  const skip = n=>{ while(n > 0){ if(pos >= end) next(); const k = Math.min(n, end-pos); pos += k; n -= k; } };
+
+  u32();                    // 総数（使わない）
+  const unique = u32();
+  const out = [];
+  try{
+    for(let i=0;i<unique;i++){
+      const cch = u16();
+      const flags = byte();
+      let hi = flags & 1;
+      const runs = (flags & 8) ? u16() : 0;
+      const ext  = (flags & 4) ? u32() : 0;
+      let s = "", left = cch;
+      while(left > 0){
+        if(pos >= end){ next(); hi = data[pos++] & 1; }
+        const avail = hi ? Math.floor((end-pos)/2) : (end-pos);
+        const k = Math.min(left, avail);
+        for(let j=0;j<k;j++){
+          if(hi){ s += String.fromCharCode(data[pos] | (data[pos+1] << 8)); pos += 2; }
+          else  { s += String.fromCharCode(data[pos]); pos += 1; }
+        }
+        left -= k;
+      }
+      skip(runs * 4);
+      skip(ext);
+      out.push(s);
+    }
+  }catch(e){ /* 途中で壊れていたら、読めた分だけ使う */ }
+  return out;
+}
+
+/* ---- 一覧の見出しを読み解く ---- */
+
+/* 行動の記録10項目 → アプリの学年共通の観点（v1.25で決めた対応表）。
+   1項目に2つの観点を当てているものは、両方にチェックを付ける。 */
+const BEHAVIOR_MAP = {
+  "基本的な生活習慣":   ["s1","s3"],
+  "健康・体力の向上":   ["h1"],
+  "自主・自律":         ["s9","t2"],
+  "責任感":             ["t1"],
+  "創意工夫":           ["t3"],
+  "思いやり・協力":     ["r1","t8"],
+  "生命尊重・自然愛護": ["s10"],
+  "勤労・奉仕":         ["t9"],
+  "公正・公平":         ["r2"],
+  "公共心・公徳心":     ["s7"],
+};
+/* 校務システムと表記が違う教科名の読み替え */
+const SUBJECT_ALIAS = { "図工":"図画工作", "家庭科":"家庭", "道徳":"特別の教科　道徳", "総合":"総合的な学習の時間" };
+
+function evNorm(v){
+  return String(v==null ? "" : v).normalize('NFKC').replace(/[\s\u3000]+/g, "").trim();
+}
+function bandOfYear(n){
+  return n<=2 ? 'low' : n<=4 ? 'mid' : 'high';
+}
+function yearOf(text){
+  const m = evNorm(text).match(/([1-6])年/);
+  return m ? +m[1] : 0;
+}
+/* 教科名＋観点の記号（c/s/t）＋学年帯 → 観点ID。見つからなければ null。 */
+function subjectItemId(subj, code, band){
+  const name = SUBJECT_ALIAS[subj] || subj;
+  const g = DB.find(x=>x.cat===name && x.grade===band);
+  if(!g) return null;
+  const it = g.items.find(i=>i.id.endsWith('_' + code));
+  return it ? it.id : null;
+}
+
+/* 値の読み取り。ABC は 3/2/1 で出てくることもあるので両方受け付ける。 */
+function evalABC(v){
+  const t = evNorm(v).toUpperCase();
+  if(!t) return "";
+  if(t==="A" || t==="3") return "A";
+  if(t==="B" || t==="2") return "B";
+  if(t==="C" || t==="1") return "C";
+  return "?";
+}
+function evalMark(v){
+  const t = evNorm(v);
+  if(!t || t==="・" || t==="-" || t==="－") return "";
+  if(/^[○〇◯◎]$/.test(t)) return "o";
+  if(/^[△▲]$/.test(t)) return "t";
+  return "?";
+}
+
+/* シート1枚を読み解く。見出し行（「番号」と「氏名」がある行）が無ければ null。 */
+function evalAnalyze(rows){
+  const hi = rows.findIndex(r=>r.some(v=>evNorm(v)==="番号") && r.some(v=>/氏名|名前/.test(evNorm(v))));
+  if(hi < 0) return null;
+  const head = rows[hi].map(evNorm);
+  const colNo   = head.indexOf("番号");
+  const colName = head.findIndex(v=>/氏名|名前/.test(v));
+  const colYear = head.indexOf("学年");
+  const colKumi = head.indexOf("組");
+  const meta = new Set([colNo, colName, colYear, colKumi, head.indexOf("生徒管理コード")]);
+
+  // 教科名の行（見出しのすぐ上）。結合セルは先頭にしか値が無いので右へ引き延ばす。
+  const subjRow = hi>0 ? rows[hi-1].map(evNorm) : [];
+  const subjOf = [];
+  let cur = "";
+  for(let c=0;c<head.length;c++){ if(subjRow[c]) cur = subjRow[c]; subjOf[c] = cur; }
+  const title = rows.slice(0, Math.max(0, hi-1)).map(r=>r.join(" ")).join(" ");
+  const titleYear = yearOf(title);
+
+  // 列の意味づけ
+  const cols = [];       // {c, kind:'gaku'|'kodo', subj, code, label, ids(kodo)}
+  const unmapped = [];
+  head.forEach((h,c)=>{
+    if(meta.has(c) || !h) return;
+    const base = h.replace(/[0-9]+$/, "");
+    const code = /知識/.test(base) ? 'c' : /思考/.test(base) ? 's' : /主体/.test(base) ? 't' : null;
+    if(code && subjOf[c] && subjOf[c] !== "行動の記録"){
+      cols.push({ c, kind:'gaku', subj:subjOf[c], code, label:subjOf[c] + "（" + base + "）" });
+    }else if(BEHAVIOR_MAP[base]){
+      cols.push({ c, kind:'kodo', ids:BEHAVIOR_MAP[base], label:base });
+    }else if(/評定/.test(base)){
+      // 評定は使わない（観点別の評価だけで選ぶ）
+    }else{
+      unmapped.push((subjOf[c] && subjOf[c]!==base ? subjOf[c] + "・" : "") + base);
+    }
+  });
+
+  const students = [];
+  for(let r=hi+1; r<rows.length; r++){
+    const row = rows[r] || [];
+    const name = String(row[colName]||"").trim();
+    const noRaw = evNorm(row[colNo]);
+    if(!name || !/^[0-9]+$/.test(noRaw)) continue;
+    const year = (colYear>=0 ? yearOf(row[colYear]) : 0) || titleYear;
+    const kumi = colKumi>=0 ? evNorm(row[colKumi]) : "";
+    students.push({ no:String(parseInt(noRaw,10)), name, year, kumi,
+                    cells: cols.map(k=>row[k.c]) });
+  }
+  return { cols, unmapped, students, titleYear };
+}
+
+/* 1人分の評価 → 選択（Map<id, lvl>）。値の読めないセルは数える。 */
+function evalMarks(ana, st, optC){
+  const band = st.year ? bandOfYear(st.year) : state.grade;
+  const marks = new Map();
+  const missing = new Set();   // 学年帯に対応する教科カテゴリが無かった列
+  const tri = [];              // △の付いた行動の記録の列
+  let bad = 0;
+  ana.cols.forEach((k,i)=>{
+    const v = st.cells[i];
+    if(k.kind === 'gaku'){
+      const g = evalABC(v);
+      if(g === "?"){ bad++; return; }
+      const lvl = g==="A" ? 'can' : (g==="C" && optC==="grow") ? 'grow' : null;
+      if(!lvl) return;
+      const id = subjectItemId(k.subj, k.code, band);
+      if(!id){ missing.add(k.subj); return; }
+      marks.set(id, lvl);
+    }else{
+      const m = evalMark(v);
+      if(m === "?"){ bad++; return; }
+      if(m === "o") k.ids.forEach(id=>marks.set(id, 'can'));
+      else if(m === "t") tri.push(k);
+    }
+  });
+  // △は「課題」。課題は所見全体で1件までなので、△がちょうど1つの児童だけ付ける。
+  // △が2つ以上ある児童はどれを伝えるかを担任が決めるべきなので、自動では付けない。
+  // 対応する観点が2つある項目は、課題の文例（issue）を持つほうを使う。持たなければ選ばない。
+  let issue = null;   // {status:'set'|'multi'|'none', label}
+  if(tri.length === 1){
+    const k = tri[0];
+    const id = k.ids.find(x=>HAS_ISSUE.has(x));
+    if(id){ marks.set(id, 'issue'); issue = { status:'set', label:k.label, id }; }
+    else issue = { status:'none', label:k.label };
+  }else if(tri.length > 1){
+    issue = { status:'multi', count:tri.length, label:tri.map(k=>k.label).join('・') };
+  }
+  return { band, marks, bad, missing, issue };
+}
+
+/* 一覧が対象にしている観点IDの全体（「置き換える」で、いったん外す範囲） */
+function evalScopeIds(ana, band){
+  const ids = new Set();
+  ana.cols.forEach(k=>{
+    if(k.kind === 'gaku'){ const id = subjectItemId(k.subj, k.code, band); if(id) ids.add(id); }
+    else k.ids.forEach(id=>ids.add(id));
+  });
+  return ids;
+}
+
+/* 名簿に表示する名前を作る。名簿CSVと同じ考え方。
+   ローマ字の氏名は空白を残してつなぐ。 */
+function evalYobi(full, use, suffix){
+  const parts = String(full).trim().split(/[\s\u3000]+/).filter(Boolean);
+  const latin = /^[\x20-\x7E]+$/.test(full);
+  const family = parts[0] || "";
+  const given  = parts.slice(1).join(latin ? " " : "");
+  let base;
+  if(use === 'given')       base = given || family;
+  else if(use === 'family') base = family;
+  else                      base = latin ? parts.join(" ") : family + given;
+  return base ? base + suffix : "";
+}
+/* 校務システムの外字（私用領域の文字）を含むか */
+const hasGaiji = s => /[\uE000-\uF8FF]/.test(String(s));
+
+/* ---- 取り込み画面 ---- */
+
+const evalState = { ana:null, file:"", sheet:"" };
+
+function evalOpts(){
+  return {
+    mode:  document.getElementById('evalMode').value,
+    merge: document.getElementById('evalMerge').value,
+    c:     document.getElementById('evalC').value,
+    use:   document.getElementById('evalUse').value,
+    suffix:document.getElementById('evalSuffix').value,
+  };
+}
+
+/* 番号で、いまの学級の児童を探す */
+function evalTarget(no){
+  const n = parseInt(no, 10);
+  return roster.students.find(s=>parseInt(s.no,10) === n) || null;
+}
+
+/* いまの学級が「まっさら」か（名前も選択も下書きもない児童だけ） */
+function rosterIsBlank(){
+  return roster.students.every(s=>!(s.name||'').trim() && !s.out && !Object.keys(s.sel||{}).length);
+}
+
+function evalRenderPreview(){
+  const ana = evalState.ana, o = evalOpts();
+  document.getElementById('evalNameOpts').style.display = o.mode==='create' ? 'contents' : 'none';
+  document.getElementById('evalMergeWrap').style.display = o.mode==='match' ? '' : 'none';
+
+  let html = '<table><thead><tr><th>番号</th><th>一覧の氏名</th><th>'
+    + (o.mode==='create' ? '名前（名簿に表示されます）' : '取り込み先（いまの学級）')
+    + '</th><th>できる</th><th>伸長中</th><th>課題（△）</th></tr></thead><tbody>';
+  ana.students.forEach(()=>{ html += '<tr><td class="num"></td><td></td><td></td><td class="cnt can"></td><td class="cnt grow"></td><td class="iss"></td></tr>'; });
+  html += '</tbody></table>';
+  const box = document.getElementById('evalPrev');
+  box.innerHTML = html;
+
+  let total = 0, matched = 0, bad = 0, gaiji = 0, multi = 0, noIssue = 0, hasIss = 0;
+  const missing = new Set();
+  box.querySelectorAll('tbody tr').forEach((tr,i)=>{
+    const st = ana.students[i];
+    const r = evalMarks(ana, st, o.c);
+    const nCan  = [...r.marks.values()].filter(l=>l==='can').length;
+    const nGrow = [...r.marks.values()].filter(l=>l==='grow').length;
+    const nIss  = [...r.marks.values()].filter(l=>l==='issue').length;
+    bad += r.bad; r.missing.forEach(m=>missing.add(m));
+    // 一覧の文字はそのまま表示する（HTMLとして解釈させない）
+    tr.children[0].textContent = st.no;
+    tr.children[1].textContent = st.name;
+    if(o.mode === 'create'){
+      tr.children[2].textContent = evalYobi(st.name, o.use, o.suffix) || '（作れません）';
+      if(hasGaiji(st.name) && o.use !== 'given'){
+        gaiji++;
+        const w = document.createElement('span'); w.className = 'gaiji';
+        w.textContent = '外字を含みます。名前が正しく表示されないことがあります';
+        tr.children[2].appendChild(w);
+      }
+      total += nCan + nGrow + nIss; matched++;
+    }else{
+      const t = evalTarget(st.no);
+      if(t){
+        tr.children[2].textContent = (t.name||'').trim() || '（名前未入力）';
+        total += nCan + nGrow + nIss; matched++;
+        if(nIss && Object.values(t.sel||{}).includes('issue')) hasIss++;
+      }else{
+        tr.children[2].textContent = '（この番号の児童がいません：取り込みません）';
+        tr.className = 'skip';
+      }
+    }
+    tr.children[3].textContent = nCan  || '';
+    tr.children[4].textContent = nGrow || '';
+    // 課題（△）の欄：付けるもの／付けない理由
+    const ic = tr.children[5];
+    if(r.issue){
+      if(r.issue.status === 'set'){ ic.textContent = r.issue.label; }
+      else if(r.issue.status === 'multi'){ ic.textContent = `△${r.issue.count}件：付けません`; ic.title = r.issue.label; ic.classList.add('dim'); multi++; }
+      else { ic.textContent = `${r.issue.label}：文例なし`; ic.classList.add('dim'); noIssue++; }
+    }
+  });
+
+  const msgs = [];
+  if(o.mode === 'create'){
+    msgs.push(`この一覧の <b>${ana.students.length}人</b> で学級をつくり直します。`);
+  }else{
+    msgs.push(`照合できた児童：<b>${matched}人</b>／一覧 ${ana.students.length}人`);
+    const extra = roster.students.filter(s=>!ana.students.some(x=>parseInt(x.no,10)===parseInt(s.no,10))).length;
+    if(extra) msgs.push(`いまの学級のうち ${extra}人 は一覧に番号がないため、変更しません。`);
+    if(matched < ana.students.length) msgs.push(`番号が合わない児童は取り込みません。名簿がまだなければ「この一覧の名簿で学級をつくり直す」を選んでください。`);
+  }
+  if(!total) msgs.push(`<b>評価（A・○・△など）が1つも入っていません。</b>評価を入力してから出し直した一覧か確かめてください。`
+    + (o.mode==='create' ? '（名簿だけを取り込むこともできます）' : ''));
+  if(bad) msgs.push(`<b>読み取れない値が ${bad}か所</b> ありました（A・B・C／3・2・1、○・△以外）。その欄は選びません。`);
+  if(missing.size) msgs.push(`学年帯に対応するカテゴリがない教科：${[...missing].join('・')}（その列は選びません）`);
+  if(multi) msgs.push(`△が2つ以上ある児童が <b>${multi}人</b> います。課題は1人1件までのため自動では付けません。「課題（△）」欄にカーソルを合わせると項目名が出ます。取り込んだあと、担任が1つ選んで「課題」を付けてください。`);
+  if(noIssue) msgs.push(`課題の文例がない観点の△が ${noIssue}人分 あります（選びません）。`);
+  if(hasIss) msgs.push(`すでに課題を付けてある児童が ${hasIss}人 います。その児童には一覧の△による課題を付けません。`);
+  if(gaiji) msgs.push(`外字を含む氏名が ${gaiji}人 います。「名前に使う部分」を「名だけ」にすると避けられる場合があります。`);
+  document.getElementById('evalWarn').innerHTML = msgs.join('<br>');
+
+  const can = o.mode==='create' ? ana.students.length>0 : (matched>0 && total>0);
+  document.getElementById('evalApply').disabled = !can;
+}
+
+function openEvalModal(ana, fname, sheet){
+  evalState.ana = ana; evalState.file = fname; evalState.sheet = sheet;
+  document.getElementById('evalMode').value = rosterIsBlank() ? 'create' : 'match';
+  document.getElementById('evalMerge').value = 'add';
+  document.getElementById('evalC').value = 'none';
+  document.getElementById('evalUse').value = 'full';
+
+  const nG = ana.cols.filter(k=>k.kind==='gaku').length;
+  const nK = ana.cols.filter(k=>k.kind==='kodo').length;
+  const years = [...new Set(ana.students.map(s=>s.year).filter(Boolean))];
+  document.getElementById('evalInfo').textContent =
+    `${fname}` + (sheet ? `（シート「${sheet}」）` : '') + `　${ana.students.length}人分`
+    + (years.length ? `　${years.join('・')}年 → 学年帯「${years.map(y=>gradeLabel(bandOfYear(y))).filter((v,i,a)=>a.indexOf(v)===i).join('・')}」` : '');
+  document.getElementById('evalMap').innerHTML =
+    `読み取った列：学習の記録 <b>${nG}列</b>・行動の記録 <b>${nK}列</b>`
+    + (ana.unmapped.length ? `<br>対応する観点がないため使わない列：${ana.unmapped.map(s=>String(s).replace(/[<>&]/g,'')).join('、')}` : '');
+  evalRenderPreview();
+  document.getElementById('evalModal').style.display = 'flex';
+}
+
+function closeEvalModal(){
+  document.getElementById('evalModal').style.display = 'none';
+  evalState.ana = null;
+}
+
+function evalApply(){
+  const ana = evalState.ana, o = evalOpts();
+  if(!ana) return;
+  let changed = 0, skipIss = 0;
+
+  if(o.mode === 'create'){
+    const cur = roster.students.filter(s=>s.out).length;
+    if(!rosterIsBlank()){
+      const msg = `${ana.students.length}人の一覧で学級をつくり直します。\n`
+        + `いま入力してある${roster.students.length}人分は消えます。`
+        + (cur ? `\n\n所見文ができている児童が ${cur}人 います。本当によろしいですか。` : '\nよろしいですか。');
+      if(!confirm(msg)) return;
+    }
+    roster.students = ana.students.map(st=>{
+      const r = evalMarks(ana, st, o.c);
+      const rec = blankStudent();
+      rec.no = st.no; rec.name = evalYobi(st.name, o.use, o.suffix);
+      rec.grade = r.band;
+      rec.sel = Object.fromEntries(r.marks);
+      if(r.marks.size) changed++;
+      return rec;
+    });
+    // 学級名が空なら、一覧の学年・組から補う
+    const clsEl = document.getElementById('clsInput');
+    const f = ana.students[0];
+    if(!clsEl.value.trim() && f && f.year && f.kumi) clsEl.value = `${f.year}年${f.kumi.replace(/組$/,'')}組`;
+    roster.curId = roster.students[0].id;
+    applyRecord(roster.students[0]);
+  }else{
+    captureCurrent();
+    ana.students.forEach(st=>{
+      const rec = evalTarget(st.no);
+      if(!rec) return;
+      const r = evalMarks(ana, st, o.c);
+      const before = JSON.stringify(rec.sel || {});
+      const sel = Object.assign({}, rec.sel || {});
+      if(o.merge === 'replace'){
+        // 一覧が対象にしている観点の「できる」「伸長中」は、いったん外して一覧の内容にする。
+        // 「課題」は担任が自分で付けたものなので残す。
+        evalScopeIds(ana, r.band).forEach(id=>{ if(sel[id]==='can' || sel[id]==='grow') delete sel[id]; });
+      }
+      // 課題は1件まで。担任がすでに付けた課題があれば、一覧の△による課題は付けない。
+      const already = Object.values(sel).includes('issue');
+      r.marks.forEach((lvl,id)=>{
+        if(lvl === 'issue' && already){ skipIss++; return; }
+        if(o.merge === 'replace'){ if(sel[id] !== 'issue') sel[id] = lvl; }
+        else if(!(id in sel)) sel[id] = lvl;
+      });
+      rec.sel = sel;
+      rec.grade = r.band;
+      rec.pri = (rec.pri||[]).filter(id=>sel[id]);
+      if(JSON.stringify(sel) !== before){
+        // 選択が変わった児童は、手で決めた顔ぶれをやめて自動判定に戻す
+        rec.manual = false; rec.mIn = [];
+        changed++;
+      }
+    });
+    applyRecord(roster.students.find(s=>s.id===roster.curId));
+  }
+  renderRoster();
+  saveNow();
+  closeEvalModal();
+  setSaveState(`評価一覧から観点を選びました（${changed}人分）`
+    + (skipIss ? `。すでに課題がある ${skipIss}人 には△の課題を付けていません` : ''), true);
+}
+
+/* ファイルを開いて、評価一覧として読めるシートを探す */
+function readEvalFile(file){
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    const buf = reader.result;
+    const b = new Uint8Array(buf);
+    let sheets;
+    try{
+      if(b[0]===0xD0 && b[1]===0xCF){
+        sheets = xlsParse(buf);
+      }else if(b[0]===0x50 && b[1]===0x4B){
+        alert("このファイルは .xlsx 形式のため読み込めません。\n"
+          + "Excelで開き、「名前を付けて保存」で「Excel 97-2003 ブック（.xls）」か"
+          + "「CSV（コンマ区切り）」を選んで保存し直してから読み込んでください。");
+        return;
+      }else{
+        const { text } = decodeText(buf);
+        sheets = [{ name:"", rows:parseCsv(text) }];
+      }
+    }catch(e){
+      alert("このファイルは読み込めませんでした。\n校務システムから出した評価一覧（.xls）か、Excelで保存したCSVを選んでください。");
+      return;
+    }
+    for(const sh of sheets){
+      const ana = evalAnalyze(sh.rows);
+      if(ana && ana.students.length && ana.cols.length){
+        openEvalModal(ana, file.name, sheets.length>1 ? sh.name : "");
+        return;
+      }
+    }
+    alert("このファイルからは評価一覧を読み取れませんでした。\n"
+      + "「番号」「氏名」の見出しと、教科名・観点名（知識・技能 など）や行動の記録の項目名が入った一覧を選んでください。");
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+document.getElementById('impEvalBtn').addEventListener('click', ()=>{
+  document.getElementById('evalFile').click();
+});
+document.getElementById('evalFile').addEventListener('change', e=>{
+  const f = e.target.files[0];
+  e.target.value = '';
+  if(f) readEvalFile(f);
+});
+['evalMode','evalMerge','evalC','evalUse','evalSuffix'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', evalRenderPreview);
+});
+document.getElementById('evalApply').addEventListener('click', evalApply);
+document.getElementById('evalCancel').addEventListener('click', closeEvalModal);
+document.getElementById('evalModal').addEventListener('click', e=>{
+  if(e.target.id === 'evalModal') closeEvalModal();
+});
+document.addEventListener('keydown', e=>{
+  if(e.key === 'Escape' && document.getElementById('evalModal').style.display !== 'none') closeEvalModal();
 });
 
 /* ---- 起動 ---- */
