@@ -211,6 +211,8 @@
 .csvprev td .gaiji{display:block; font-size:11px; color:var(--warn);}
 .csvprev td.iss{color:var(--warn); font-size:12px; white-space:nowrap;}
 .csvprev td.iss.dim{color:var(--sub);}
+.csvprev td.star{color:var(--gold, #b8860b); font-size:12px; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.csvprev td.star.dim{color:var(--sub);}
 /* C4thからの出力手順（v1.24） */
 .c4th{font-size:12px; color:var(--ink); background:var(--accent-soft); border:1px solid #c9dccf;
   border-radius:8px; padding:8px 12px; margin:8px 0 0; line-height:1.6;}
@@ -290,6 +292,15 @@
           <input type="number" id="lenInput" value="120" min="30" max="400" style="width:90px;">
           <span class="hint" style="margin:0;">字前後で調整</span>
         </div>
+      </div>
+
+      <div class="field">
+        <label>文のまとめ方</label>
+        <div class="seg" id="joinSeg">
+          <button data-join="off" class="on">1観点＝1文</button>
+          <button data-join="on">2観点をまとめる</button>
+        </div>
+        <p class="hint">同じカテゴリで評価も同じ（できる同士・伸長中同士）観点2件を、「〜し、〜」の形で1文にまとめます。まとめると長くなりすぎる組み合わせはまとめません。</p>
       </div>
 
     </div>
@@ -432,6 +443,12 @@
           <option value="grow">「伸長中」にする</option>
         </select>
       </label>
+      <label>おすすめの★
+        <select id="evalStar">
+          <option value="on">付ける（学習面2・生活面1）</option>
+          <option value="off">付けない</option>
+        </select>
+      </label>
       <span id="evalNameOpts" style="display:contents;">
         <label>名前に使う部分
           <select id="evalUse">
@@ -467,9 +484,11 @@
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "v1.25";
-const APP_DATE    = "2026-10-27";
+const APP_VERSION = "v1.27";
+const APP_DATE    = "2026-11-03";
 const APP_HISTORY = [
+  {v:"v1.27", d:"2026-11-03", note:"評価一覧（C4thの成績Excel出力・CSV）を取り込むとき、児童ごとに「おすすめの★重点」を自動で付けるようにした（取り込み画面の「おすすめの★」で付ける／付けないを選べる。既定は付ける）。(1) 学習系（教科別カテゴリ）から2件、生活系（行動の記録から選んだ学年共通の観点）から1件、いずれも「できる」の観点から選ぶ。(2) 学習系の2件は、v1.26の「2観点をまとめる」で1文にできる組み合わせから選ぶ。教科の文例はほぼすべて読点を含み、v1.26の条件（合計56字以内・読点2個以内）ではまとめられる組み合わせが78組中2組しかなかった。機械的につなぐと読点3個・60字前後の伝わりにくい文になるため、教科ごとに「知識・技能」＋「思考・判断・表現」をまとめた専用の文（PAIR_TEXT、25教科分。読点1個・30〜40字台）を用意し、この組み合わせは字数・読点の制限なしにまとめる（「2観点をまとめる」のときは、取り込みに関係なく手で選んだ場合もこの文になる）。後ろの文例が取り組み方の語（EFFORT_MARK）を含むなど、因果文が優先されてまとまらなくなる組み合わせは除く。★は所見文の先頭に並ぶため、2件は必ず隣り合い、まとめる設定なら1文になる。(3) まとめられる組み合わせが無い児童は、別の教科の「できる」から2件を選ぶ（取り込み画面に「まとめ不可」と出る）。(4) 候補が複数あるときは出席番号で順に振り分け、学級の全員が同じ教科・同じ観点にならないようにした。(5) すでに★を付けてある児童の★は変えない。(6) 取り込み画面の一覧に「おすすめ★」の列を追加した。(7) 「文のまとめ方」が「1観点＝1文」のままなら、取り込み後にその旨を表示する（★の2件は2文のまま出る）。"},
+  {v:"v1.26", d:"2026-11-03", note:"「基本設定」に「文のまとめ方」（1観点＝1文／2観点をまとめる）を追加した（特別支援学級版 SN v1.3 の同名機能の移植）。(1) 「2観点をまとめる」にすると、並び順で隣り合う2件が、同じカテゴリ（DBのグループ）・同じ評価（できる同士／伸長中同士）のとき、1文にまとめる。できる同士は前の文を連用形にして「〜し、〜ことができました。」、伸長中同士は前の文の「〜てきました」を「〜てきており、」（「〜になりました」は「〜になり、」）にして「〜てきており、〜てきました。」とする。(2) まとめるのは、2件の文例の合計が56字以内で、まとめた文の読点が2個以内のときだけ（SN版は52字。通常版の文例は平均25字と長いため少し広げた）。課題はまとめない。(3) 因果文（v1.18 の can→grow、v1.21 の体育系 can→can）が成り立つ箇所では、因果文を優先してまとめない。1文が長くなりすぎるため。(4) まとめた1文は2件どちらの観点にも属する（owners に両方を入れる）ので、「入っている観点」一覧ではどちらからも同じ文が表示される。(5) 字数による採用判定もまとめた後の長さで行う（buildText を共用しているため）。(6) 設定は学級で共通とし、作業ファイル・自動保存に含める。既定は「1観点＝1文」で、従来と同じ出力になる。"},
   {v:"v1.25", d:"2026-10-27", note:"評価一覧（校務システムC4thの「成績Excel出力」で出した、学習の記録ABC・行動の記録○△の一覧。.xls または CSV）を読み込み、各児童の観点を自動で選択する機能を追加した。(1) .xls（Excel 97-2003形式・BIFF8）を読む最小限の処理（複合ファイル・共有文字列表・文字列/数値セル）を外部の部品なしでアプリ内に実装した。単一HTML・オフライン動作を保つため。CSVも読める。.xlsx は保存し直しを案内する。(2) 列は位置ではなく見出し（「番号」「氏名」の行と、その上の教科名の行）で特定し、教科名＋観点名を学年帯ごとの教科別カテゴリの3項目（_c/_s/_t）に対応させる。学年帯は「学年」列から判定する。(3) 行動の記録10項目は対応表（BEHAVIOR_MAP）で学年共通の観点に対応させる。『生命尊重・自然愛護』に当たる項目がなかったため、生活・行動面に s10 を新設した（課題は持たない）。(4) A・○→できる、B・空欄→選ばない、Cは既定で選ばない（取り込み画面で『伸長中』にもできる）。△→課題。課題は1人1件までのため、△がちょうど1つの児童だけ付け、△が2つ以上の児童には自動で付けない（確認画面に件数を表示）。課題の文例を持たない観点（t3・s10・t9・r2）の△は選ばない。すでに課題がある児童にも付けない。3/2/1 表記の評価も読める。(5) 照合は出席番号で行う（C4thの氏名には外字が含まれることがあるため）。取り込み方は『いまの学級に番号で照合』（足し合わせる／置き換える）と『この一覧の名簿で学級をつくり直す』。取り込み前に確認画面を必ず出す。(6) ボタンの近くにC4thでの出力手順（児童生徒→成績出力→成績Excel出力、追加する項目は『通年　必修観点』と『通年　行動の記録』、出力方法は『学年毎にシートを分ける』）を表示した。(7) 取り込みはチェックを付けるところまでで、下書きへの採用は従来どおり（字数による自動判定と担任の出し入れ）。選択が変わった児童は手で決めた顔ぶれ（manual）を解除する。"},
   {v:"v1.24", d:"2026-10-23", note:"所見文の文の並びを領域ごとにまとめた。v1.23までは「できる」→「伸長中」→「課題」の段ごとに全カテゴリを並べていたため、学習面→生活面→学習面のように同じ領域の文が離れて生成されていた。(1) 項目を学習系（「学習面」と教科別カテゴリ）と生活系（生活・行動面／健康・体力面／特別活動・係活動／人とのかかわり／行事別）に分け、学習系→生活系の順に並べる。領域の中では「できる」→「伸長中」の順。(2) 「課題」は従来どおり所見全体の最後に置く。(3) can→grow の切れ目（「また、」または因果文化、v1.18）は領域ごとに判定する。直前が別の領域の文の場合は因果化せず「また、」でつなぐ。can→can の因果化（v1.21）も同じ領域の can どうしに限った。(4) 字数による採用判定もこの並び順で行う。"},
   {v:"v1.23", d:"2026-10-23", note:"所見文の文頭に補っていた児童の呼称（「〇〇さんは、」）を付けないようにした。buildText()の3か所（課題の1文目、can→grow因果文の前半、先頭の文）から呼称付与を削除。児童名（state.name）は名簿の表示とCSV書き出し用に残し、名簿CSV取り込み画面の文言を「名前」基準に改めた（敬称の選択は名簿表示用として残す）。DBの文例には児童名を含めない方針も確認済み（文例作成時は児童名を入れない）。"},
@@ -1449,7 +1468,8 @@ const state = { len:120, sel:new Map(), pri:new Set(),
                 adopted:[], unused:[], seed:0,
                 manual:false, mIn:new Set(),
                 no:"", name:"",   // v1.20：出席番号・呼び方の手入力欄を削除したため、DOM入力の代わりに保持する
-                grade:"low" };   // v1.13：学年帯（low/mid/high）。教科別・行事別の表示と生成に使う。
+                grade:"low",
+                join:false };   // v1.26：2観点を1文にまとめるか（学級で共通の設定）   // v1.13：学年帯（low/mid/high）。教科別・行事別の表示と生成に使う。
 
 /* v1.19：「全学年共通」／「教科別」の大分類切り替え。学年帯とは別のただの表示フィルタで、
    選択（state.sel）や生成には影響しない。児童ごとには保存しない（学年帯のように所見文の
@@ -1675,6 +1695,21 @@ document.getElementById('gradeSeg').addEventListener('click',e=>{
   }
 });
 
+/* 文のまとめ方（v1.26）。学級で共通の設定。
+   手で決めた顔ぶれは変えず、下書きがあれば同じ顔ぶれ（自動判定なら判定し直し）で作り直す。 */
+function syncJoinSeg(){
+  document.querySelectorAll('#joinSeg button').forEach(b=>{
+    b.classList.toggle('on', (b.dataset.join==='on') === state.join);
+  });
+}
+document.getElementById('joinSeg').addEventListener('click',e=>{
+  if(!e.target.dataset.join) return;
+  state.join = e.target.dataset.join === 'on';
+  syncJoinSeg();
+  if(state.adopted.length) runAdoption();
+  save();
+});
+
 /* 文字数セグメント */
 document.getElementById('lenSeg').addEventListener('click',e=>{
   if(e.target.dataset.len){
@@ -1704,6 +1739,97 @@ function getFragment(it, lvl, idx, seed){
   return lvl==='can' ? endCan(it.can, variant) : endGrow(it.grow, variant);
 }
 
+/* ============ 2観点を1文にまとめる（v1.26） ============
+   SN v1.3 の「2項目をまとめる」の移植。隣り合う2件が同じカテゴリ・同じ評価なら、
+   前の文をつなぎの形にして1文にする。
+     できる同士 …「〜し、〜ことができました。」
+     伸長中同士 …「〜てきており、〜てきました。」
+   文例が長いと読みにくい1文になるため、合計字数と読点の数で制限する。 */
+const JOIN_MAX   = 56;   // まとめる2件の文例の合計字数の上限
+const JOIN_COMMA = 2;    // まとめた文に許す読点の数の上限
+const ITEM_GROUP = new Map();
+DB.forEach(g=>g.items.forEach(i=>ITEM_GROUP.set(i.id, g)));
+
+/* 教科の「知識・技能」＋「思考・判断・表現」の2件をまとめるときの専用の文（v1.27）。
+   教科の文例はほぼすべて「〜を理解し、〜する」のように読点を含むため、
+   機械的につなぐと読点3個・60字前後の、意図の伝わりにくい1文になる。
+   そこで教科ごとに、2件の内容を1つの読点で言い切る文を用意した（常体・辞書形）。
+   キーは観点IDから末尾の _c／_s を除いた部分。
+   この表にある組み合わせは字数・読点の制限にかかわらずまとめる。 */
+const PAIR_TEXT = {
+  "k_l_koku": "文字や言葉の決まりを守って正しく読み書きし、物語を読んで思ったことを自分の言葉で表す",
+  "k_l_san": "たし算・ひき算を正確に計算し、図やブロックを使って考え方を説明する",
+  "k_l_sei": "身近な自然や生活を観察し、見つけたことを言葉や絵で分かりやすく表す",
+  "k_l_ong": "正しい音程やリズムで歌い、曲の感じを声や体を使って表現する",
+  "k_l_zuk": "道具を正しく安全に使い、色や形を工夫して表したいことを表す",
+  "k_l_tai": "鉄棒やマット遊びの基本的な動きを身につけ、体の動かし方を工夫する",
+  "k_m_koku": "漢字や語句を正しく使い、文章の組み立てを考えて自分の考えを分かりやすく書く",
+  "k_m_san": "かけ算やわり算の筆算を正確に行い、図や表を使って数量の関係を説明する",
+  "k_m_sha": "地図やグラフから地域の特色を読み取り、地域の仕組みについて自分の考えをまとめる",
+  "k_m_rika": "観察や実験の結果を正確に記録し、予想と比べながら筋道立てて考える",
+  "k_m_ong": "強弱や速さを意識して演奏し、友達と声部を合わせて合唱や合奏に取り組む",
+  "k_m_zuk": "材料や用具の特徴を理解し、それを生かして表したいことを工夫して表す",
+  "k_m_tai": "基本的な運動の技能を身につけ、チームの作戦を考えて動き方を工夫する",
+  "k_m_eig": "簡単な単語や表現を使い、身振りも交えて友達と伝えたいことを伝え合う",
+  "k_m_sog": "調べ学習の進め方を身につけ、調べたことを整理して分かりやすく発表する",
+  "k_h_koku": "語句や表現を適切に使い、文章の要旨をとらえて自分の考えを根拠とともに述べる",
+  "k_h_san": "分数や小数の計算を正確に処理し、図形の性質を根拠に筋道を立てて説明する",
+  "k_h_sha": "複数の資料から社会の仕組みを読み取り、自分の考えを討論の場で伝える",
+  "k_h_rika": "器具を正しく扱って実験を行い、結果から規則性を見いだして考察をまとめる",
+  "k_h_ong": "曲の構成や特徴を理解して演奏し、パートの役割を考えて全体の響きを工夫する",
+  "k_h_zuk": "用具を目的に応じて使い分け、構成や配色を工夫して伝えたいことを表現する",
+  "k_h_kate": "手順を理解して安全に実習に取り組み、生活の課題を解決する方法を工夫して考える",
+  "k_h_tai": "自己の課題に応じた技能を身につけ、仲間と作戦を立ててゲームを進める",
+  "k_h_eig": "必要な情報を聞き取ったり読み取ったりし、自分の考えを簡単な英語で伝える",
+  "k_h_sog": "情報の集め方やまとめ方を身につけ、根拠を示しながら筋道立てて発表する",
+};
+function pairKey(a, b){
+  const m1 = a.it.id.match(/^(.*)_c$/), m2 = b.it.id.match(/^(.*)_s$/);
+  return (m1 && m2 && m1[1]===m2[1] && PAIR_TEXT[m1[1]]) ? m1[1] : null;
+}
+
+/* 常体の動詞終止形 → 連用中止形（例：発言する→発言し／やり遂げる→やり遂げ） */
+function toRenyou(s){
+  const p = toPolite(s);
+  if(!/ます$/.test(p)) return null;
+  const r = p.slice(0, -2);
+  return r.length ? r : null;
+}
+/* 伸長中の文例（敬体・進歩型）をつなぎの形にする。変換できない形なら null。 */
+function growJoinHead(s){
+  s = toPolite(s).replace(/。$/, "");
+  if(/てきました$/.test(s))   return s.replace(/てきました$/,   "てきており");
+  if(/になりました$/.test(s)) return s.replace(/になりました$/, "になり");
+  return null;
+}
+/* a・b をまとめた中核（文末を付ける前の形）を返す。まとめられなければ null。 */
+function joinCore(a, b){
+  if(a.lvl==='can'){
+    const pk = pairKey(a, b);
+    if(pk) return PAIR_TEXT[pk];
+    const h = toRenyou(a.it.can);
+    return h === null ? null : h + "、" + b.it.can;
+  }
+  if(a.lvl==='grow'){
+    const h = growJoinHead(a.it.grow);
+    return h === null ? null : h + "、" + b.it.grow;
+  }
+  return null;
+}
+function canJoin(a, b, force){
+  if((!state.join && !force) || !a || !b) return false;   // force … 設定に関わらず、まとめられる組み合わせかだけを見る（v1.27）
+  if(a.lvl !== b.lvl || (a.lvl!=='can' && a.lvl!=='grow')) return false;
+  if(ITEM_GROUP.get(a.it.id) !== ITEM_GROUP.get(b.it.id)) return false;   // カテゴリをまたがない
+  if(a.lvl==='can' && pairKey(a, b)) return true;                           // 教科の専用の文（v1.27）
+  const fa = a.lvl==='can' ? a.it.can : a.it.grow;
+  const fb = b.lvl==='can' ? b.it.can : b.it.grow;
+  if(!fa || !fb) return false;
+  if([...(fa + fb)].length > JOIN_MAX) return false;
+  const core = joinCore(a, b);
+  if(core === null) return false;
+  return (core.match(/、/g)||[]).length <= JOIN_COMMA;
+}
+
 /* 並び順（v1.24で変更）。
    v1.23までは「できる」→「伸長中」→「課題」の段ごとに全領域をまとめて並べていたため、
    学習面のできる→生活面のできる→学習面の伸長中…と、同じ領域の文が離れてしまっていた。
@@ -1730,14 +1856,15 @@ function buildText(list, seed){
   const parts  = [];
   const owners = [];   // parts[i] がどの観点から出た文かを記録する（v1.12）
 
-  ordered.forEach((c,i)=>{
+  for(let i=0; i<ordered.length; i++){
+    const c = ordered[i];
     if(c.lvl==='issue'){
       // 課題は必ず2文。1文にまとめると65字前後になり読みにくいため。
       // state は「〜場面では、」と場面から始まるので、前に接続語は置かない。
       const head = toPolite(c.it.issue.state) + "。";
       parts.push(head);   owners.push([c]);
       parts.push("今後は、" + toPolite(c.it.issue.plan) + "。");   owners.push([c]);
-      return;
+      continue;
     }
     // can→can の因果化（v1.21）。健康・体力面／体育／運動会の項目に限り、
     // 直前の can 文が取り組み方・姿勢を表す語（EFFORT_MARK）を含む場合、
@@ -1752,7 +1879,34 @@ function buildText(list, seed){
         const variant = i + seed;
         const sent = "また、" + toCausalClause(c.it.can) + endGrow(c.it.grow, variant);
         parts.push(sent);   owners.push([c]);
-        return;
+        continue;
+      }
+    }
+
+    // 2観点を1文にまとめる（v1.26）。因果文が成り立つ箇所では因果文を優先し、まとめない。
+    const n = ordered[i+1];
+    if(canJoin(c, n)){
+      let block = false;
+      if(c.lvl==='can'){
+        // n が次の文と因果文になる場合（can→grow の切れ目／体育系 can→can）
+        const nn = ordered[i+2];
+        if(nn && firstGrowPos.has(i+2) && domainOf(nn)===domainOf(n) && isEffortCan(n.it.can)) block = true;
+        if(nn && nn.lvl==='can' && domainOf(nn)===domainOf(n) && isEffortCan(n.it.can) && isTaiikuItem(nn.it) && nn.it.grow) block = true;
+        // c と n のあいだで体育系 can→can の因果文になる場合
+        if(isEffortCan(c.it.can) && isTaiikuItem(n.it) && n.it.grow) block = true;
+      }else if(firstGrowPos.has(i) && i>0){
+        // c が直前の can と因果文になる場合
+        const prev = ordered[i-1];
+        if(prev.lvl==='can' && domainOf(prev)===domainOf(c) && isEffortCan(prev.it.can)) block = true;
+      }
+      if(!block){
+        const core = joinCore(c, n);
+        const variant = i + seed;
+        let sent = c.lvl==='can' ? endCan(core, variant) : endGrow(core, variant);
+        if(c.lvl==='grow' && firstGrowPos.has(i) && i>0) sent = "また、" + sent;
+        parts.push(sent);   owners.push([c, n]);
+        i++;   // n はこの文に入れたので飛ばす
+        continue;
       }
     }
 
@@ -1771,12 +1925,12 @@ function buildText(list, seed){
         parts.pop();   owners.pop();   // 直前に積んだ独立文（can）を取り除き、この文に合体させる
         sent = clause + sent;
         parts.push(sent);   owners.push([prev, c]);   // 因果文はcan側・grow側どちらの観点にも属する
-        return;
+        continue;
       }
       sent = "また、" + sent;
     }
     parts.push(sent);   owners.push([c]);
-  });
+  }
 
   // owners は「この文はどの観点から出たか」の対応表（観点ごとの配列。v1.18で
   // 因果文が can・grow 両方の観点に属せるよう単一参照から配列に変更した）。
@@ -2282,7 +2436,7 @@ function serialize(){
   captureCurrent();
   roster.cls = document.getElementById('clsInput').value;
   return { app:"所見文アシスト", ver:APP_VERSION, saved:new Date().toISOString(),
-           cls:roster.cls, curId:roster.curId, students:roster.students };
+           cls:roster.cls, join:state.join, curId:roster.curId, students:roster.students };
 }
 
 function saveNow(){
@@ -2327,6 +2481,8 @@ function normalizeStudent(s){
 function loadData(data){
   if(!data || !Array.isArray(data.students) || !data.students.length) return false;
   roster.cls = String(data.cls || "");
+  state.join = !!data.join;   // v1.26（それ以前のファイルには無いので「1観点＝1文」になる）
+  syncJoinSeg();
   roster.students = data.students.map(normalizeStudent);
   roster.curId = roster.students.some(s=>s.id===data.curId)
     ? data.curId : roster.students[0].id;
@@ -3105,6 +3261,66 @@ function evalScopeIds(ana, band){
   return ids;
 }
 
+/* 一覧の評価を、児童のいまの選択に重ねた結果（取り込み画面の予告と取り込みで共用） */
+function evalMergeSel(rec, r, o){
+  const sel = Object.assign({}, rec.sel || {});
+  if(o.merge === 'replace'){
+    // 一覧が対象にしている観点の「できる」「伸長中」は、いったん外して一覧の内容にする。
+    // 「課題」は担任が自分で付けたものなので残す。
+    evalScopeIds(evalState.ana, r.band).forEach(id=>{ if(sel[id]==='can' || sel[id]==='grow') delete sel[id]; });
+  }
+  // 課題は1件まで。担任がすでに付けた課題があれば、一覧の△による課題は付けない。
+  const already = Object.values(sel).includes('issue');
+  let skipIss = false;
+  r.marks.forEach((lvl,id)=>{
+    if(lvl === 'issue' && already){ skipIss = true; return; }
+    if(o.merge === 'replace'){ if(sel[id] !== 'issue') sel[id] = lvl; }
+    else if(!(id in sel)) sel[id] = lvl;
+  });
+  return { sel, skipIss };
+}
+
+/* おすすめの★（v1.27）。学習系の「できる」から2件、生活系の「できる」から1件。
+   学習系の2件は「2観点をまとめる」で1文にできる組み合わせを選ぶ。
+   ★は所見文の先頭（学習系の「できる」の先頭）に並ぶので、2件は必ず隣り合う。
+   ただし後ろの文が因果文（v1.18／v1.21）になる組み合わせは、buildText が
+   まとめずに因果文を優先するため候補から外す。
+   候補が複数あるときは出席番号で振り分け、学級の全員が同じ観点にならないようにする。 */
+function evalRecommend(sel, band, no){
+  const k = Math.max(0, (parseInt(no,10) || 1) - 1);
+  const learn = [], life = [];
+  DB.filter(g=>(g.grade||'all')==='all' || g.grade===band).forEach(g=>g.items.forEach(it=>{
+    if(sel[it.id] !== 'can') return;
+    const c = { it, lvl:'can' };
+    (domainOf(c)==='learn' ? learn : life).push(c);
+  }));
+  const pairs = [];
+  for(let i=0;i<learn.length;i++) for(let j=i+1;j<learn.length;j++){
+    const a = learn[i], b = learn[j];
+    if(ITEM_GROUP.get(a.it.id) !== ITEM_GROUP.get(b.it.id)) continue;
+    if(!canJoin(a, b, true)) continue;
+    if(isEffortCan(b.it.can)) continue;                                        // b の後ろが因果文になりうる
+    if(isEffortCan(a.it.can) && isTaiikuItem(b.it) && b.it.grow) continue;     // a→b が体育系の因果文になる
+    pairs.push([a, b]);
+  }
+  let L = [], joinable = false;
+  if(pairs.length){ L = pairs[k % pairs.length]; joinable = true; }
+  else if(learn.length){
+    const a = learn[k % learn.length];
+    const b = learn.find(x=>ITEM_GROUP.get(x.it.id)!==ITEM_GROUP.get(a.it.id)) || learn.find(x=>x!==a);
+    L = [a, b].filter(Boolean);
+  }
+  const one = life.length ? life[k % life.length] : null;
+  return { ids:[...L, one].filter(Boolean).map(c=>c.it.id), joinable,
+           learnCat: L.length ? ITEM_GROUP.get(L[0].it.id).cat : "", nLearn:L.length,
+           life: one ? one.it.txt : "" };
+}
+function evalStarLabel(rc){
+  if(!rc.ids.length) return "";
+  const a = rc.nLearn ? (rc.joinable ? `${rc.learnCat}2件（まとめ可）` : `学習${rc.nLearn}件（まとめ不可）`) : "学習なし";
+  return a + "／" + (rc.life || "生活なし");
+}
+
 /* 名簿に表示する名前を作る。名簿CSVと同じ考え方。
    ローマ字の氏名は空白を残してつなぐ。 */
 function evalYobi(full, use, suffix){
@@ -3130,6 +3346,7 @@ function evalOpts(){
     mode:  document.getElementById('evalMode').value,
     merge: document.getElementById('evalMerge').value,
     c:     document.getElementById('evalC').value,
+    star:  document.getElementById('evalStar').value,
     use:   document.getElementById('evalUse').value,
     suffix:document.getElementById('evalSuffix').value,
   };
@@ -3153,13 +3370,15 @@ function evalRenderPreview(){
 
   let html = '<table><thead><tr><th>番号</th><th>一覧の氏名</th><th>'
     + (o.mode==='create' ? '名前（名簿に表示されます）' : '取り込み先（いまの学級）')
-    + '</th><th>できる</th><th>伸長中</th><th>課題（△）</th></tr></thead><tbody>';
-  ana.students.forEach(()=>{ html += '<tr><td class="num"></td><td></td><td></td><td class="cnt can"></td><td class="cnt grow"></td><td class="iss"></td></tr>'; });
+    + '</th><th>できる</th><th>伸長中</th><th>課題（△）</th>'
+    + (o.star==='on' ? '<th>おすすめ★</th>' : '') + '</tr></thead><tbody>';
+  ana.students.forEach(()=>{ html += '<tr><td class="num"></td><td></td><td></td><td class="cnt can"></td><td class="cnt grow"></td><td class="iss"></td>'
+    + (o.star==='on' ? '<td class="star"></td>' : '') + '</tr>'; });
   html += '</tbody></table>';
   const box = document.getElementById('evalPrev');
   box.innerHTML = html;
 
-  let total = 0, matched = 0, bad = 0, gaiji = 0, multi = 0, noIssue = 0, hasIss = 0;
+  let total = 0, matched = 0, bad = 0, gaiji = 0, multi = 0, noIssue = 0, hasIss = 0, noPair = 0, keepStar = 0;
   const missing = new Set();
   box.querySelectorAll('tbody tr').forEach((tr,i)=>{
     const st = ana.students[i];
@@ -3200,6 +3419,20 @@ function evalRenderPreview(){
       else if(r.issue.status === 'multi'){ ic.textContent = `△${r.issue.count}件：付けません`; ic.title = r.issue.label; ic.classList.add('dim'); multi++; }
       else { ic.textContent = `${r.issue.label}：文例なし`; ic.classList.add('dim'); noIssue++; }
     }
+    // おすすめ★（v1.27）
+    if(o.star === 'on'){
+      const sc = tr.children[6];
+      const t = o.mode==='create' ? null : evalTarget(st.no);
+      if(o.mode!=='create' && !t){ /* 取り込まない児童 */ }
+      else if(t && (t.pri||[]).length){ sc.textContent = '★あり：変えません'; sc.classList.add('dim'); keepStar++; }
+      else{
+        const sel = t ? evalMergeSel(t, r, o).sel : Object.fromEntries(r.marks);
+        const rc = evalRecommend(sel, r.band, st.no);
+        sc.textContent = evalStarLabel(rc) || '（「できる」がありません）';
+        sc.title = sc.textContent;
+        if(!rc.joinable){ sc.classList.add('dim'); if(rc.ids.length) noPair++; }
+      }
+    }
   });
 
   const msgs = [];
@@ -3218,6 +3451,12 @@ function evalRenderPreview(){
   if(multi) msgs.push(`△が2つ以上ある児童が <b>${multi}人</b> います。課題は1人1件までのため自動では付けません。「課題（△）」欄にカーソルを合わせると項目名が出ます。取り込んだあと、担任が1つ選んで「課題」を付けてください。`);
   if(noIssue) msgs.push(`課題の文例がない観点の△が ${noIssue}人分 あります（選びません）。`);
   if(hasIss) msgs.push(`すでに課題を付けてある児童が ${hasIss}人 います。その児童には一覧の△による課題を付けません。`);
+  if(o.star==='on'){
+    msgs.push(`★は学習面2件・生活面1件をおすすめとして付けます。学習面の2件は、同じ教科の中で1文にまとめられる組み合わせから選びます。`
+      + (state.join ? '' : `<b>いまは「文のまとめ方」が「1観点＝1文」のため、2件は2文のまま出ます。</b>`));
+    if(noPair) msgs.push(`まとめられる組み合わせがない児童が ${noPair}人 います。別の教科の「できる」から2件を選びます。`);
+    if(keepStar) msgs.push(`すでに★を付けてある児童が ${keepStar}人 います。その児童の★は変えません。`);
+  }
   if(gaiji) msgs.push(`外字を含む氏名が ${gaiji}人 います。「名前に使う部分」を「名だけ」にすると避けられる場合があります。`);
   document.getElementById('evalWarn').innerHTML = msgs.join('<br>');
 
@@ -3230,6 +3469,7 @@ function openEvalModal(ana, fname, sheet){
   document.getElementById('evalMode').value = rosterIsBlank() ? 'create' : 'match';
   document.getElementById('evalMerge').value = 'add';
   document.getElementById('evalC').value = 'none';
+  document.getElementById('evalStar').value = 'on';
   document.getElementById('evalUse').value = 'full';
 
   const nG = ana.cols.filter(k=>k.kind==='gaku').length;
@@ -3253,7 +3493,7 @@ function closeEvalModal(){
 function evalApply(){
   const ana = evalState.ana, o = evalOpts();
   if(!ana) return;
-  let changed = 0, skipIss = 0;
+  let changed = 0, skipIss = 0, starred = 0;
 
   if(o.mode === 'create'){
     const cur = roster.students.filter(s=>s.out).length;
@@ -3270,6 +3510,10 @@ function evalApply(){
       rec.grade = r.band;
       rec.sel = Object.fromEntries(r.marks);
       if(r.marks.size) changed++;
+      if(o.star === 'on'){
+        rec.pri = evalRecommend(rec.sel, r.band, st.no).ids;
+        if(rec.pri.length) starred++;
+      }
       return rec;
     });
     // 学級名が空なら、一覧の学年・組から補う
@@ -3285,22 +3529,17 @@ function evalApply(){
       if(!rec) return;
       const r = evalMarks(ana, st, o.c);
       const before = JSON.stringify(rec.sel || {});
-      const sel = Object.assign({}, rec.sel || {});
-      if(o.merge === 'replace'){
-        // 一覧が対象にしている観点の「できる」「伸長中」は、いったん外して一覧の内容にする。
-        // 「課題」は担任が自分で付けたものなので残す。
-        evalScopeIds(ana, r.band).forEach(id=>{ if(sel[id]==='can' || sel[id]==='grow') delete sel[id]; });
-      }
-      // 課題は1件まで。担任がすでに付けた課題があれば、一覧の△による課題は付けない。
-      const already = Object.values(sel).includes('issue');
-      r.marks.forEach((lvl,id)=>{
-        if(lvl === 'issue' && already){ skipIss++; return; }
-        if(o.merge === 'replace'){ if(sel[id] !== 'issue') sel[id] = lvl; }
-        else if(!(id in sel)) sel[id] = lvl;
-      });
+      const m = evalMergeSel(rec, r, o);
+      const sel = m.sel;
+      if(m.skipIss) skipIss++;
       rec.sel = sel;
       rec.grade = r.band;
       rec.pri = (rec.pri||[]).filter(id=>sel[id]);
+      // おすすめ★（v1.27）。担任がすでに★を付けている児童は変えない。
+      if(o.star === 'on' && !rec.pri.length){
+        rec.pri = evalRecommend(sel, r.band, st.no).ids;
+        if(rec.pri.length){ starred++; rec.manual = false; rec.mIn = []; }
+      }
       if(JSON.stringify(sel) !== before){
         // 選択が変わった児童は、手で決めた顔ぶれをやめて自動判定に戻す
         rec.manual = false; rec.mIn = [];
@@ -3313,7 +3552,8 @@ function evalApply(){
   saveNow();
   closeEvalModal();
   setSaveState(`評価一覧から観点を選びました（${changed}人分）`
-    + (skipIss ? `。すでに課題がある ${skipIss}人 には△の課題を付けていません` : ''), true);
+    + (skipIss ? `。すでに課題がある ${skipIss}人 には△の課題を付けていません` : '')
+    + (starred ? `。${starred}人におすすめの★を付けました` + (state.join ? '' : '（学習面の2件を1文にするには「文のまとめ方」を「2観点をまとめる」に）') : ''), true);
 }
 
 /* ファイルを開いて、評価一覧として読めるシートを探す */
@@ -3360,7 +3600,7 @@ document.getElementById('evalFile').addEventListener('change', e=>{
   e.target.value = '';
   if(f) readEvalFile(f);
 });
-['evalMode','evalMerge','evalC','evalUse','evalSuffix'].forEach(id=>{
+['evalMode','evalMerge','evalC','evalStar','evalUse','evalSuffix'].forEach(id=>{
   document.getElementById(id).addEventListener('change', evalRenderPreview);
 });
 document.getElementById('evalApply').addEventListener('click', evalApply);
