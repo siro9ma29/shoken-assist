@@ -484,9 +484,10 @@
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "v1.30";
+const APP_VERSION = "v1.31";
 const APP_DATE    = "2026-11-03";
 const APP_HISTORY = [
+  {v:"v1.31", d:"2026-11-03", note:"不自然な文ができないように、生成される文をすべて洗い出して直した。(0) 健康・体力面 h3 の「できる」の文例を「〜運動する力を高めている」から「〜運動する力を高める」に変えた（「高めていることができました」になっていたため）。(1) 因果文「〜することで、〜てきました。」（v1.18）は、同じ教科の「主体的に学習に取り組む態度」の「できる」と、同じ教科の「知識・技能」か「思考・判断・表現」の「伸長中」が続くときだけ作る（causalPair）。v1.30までは取り組み方の語（EFFORT_MARK）だけで判定しており、全156通りのうち学年共通の観点や行事では「進んで挙手して発言することで、資料やICT機器を〜」のような意味のつながらない文が大半だった。それ以外はこれまでどおり「また、」でつなぐ。(2) v1.21 の体育系 can→can の因果文を廃止した。自分の「できる」と自分の「伸長中」をつなぐ形のため、全16通りで内容が重なり（「最後まで活動をやり抜くことで、最後まで活動をやり抜こうとする姿が〜」）、「できる」を選んだ観点が「伸長中」の書き方で出ていた。(3) 因果文の前半の「〜しようとすることで、」を「〜することで、」に直した（取り組もうとする→取り組む）。(4) 「〜しようとすることができました。」（6件）を「〜しようとしていました。」にした。(5) 2観点をまとめるとき（v1.26）、「高めている」が「高めてい、」になる活用の誤りを「高めており、」に直した。(6) 伸長中どうしをまとめるとき、「〜姿が増えてきており、〜姿が増えてきました。」のように同じ言い方が1文に2回出る組み合わせはまとめないようにした。(7) 2観点をまとめるとき、前の文が「〜しようとする」で終わるもの（「深めようとし、」）と、同じ副詞が2回出るもの（「素直に伝え、〜素直に言葉にできました」）はまとめないようにした。"},
   {v:"v1.30", d:"2026-11-03", note:"(1) 因果文（v1.18 の can→grow「〜することで、〜てきました。」、v1.21 の体育系 can→can）を、同じカテゴリ（DBのグループ）の2文のときだけ作るようにした。v1.24からは「同じ領域（学習系／生活系）」で判定していたため、「人とのかかわり」の「進んで手を差し伸べる」と「特別活動・係活動」の「自分から仕事を見つけて動こうとする姿が増えてきました」のように、意味のつながらない2文までつないでいた。別のカテゴリの文が続くときは「また、」でつなぐ。2観点をまとめるとき（v1.26）の「因果文になるならまとめない」判定も同じ条件にそろえた。(2) ★重点の上限を3件から5件にし、評価一覧取り込み時のおすすめの★を「学習面2・生活面1」から「学習面3・生活面2」にした。学習面の3件は、1文にまとめられる同じ教科の2件（v1.27と同じ選び方）に、別の教科の1件を足す。生活面の2件は、なるべく別のカテゴリから選ぶ。いずれも出席番号で振り分ける。所見が150〜200字になり、5観点がそろうと175字前後になるため。"},
   {v:"v1.29", d:"2026-11-03", note:"文字数のめやすのボタンを「80・120・160字」から「150・175・200字」に変更し、既定値を120字から175字にした。勤務校の所見が150〜200字のため。175字を既定にしたのは、採用判定がめやすの前後どちらにも振れるので、範囲の中央にしておくと150〜200字に収まりやすいため（めやす175字・6観点以上のチェックで、試算では全件が150〜200字に入った）。保存済みの児童は保存時のめやす（120字など）をそのまま使う。新しく追加する児童と、めやすが記録されていないデータは175字になる。課題の注意表示の基準（120字未満）は変えていない。"},
   {v:"v1.28", d:"2026-11-03", note:"教科の専用まとめ文（PAIR_TEXT）に「主体的に学習に取り組む態度」との組み合わせを追加し、教科ごとに3観点のどの2つでも1文にまとめられるようにした（知識・技能＋思考・判断・表現（v1.27の25件）に加え、知識・技能＋態度、思考・判断・表現＋態度を各25件、計75件）。(1) 態度の文例は「進んで」「意欲的に」などの語を含み、従来は後ろの文と因果文（v1.18／v1.21）になるため、まとめる対象から外れていた。専用の文がある組み合わせは因果文よりまとめることを優先する。(2) まとめた1文の後ろ側の観点は、続く「伸長中」との因果文の材料にしない（まとめた文を作り替えると長くなりすぎるため。「また、」でつなぐ）。(3) おすすめの★（v1.27）も、同じ教科でAが2つ以上あれば必ず1文にまとめられる組み合わせを選べるようになった。3観点ともAなら、3通りの組み合わせを出席番号で振り分ける。(4) 専用の文は「〜しようとする」で終わらない形にした（「〜しようとすることができました」となるのを避けるため）。"},
@@ -639,7 +640,7 @@ const DB = [
     can:"休み時間には外で元気に体を動かして過ごす",
     grow:"外で体を動かして遊ぶ機会が少しずつ増えてきました"},
    {id:"h3", txt:"持久力や柔軟性など、体力の伸びが見られる",
-    can:"持久力や柔軟性が着実に伸び、運動する力を高めている",
+    can:"持久力や柔軟性が着実に伸び、運動する力を高める",
     grow:"運動する力を高めようと、こつこつと練習を重ねてきました"},
    {id:"h4", txt:"手洗い・うがい・ハンカチ持参を心がけている",
     can:"手洗いやうがいを習慣にし、清潔を心がけて生活する",
@@ -1354,7 +1355,10 @@ const ENDINGS = {
     // 「〜できる」で終わる文例（s1・r2の2件）にそのまま付けると
     // 「返事ができることができました。」と「できる」が重なる。語尾を活用させて回避する。
     // v1.10以前からあった不具合。案を並べて表示するようになり目につきやすくなったため直した。
-    (f)=>/できる$/.test(f) ? f.replace(/できる$/,"できました。") : f+"ことができました。",
+    (f)=>/できる$/.test(f) ? f.replace(/できる$/,"できました。")
+        // v1.31：「〜しようとすることができました」は不自然なので「〜しようとしていました」にする
+        : /うとする$/.test(f) ? f.replace(/する$/,"していました。")
+        : f+"ことができました。",
     (f)=>f+"様子が見られました。",
     (f)=>toTeiru(f)+"。",
     (f)=>f+"姿が印象的でした。",
@@ -1400,11 +1404,36 @@ const EFFORT_MARK = /(粘り強く|進んで|意欲的|主体的|最後まで|�
 function isEffortCan(frag){
   return EFFORT_MARK.test(frag);
 }
+/* v1.31：因果文（「〜することで、〜てきました。」）を作ってよい組み合わせ。
+   同じ教科の「主体的に学習に取り組む態度」の「できる」→ 同じ教科の
+   「知識・技能」か「思考・判断・表現」の「伸長中」に限る。
+   v1.18〜v1.30は「取り組み方の語（EFFORT_MARK）を含むか」だけで判定していたため、
+   学年共通の観点では「進んで挙手して発言することで、資料やICT機器を〜使えるようになってきました」
+   「全力で取り組むことで、手洗いやハンカチの用意を〜」のように、
+   意味のつながらない文が多くできていた（全156通りを洗い出して確認した）。
+   教科の「態度」→「知識・技能」「思考・判断・表現」は、意欲的に取り組んだ結果として力が伸びた、
+   という関係がどの教科でも成り立つ。 */
+function causalPair(prev, c){
+  if(!prev || !c || prev.lvl!=='can' || c.lvl!=='grow') return false;
+  const m1 = prev.it.id.match(/^(.*)_t$/), m2 = c.it.id.match(/^(.*)_([cs])$/);
+  return !!(m1 && m2 && m1[1]===m2[1]);
+}
 /* 常体・辞書形のcan fragを、そのまま「ことで、」に接続できる形に整える。
    ENDINGS.can と同じく frag は辞書形（「〜する」「〜できる」等）で登録されているため、
    末尾にそのまま付けるだけでよい（例：「粘り強く挑戦する」→「粘り強く挑戦することで、」）。 */
 function toCausalClause(frag){
-  return frag + "ことで、";
+  return toPlainIntent(frag) + "ことで、";
+}
+/* 「〜しようとする」「〜取り組もうとする」を「〜する」「〜取り組む」に戻す（v1.31）。
+   「取り組もうとすることで、」は不自然なため。 */
+function toPlainIntent(f){
+  if(!/ようとする$|うとする$/.test(f)) return f;
+  if(/しようとする$/.test(f)) return f.replace(/しようとする$/, "する");
+  const g = {"お":"う","こ":"く","ご":"ぐ","そ":"す","と":"つ","の":"ぬ","ぼ":"ぶ","も":"む","ろ":"る"};
+  const m = f.match(/([おこごそとのぼもろ])うとする$/);
+  if(m) return f.replace(/[おこごそとのぼもろ]うとする$/, g[m[1]]);
+  if(/ようとする$/.test(f)) return f.replace(/ようとする$/, "る");   // 一段（調べようとする→調べる）
+  return f;
 }
 
 /* 「できる」系fragはそのまま文末付与、「伸長中」fragは既に語尾を含む場合が多いので調整 */
@@ -1881,6 +1910,9 @@ function pairText(a, b){
 /* 常体の動詞終止形 → 連用中止形（例：発言する→発言し／やり遂げる→やり遂げ） */
 function toRenyou(s){
   const p = toPolite(s);
+  // v1.31：「高めている」→「高めてい」になっていた。「〜ており」にする。
+  if(/ています$/.test(p)) return p.replace(/ています$/, "ており");
+  if(/でいます$/.test(p)) return p.replace(/でいます$/, "でおり");
   if(!/ます$/.test(p)) return null;
   const r = p.slice(0, -2);
   return r.length ? r : null;
@@ -1906,6 +1938,7 @@ function joinCore(a, b){
   }
   return null;
 }
+const JOIN_DUP_WORDS = ["素直に","進んで","丁寧に","意欲的","粘り強く","主体的","自ら","自分から","最後まで","全力で","楽しみながら","責任をもって","目標をもって","優しく"];
 function canJoin(a, b, force){
   if((!state.join && !force) || !a || !b) return false;   // force … 設定に関わらず、まとめられる組み合わせかだけを見る（v1.27）
   if(a.lvl !== b.lvl || (a.lvl!=='can' && a.lvl!=='grow')) return false;
@@ -1915,6 +1948,19 @@ function canJoin(a, b, force){
   const fb = b.lvl==='can' ? b.it.can : b.it.grow;
   if(!fa || !fb) return false;
   if([...(fa + fb)].length > JOIN_MAX) return false;
+  if(a.lvl==='grow'){
+    // v1.31：「〜姿が増えてきており、〜姿が増えてきました。」のように
+    // 同じ言い方が1文に2回出る組み合わせはまとめない。
+    const ta = toPolite(fa).replace(/。$/,""), tb = toPolite(fb).replace(/。$/,"");
+    if(ta.slice(-7) === tb.slice(-7)) return false;
+    if(/姿/.test(ta) && /姿/.test(tb)) return false;
+  }
+  if(a.lvl==='can'){
+    // v1.31：前の文が「〜しようとする」で終わると「〜深めようとし、〜」となり読みにくい。
+    if(/うとする$/.test(fa)) return false;
+  }
+  // v1.31：同じ副詞が1文に2回出る組み合わせ（「素直に伝え、〜素直に言葉にできました」など）はまとめない。
+  if(JOIN_DUP_WORDS.some(w=>fa.includes(w) && fb.includes(w))) return false;
   const core = joinCore(a, b);
   if(core === null) return false;
   return (core.match(/、/g)||[]).length <= JOIN_COMMA;
@@ -1957,22 +2003,10 @@ function buildText(list, seed){
       parts.push("今後は、" + toPolite(c.it.issue.plan) + "。");   owners.push([c]);
       continue;
     }
-    // can→can の因果化（v1.21）。健康・体力面／体育／運動会の項目に限り、
-    // 直前の can 文が取り組み方・姿勢を表す語（EFFORT_MARK）を含む場合、
-    // この can 文を通常の文末（「様子が見られました」等）にはせず、
-    // 自分自身の grow フィールドを結果節にした因果文（「〜することで、〜てきました。」）
-    // にする。v1.18のcan→grow因果化と違い、直前の文はそのまま独立文として残す
-    // （popしない）。can→can はもともと無接続で並べていたため、この文には
-    // 「また、」を付けて前文とのつながりを示す。
-    if(c.lvl==='can' && i>0){
-      const prev = ordered[i-1];
-      if(prev.lvl==='can' && sameCat(prev, c) && isEffortCan(prev.it.can) && isTaiikuItem(c.it) && c.it.grow){
-        const variant = i + seed;
-        const sent = "また、" + toCausalClause(c.it.can) + endGrow(c.it.grow, variant);
-        parts.push(sent);   owners.push([c]);
-        continue;
-      }
-    }
+    // v1.31：v1.21 の体育系 can→can の因果文（自分の can と自分の grow をつなぐ形）は廃止した。
+    // 同じ観点の「できる」と「伸長中」をつなぐため、「最後まで活動をやり抜くことで、
+    // 最後まで活動をやり抜こうとする姿が増えてきています。」のように内容が重なり、
+    // さらに「できる」を選んだ観点が「伸長中」の書き方で出てしまっていた（全16通りすべて）。
 
     // 2観点を1文にまとめる（v1.26）。因果文が成り立つ箇所では因果文を優先し、まとめない。
     const n = ordered[i+1];
@@ -1981,16 +2015,13 @@ function buildText(list, seed){
       if(c.lvl==='can' && pairText(c, n)){
         // 教科の専用の文は因果文より優先する（v1.28）
       }else if(c.lvl==='can'){
-        // n が次の文と因果文になる場合（can→grow の切れ目／体育系 can→can）
+        // n が次の文と因果文になる場合（can→grow の切れ目）
         const nn = ordered[i+2];
-        if(nn && firstGrowPos.has(i+2) && sameCat(nn, n) && isEffortCan(n.it.can)) block = true;
-        if(nn && nn.lvl==='can' && sameCat(nn, n) && isEffortCan(n.it.can) && isTaiikuItem(nn.it) && nn.it.grow) block = true;
-        // c と n のあいだで体育系 can→can の因果文になる場合
-        if(sameCat(c, n) && isEffortCan(c.it.can) && isTaiikuItem(n.it) && n.it.grow) block = true;
+        if(nn && firstGrowPos.has(i+2) && causalPair(n, nn)) block = true;
       }else if(firstGrowPos.has(i) && i>0){
         // c が直前の can と因果文になる場合
         const prev = ordered[i-1];
-        if(prev.lvl==='can' && !inJoin.has(i-1) && sameCat(prev, c) && isEffortCan(prev.it.can)) block = true;
+        if(!inJoin.has(i-1) && causalPair(prev, c)) block = true;
       }
       if(!block){
         const core = joinCore(c, n);
@@ -2006,8 +2037,9 @@ function buildText(list, seed){
 
     let sent = getFragment(c.it, c.lvl, i, seed);   // v1.23：文頭に児童の呼称は付けない
 
-    // can→grow の切れ目（v1.18）。直前の can 文が取り組み方・姿勢を表す語を
-    // 含む場合は、2文に割らず「〜することで、〜てきました。」の因果文にまとめる。
+    // can→grow の切れ目（v1.18）。直前の can 文と因果関係が成り立つ場合
+    //（v1.31：同じ教科の「態度」→「知識・技能」「思考・判断・表現」に限る。causalPair）は、
+    // 2文に割らず「〜することで、〜てきました。」の因果文にまとめる。
     // それ以外は従来どおり「また、」でつなぐ（v1.7は「これからは、」だったが、
     // v1.8で grow を進歩型に統一したため時制が食い違い「また、」に変更した）。
     if(firstGrowPos.has(i) && i>0){
@@ -2015,7 +2047,7 @@ function buildText(list, seed){
       // 直前が別のカテゴリの文なら因果化はせず、「また、」でつなぐ（v1.30）。
       const prev = ordered[i-1];
       // 直前の can がまとめた1文の後ろ側なら、その文を因果文に作り替えない（v1.28）
-      if(prev.lvl==='can' && !inJoin.has(i-1) && sameCat(prev, c) && isEffortCan(prev.it.can)){
+      if(!inJoin.has(i-1) && causalPair(prev, c)){
         const clause = toCausalClause(prev.it.can);
         parts.pop();   owners.pop();   // 直前に積んだ独立文（can）を取り除き、この文に合体させる
         sent = clause + sent;
@@ -3397,8 +3429,7 @@ function evalRecommend(sel, band, no){
     if(ITEM_GROUP.get(a.it.id) !== ITEM_GROUP.get(b.it.id)) continue;
     if(!canJoin(a, b, true)) continue;
     if(pairText(a, b)){ pairs.push([a, b]); continue; }   // 専用の文は因果文より優先される（v1.28）
-    if(isEffortCan(b.it.can)) continue;                                        // b の後ろが因果文になりうる
-    if(isEffortCan(a.it.can) && isTaiikuItem(b.it) && b.it.grow) continue;     // a→b が体育系の因果文になる
+    if(/_t$/.test(b.it.id)) continue;   // b の後ろが因果文になりうる（v1.31：causalPair と同じ条件）
     pairs.push([a, b]);
   }
   let L = [], joinable = false;
