@@ -445,7 +445,7 @@
       </label>
       <label>おすすめの★
         <select id="evalStar">
-          <option value="on">付ける（学習面2・生活面1）</option>
+          <option value="on">付ける（学習面3・生活面2）</option>
           <option value="off">付けない</option>
         </select>
       </label>
@@ -484,9 +484,10 @@
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "v1.29";
+const APP_VERSION = "v1.30";
 const APP_DATE    = "2026-11-03";
 const APP_HISTORY = [
+  {v:"v1.30", d:"2026-11-03", note:"(1) 因果文（v1.18 の can→grow「〜することで、〜てきました。」、v1.21 の体育系 can→can）を、同じカテゴリ（DBのグループ）の2文のときだけ作るようにした。v1.24からは「同じ領域（学習系／生活系）」で判定していたため、「人とのかかわり」の「進んで手を差し伸べる」と「特別活動・係活動」の「自分から仕事を見つけて動こうとする姿が増えてきました」のように、意味のつながらない2文までつないでいた。別のカテゴリの文が続くときは「また、」でつなぐ。2観点をまとめるとき（v1.26）の「因果文になるならまとめない」判定も同じ条件にそろえた。(2) ★重点の上限を3件から5件にし、評価一覧取り込み時のおすすめの★を「学習面2・生活面1」から「学習面3・生活面2」にした。学習面の3件は、1文にまとめられる同じ教科の2件（v1.27と同じ選び方）に、別の教科の1件を足す。生活面の2件は、なるべく別のカテゴリから選ぶ。いずれも出席番号で振り分ける。所見が150〜200字になり、5観点がそろうと175字前後になるため。"},
   {v:"v1.29", d:"2026-11-03", note:"文字数のめやすのボタンを「80・120・160字」から「150・175・200字」に変更し、既定値を120字から175字にした。勤務校の所見が150〜200字のため。175字を既定にしたのは、採用判定がめやすの前後どちらにも振れるので、範囲の中央にしておくと150〜200字に収まりやすいため（めやす175字・6観点以上のチェックで、試算では全件が150〜200字に入った）。保存済みの児童は保存時のめやす（120字など）をそのまま使う。新しく追加する児童と、めやすが記録されていないデータは175字になる。課題の注意表示の基準（120字未満）は変えていない。"},
   {v:"v1.28", d:"2026-11-03", note:"教科の専用まとめ文（PAIR_TEXT）に「主体的に学習に取り組む態度」との組み合わせを追加し、教科ごとに3観点のどの2つでも1文にまとめられるようにした（知識・技能＋思考・判断・表現（v1.27の25件）に加え、知識・技能＋態度、思考・判断・表現＋態度を各25件、計75件）。(1) 態度の文例は「進んで」「意欲的に」などの語を含み、従来は後ろの文と因果文（v1.18／v1.21）になるため、まとめる対象から外れていた。専用の文がある組み合わせは因果文よりまとめることを優先する。(2) まとめた1文の後ろ側の観点は、続く「伸長中」との因果文の材料にしない（まとめた文を作り替えると長くなりすぎるため。「また、」でつなぐ）。(3) おすすめの★（v1.27）も、同じ教科でAが2つ以上あれば必ず1文にまとめられる組み合わせを選べるようになった。3観点ともAなら、3通りの組み合わせを出席番号で振り分ける。(4) 専用の文は「〜しようとする」で終わらない形にした（「〜しようとすることができました」となるのを避けるため）。"},
   {v:"v1.27", d:"2026-11-03", note:"評価一覧（C4thの成績Excel出力・CSV）を取り込むとき、児童ごとに「おすすめの★重点」を自動で付けるようにした（取り込み画面の「おすすめの★」で付ける／付けないを選べる。既定は付ける）。(1) 学習系（教科別カテゴリ）から2件、生活系（行動の記録から選んだ学年共通の観点）から1件、いずれも「できる」の観点から選ぶ。(2) 学習系の2件は、v1.26の「2観点をまとめる」で1文にできる組み合わせから選ぶ。教科の文例はほぼすべて読点を含み、v1.26の条件（合計56字以内・読点2個以内）ではまとめられる組み合わせが78組中2組しかなかった。機械的につなぐと読点3個・60字前後の伝わりにくい文になるため、教科ごとに「知識・技能」＋「思考・判断・表現」をまとめた専用の文（PAIR_TEXT、25教科分。読点1個・30〜40字台）を用意し、この組み合わせは字数・読点の制限なしにまとめる（「2観点をまとめる」のときは、取り込みに関係なく手で選んだ場合もこの文になる）。後ろの文例が取り組み方の語（EFFORT_MARK）を含むなど、因果文が優先されてまとまらなくなる組み合わせは除く。★は所見文の先頭に並ぶため、2件は必ず隣り合い、まとめる設定なら1文になる。(3) まとめられる組み合わせが無い児童は、別の教科の「できる」から2件を選ぶ（取り込み画面に「まとめ不可」と出る）。(4) 候補が複数あるときは出席番号で順に振り分け、学級の全員が同じ教科・同じ観点にならないようにした。(5) すでに★を付けてある児童の★は変えない。(6) 取り込み画面の一覧に「おすすめ★」の列を追加した。(7) 「文のまとめ方」が「1観点＝1文」のままなら、取り込み後にその旨を表示する（★の2件は2文のまま出る）。"},
@@ -1443,7 +1444,7 @@ function toPolite(s){
 /* sel: Map<id, "can"|"grow"|"issue">  /  pri: Set<id>（★重点。最大 MAX_PRI 件）
    課題（issue）は所見全体で MAX_ISSUE 件まで。issue は66〜84字あり、
    2件入れると所見の半分以上が課題の話になるため。 */
-const MAX_PRI = 3;
+const MAX_PRI = 5;   // v1.30：3→5（おすすめの★を学習面3・生活面2にしたため）
 const MAX_ISSUE = 1;
 /* issue を選んだときに注意を出す、めやす字数の下限 */
 const ISSUE_WARN_LEN = 120;
@@ -1751,6 +1752,12 @@ const JOIN_MAX   = 56;   // まとめる2件の文例の合計字数の上限
 const JOIN_COMMA = 2;    // まとめた文に許す読点の数の上限
 const ITEM_GROUP = new Map();
 DB.forEach(g=>g.items.forEach(i=>ITEM_GROUP.set(i.id, g)));
+/* v1.30：因果文（v1.18 の can→grow、v1.21 の体育系 can→can）は、同じカテゴリ
+   （DBのグループ。例：同じ学年帯の「体育」どうし、「人とのかかわり」どうし）の
+   2文のときだけ作る。v1.24〜v1.29は「同じ領域（学習系／生活系）」で判定していたため、
+   「人とのかかわり」の「進んで手を差し伸べる」と「特別活動・係活動」の伸長中のように、
+   意味のつながらない2文まで「〜ことで、」でつないでいた。 */
+function sameCat(a, b){ return !!a && !!b && ITEM_GROUP.get(a.it.id) === ITEM_GROUP.get(b.it.id); }
 
 /* 教科の「知識・技能」＋「思考・判断・表現」の2件をまとめるときの専用の文（v1.27）。
    v1.28：「主体的に学習に取り組む態度」との組み合わせ（ct＝知識・技能＋態度、
@@ -1959,7 +1966,7 @@ function buildText(list, seed){
     // 「また、」を付けて前文とのつながりを示す。
     if(c.lvl==='can' && i>0){
       const prev = ordered[i-1];
-      if(prev.lvl==='can' && domainOf(prev)===domainOf(c) && isEffortCan(prev.it.can) && isTaiikuItem(c.it) && c.it.grow){
+      if(prev.lvl==='can' && sameCat(prev, c) && isEffortCan(prev.it.can) && isTaiikuItem(c.it) && c.it.grow){
         const variant = i + seed;
         const sent = "また、" + toCausalClause(c.it.can) + endGrow(c.it.grow, variant);
         parts.push(sent);   owners.push([c]);
@@ -1976,14 +1983,14 @@ function buildText(list, seed){
       }else if(c.lvl==='can'){
         // n が次の文と因果文になる場合（can→grow の切れ目／体育系 can→can）
         const nn = ordered[i+2];
-        if(nn && firstGrowPos.has(i+2) && domainOf(nn)===domainOf(n) && isEffortCan(n.it.can)) block = true;
-        if(nn && nn.lvl==='can' && domainOf(nn)===domainOf(n) && isEffortCan(n.it.can) && isTaiikuItem(nn.it) && nn.it.grow) block = true;
+        if(nn && firstGrowPos.has(i+2) && sameCat(nn, n) && isEffortCan(n.it.can)) block = true;
+        if(nn && nn.lvl==='can' && sameCat(nn, n) && isEffortCan(n.it.can) && isTaiikuItem(nn.it) && nn.it.grow) block = true;
         // c と n のあいだで体育系 can→can の因果文になる場合
-        if(isEffortCan(c.it.can) && isTaiikuItem(n.it) && n.it.grow) block = true;
+        if(sameCat(c, n) && isEffortCan(c.it.can) && isTaiikuItem(n.it) && n.it.grow) block = true;
       }else if(firstGrowPos.has(i) && i>0){
         // c が直前の can と因果文になる場合
         const prev = ordered[i-1];
-        if(prev.lvl==='can' && !inJoin.has(i-1) && domainOf(prev)===domainOf(c) && isEffortCan(prev.it.can)) block = true;
+        if(prev.lvl==='can' && !inJoin.has(i-1) && sameCat(prev, c) && isEffortCan(prev.it.can)) block = true;
       }
       if(!block){
         const core = joinCore(c, n);
@@ -2005,10 +2012,10 @@ function buildText(list, seed){
     // v1.8で grow を進歩型に統一したため時制が食い違い「また、」に変更した）。
     if(firstGrowPos.has(i) && i>0){
       // 直前が同じ領域の can なら、それがその領域の最後の can（order()による整列のため）。
-      // 直前が別の領域の文なら因果化はせず、「また、」でつなぐ。
+      // 直前が別のカテゴリの文なら因果化はせず、「また、」でつなぐ（v1.30）。
       const prev = ordered[i-1];
       // 直前の can がまとめた1文の後ろ側なら、その文を因果文に作り替えない（v1.28）
-      if(prev.lvl==='can' && !inJoin.has(i-1) && domainOf(prev)===domainOf(c) && isEffortCan(prev.it.can)){
+      if(prev.lvl==='can' && !inJoin.has(i-1) && sameCat(prev, c) && isEffortCan(prev.it.can)){
         const clause = toCausalClause(prev.it.can);
         parts.pop();   owners.pop();   // 直前に積んだ独立文（can）を取り除き、この文に合体させる
         sent = clause + sent;
@@ -3368,7 +3375,9 @@ function evalMergeSel(rec, r, o){
   return { sel, skipIss };
 }
 
-/* おすすめの★（v1.27）。学習系の「できる」から2件、生活系の「できる」から1件。
+/* おすすめの★（v1.27、v1.30で5件に）。学習系の「できる」から3件、生活系の「できる」から2件。
+   学習系の3件目は、1文にまとめる2件とは別の教科から選ぶ（同じ教科が3文続かないように）。
+   生活系の2件は、なるべく別のカテゴリから選ぶ。
    学習系の2件は「2観点をまとめる」で1文にできる組み合わせを選ぶ。
    ★は所見文の先頭（学習系の「できる」の先頭）に並ぶので、2件は必ず隣り合う。
    ただし後ろの文が因果文（v1.18／v1.21）になる組み合わせは、buildText が
@@ -3399,15 +3408,32 @@ function evalRecommend(sel, band, no){
     const b = learn.find(x=>ITEM_GROUP.get(x.it.id)!==ITEM_GROUP.get(a.it.id)) || learn.find(x=>x!==a);
     L = [a, b].filter(Boolean);
   }
-  const one = life.length ? life[k % life.length] : null;
-  return { ids:[...L, one].filter(Boolean).map(c=>c.it.id), joinable,
+  // 学習系の3件目（v1.30）。まとめる2件と別の教科を優先し、出席番号で振り分ける。
+  const restL = learn.filter(x=>!L.includes(x));
+  if(L.length && restL.length){
+    const g0 = ITEM_GROUP.get(L[0].it.id);
+    const other = restL.filter(x=>ITEM_GROUP.get(x.it.id)!==g0);
+    const pool = other.length ? other : restL;
+    L = [...L, pool[k % pool.length]];
+  }
+  // 生活系の2件（v1.30）。2件目はなるべく1件目と別のカテゴリから選ぶ。
+  const lifePick = [];
+  if(life.length){
+    const a = life[k % life.length];
+    lifePick.push(a);
+    const rest = life.filter(x=>x!==a);
+    const other = rest.filter(x=>ITEM_GROUP.get(x.it.id)!==ITEM_GROUP.get(a.it.id));
+    const pool = other.length ? other : rest;
+    if(pool.length) lifePick.push(pool[k % pool.length]);
+  }
+  return { ids:[...L, ...lifePick].map(c=>c.it.id), joinable,
            learnCat: L.length ? ITEM_GROUP.get(L[0].it.id).cat : "", nLearn:L.length,
-           life: one ? one.it.txt : "" };
+           nLife: lifePick.length, life: lifePick.map(c=>c.it.txt).join("／") };
 }
 function evalStarLabel(rc){
   if(!rc.ids.length) return "";
-  const a = rc.nLearn ? (rc.joinable ? `${rc.learnCat}2件（まとめ可）` : `学習${rc.nLearn}件（まとめ不可）`) : "学習なし";
-  return a + "／" + (rc.life || "生活なし");
+  const a = rc.nLearn ? `学習${rc.nLearn}件` + (rc.joinable ? `（${rc.learnCat}の2件はまとめ可）` : '（まとめ不可）') : "学習なし";
+  return a + "／" + (rc.nLife ? `生活${rc.nLife}件：${rc.life}` : "生活なし");
 }
 
 /* 名簿に表示する名前を作る。名簿CSVと同じ考え方。
@@ -3541,9 +3567,9 @@ function evalRenderPreview(){
   if(noIssue) msgs.push(`課題の文例がない観点の△が ${noIssue}人分 あります（選びません）。`);
   if(hasIss) msgs.push(`すでに課題を付けてある児童が ${hasIss}人 います。その児童には一覧の△による課題を付けません。`);
   if(o.star==='on'){
-    msgs.push(`★は学習面2件・生活面1件をおすすめとして付けます。学習面の2件は、同じ教科の中で1文にまとめられる組み合わせから選びます。`
-      + (state.join ? '' : `<b>いまは「文のまとめ方」が「1観点＝1文」のため、2件は2文のまま出ます。</b>`));
-    if(noPair) msgs.push(`まとめられる組み合わせがない児童が ${noPair}人 います。別の教科の「できる」から2件を選びます。`);
+    msgs.push(`★は学習面3件・生活面2件をおすすめとして付けます。学習面のうち2件は、同じ教科の中で1文にまとめられる組み合わせから選び、残りの1件は別の教科から選びます。`
+      + (state.join ? '' : `<b>いまは「文のまとめ方」が「1観点＝1文」のため、まとめられる2件も2文のまま出ます。</b>`));
+    if(noPair) msgs.push(`まとめられる組み合わせがない児童が ${noPair}人 います。別の教科の「できる」から選びます。`);
     if(keepStar) msgs.push(`すでに★を付けてある児童が ${keepStar}人 います。その児童の★は変えません。`);
   }
   if(gaiji) msgs.push(`外字を含む氏名が ${gaiji}人 います。「名前に使う部分」を「名だけ」にすると避けられる場合があります。`);
@@ -3642,7 +3668,7 @@ function evalApply(){
   closeEvalModal();
   setSaveState(`評価一覧から観点を選びました（${changed}人分）`
     + (skipIss ? `。すでに課題がある ${skipIss}人 には△の課題を付けていません` : '')
-    + (starred ? `。${starred}人におすすめの★を付けました` + (state.join ? '' : '（学習面の2件を1文にするには「文のまとめ方」を「2観点をまとめる」に）') : ''), true);
+    + (starred ? `。${starred}人におすすめの★を付けました` + (state.join ? '' : '（同じ教科の2件を1文にするには「文のまとめ方」を「2観点をまとめる」に）') : ''), true);
 }
 
 /* ファイルを開いて、評価一覧として読めるシートを探す */
