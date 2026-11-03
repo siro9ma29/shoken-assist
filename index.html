@@ -217,161 +217,476 @@
 .c4th{font-size:12px; color:var(--ink); background:var(--accent-soft); border:1px solid #c9dccf;
   border-radius:8px; padding:8px 12px; margin:8px 0 0; line-height:1.6;}
 .c4th ol{margin:4px 0 0; padding-left:1.4em;}
+
+/* ==== v1.33：1画面1ステップの画面構成 ==== */
+.apphead{padding:12px 22px 10px;}
+.headrow{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; max-width:820px; margin:0 auto;}
+.headnav{display:flex; gap:6px;}
+.linkbtn{border:none; background:none; color:var(--accent); font:inherit; font-size:13.5px; cursor:pointer;
+  padding:6px 8px; border-radius:6px; text-decoration:underline; text-underline-offset:3px;}
+.linkbtn:hover{background:var(--accent-soft);}
+.linkbtn.strong{font-weight:700; font-size:15px;}
+.stepbar{list-style:none; display:flex; gap:4px; margin:10px auto 0; padding:0; max-width:820px; counter-reset:st;}
+.stepbar li{flex:1; text-align:center; font-size:12.5px; color:var(--sub); padding:6px 4px 5px;
+  border-bottom:4px solid var(--line); counter-increment:st; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.stepbar li::before{content:counter(st) " "; font-weight:700;}
+.stepbar li.done{color:var(--accent); border-color:#a9c7b6;}
+.stepbar li.cur{color:var(--accent); border-color:var(--accent); font-weight:700;}
+.stage{max-width:820px; margin:0 auto; padding:22px 22px 60px;}
+.screen{display:none; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:24px 26px;}
+.screen.on{display:block;}
+.scrtitle{font-size:20px; margin:0 0 6px; letter-spacing:.02em;}
+.lead{font-size:16px; margin:0 0 18px;}
+.small{font-size:12.5px;}
+.center{text-align:center;}
+.bigchoice{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:8px 0 18px;}
+@media(max-width:640px){.bigchoice{grid-template-columns:1fr;}}
+.choice{display:flex; flex-direction:column; gap:8px; text-align:left; padding:26px 22px; border-radius:14px; cursor:pointer;
+  border:2px solid var(--accent); background:var(--accent-soft); font-family:inherit; color:var(--ink);}
+.choice:hover{background:#dbe9df;}
+.choice:focus-visible{outline:3px solid var(--accent); outline-offset:2px;}
+.ch-title{font-size:21px; font-weight:700; color:var(--accent);}
+.ch-sub{font-size:13.5px; color:var(--sub); line-height:1.6;}
+.sublinks{display:flex; flex-wrap:wrap; gap:6px 14px; margin-bottom:14px;}
+.btn.wide{flex:none; min-width:220px;}
+.btn:disabled{opacity:.45; cursor:not-allowed;}
+.navrow{display:flex; gap:10px; justify-content:space-between; align-items:center; margin-top:22px; flex-wrap:wrap;}
+.navrow .btn{flex:none; min-width:130px; padding:13px 18px;}
+.navrow .btn.primary{min-width:200px; font-size:16px;}
+.dropzone{border:2px dashed #a9c7b6; border-radius:14px; padding:30px 16px; text-align:center; background:#fafcfa;}
+.dropzone.over{background:var(--accent-soft); border-color:var(--accent);}
+.dz-main{font-size:17px; font-weight:700; margin:0;}
+.dz-or{color:var(--sub); margin:6px 0 12px; font-size:13px;}
+.errbox{margin-top:14px; padding:12px 14px; border-radius:8px; background:#f7e6e0; border:1px solid #d9b3a6; color:#7a3424; font-size:14px; line-height:1.7;}
+details.fold{margin-top:16px; border-top:1px solid var(--line); padding-top:10px;}
+details.fold>summary{cursor:pointer; color:var(--accent); font-weight:700; font-size:14px; padding:4px 0;}
+details.fold[open]>summary{margin-bottom:10px;}
+details.fold.mini{margin-top:4px; border-top:none; padding-top:0;}
+details.fold.mini>summary{font-size:13px; font-weight:600;}
+.guidedl{margin:0; font-size:13px;}
+.guidedl dt{font-weight:700; margin-top:6px;}
+.guidedl dd{margin:2px 0 0 1em; color:var(--sub);}
+.guidedl .lv-can{color:var(--accent);} .guidedl .lv-grow{color:var(--grow);} .guidedl .lv-issue{color:var(--warn);}
+.bignum{font-size:22px; font-weight:700; margin:6px 0 4px; color:var(--accent);}
+.bigselect{font-family:inherit; font-size:15px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; min-width:260px;}
+.seg.big button{padding:12px 8px; font-size:14.5px;}
+.warnlist{font-size:13.5px; line-height:1.8; margin-top:14px; color:var(--ink);}
+.lenpick{display:flex; gap:14px;}
+.lenpick button{flex:1; padding:28px 10px; font-size:24px; font-weight:700; font-family:inherit; cursor:pointer;
+  border:2px solid var(--line); border-radius:14px; background:var(--panel); color:var(--ink);}
+.lenpick button:hover{border-color:var(--accent); background:var(--accent-soft);}
+.lenpick button.on{border-color:var(--accent); background:var(--accent-soft); color:var(--accent);}
+.bigin{font-size:17px !important; padding:11px 12px !important;}
+.yearpick{display:grid; grid-template-columns:repeat(6,1fr); gap:8px;}
+@media(max-width:560px){.yearpick{grid-template-columns:repeat(3,1fr);}}
+.yearpick button{padding:14px 4px; font-size:16px; font-family:inherit; border:2px solid var(--line); border-radius:10px; background:var(--panel); cursor:pointer;}
+.yearpick button.on{border-color:var(--accent); background:var(--accent); color:#fff; font-weight:700;}
+.whobar{display:flex; justify-content:space-between; align-items:baseline; gap:10px; flex-wrap:wrap;
+  font-size:13.5px; color:var(--sub); margin:-6px 0 12px; padding-bottom:8px; border-bottom:1px solid var(--line);}
+.whobar b{font-size:18px; color:var(--ink);}
+.whobar .prog{font-weight:700; color:var(--accent);}
+.pagechips{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px;}
+.pagechips button{border:1px solid var(--line); background:var(--panel); border-radius:16px; padding:4px 11px;
+  font-size:12.5px; font-family:inherit; cursor:pointer; color:var(--sub);}
+.pagechips button.cur{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:700;}
+.pagechips button .n{margin-left:4px; font-weight:700;}
+.meterbar{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;
+  margin-top:12px; padding:10px 14px; border-radius:8px; background:#faf9f5; font-size:14px;}
+.meter-ok{color:#1b6b34; font-weight:700;}
+.meter-short{color:var(--grow); font-weight:700;}
+.meter-over{color:var(--warn); font-weight:700;}
+#scrDraft .out{font-size:17px; line-height:2; min-height:170px; padding:18px 20px;}
+#scrDraft .tools{flex-wrap:wrap;}
+#scrDraft .tools button{padding:9px 14px; font-size:13.5px;}
+/* 項目の行（1ページ分）。ボタンを大きくし、「選ばない」を足す */
+#scrItems .cat-divider{display:none;}
+#scrItems .item{padding:11px 0; flex-wrap:wrap;}
+#scrItems .item .txt{font-size:15px; min-width:220px;}
+#scrItems .lvlpick{gap:6px;}
+#scrItems .lvlpick span{padding:8px 14px; font-size:13.5px; border-radius:18px;}
+#scrItems .lvlpick span.noissue{width:62px; border:none; background:none; padding:0;}
+.clr{border:1px solid var(--line); background:var(--panel); border-radius:18px; padding:8px 12px; font-size:13px;
+  font-family:inherit; color:var(--sub); cursor:pointer;}
+.item:not(.sel) .clr{background:#efede6; color:var(--ink); font-weight:700;}
+.item:not(.sel) .star{visibility:hidden;}
+details.cat>summary{font-size:15px;}
+.banner{background:#dff3e3; color:#1b6b34; border-radius:8px; padding:12px 14px; margin-bottom:14px; font-weight:700;}
+.listhead{display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; margin-bottom:12px;}
+.listcount{font-size:14px; color:var(--sub);}
+.listcount b{color:var(--ink);}
+.listtools{display:flex; gap:10px; flex-wrap:wrap;}
+.listtools .btn{flex:none; padding:10px 16px; font-size:14px;}
+.listtable{margin-top:12px; border:1px solid var(--line); border-radius:8px; overflow:auto;}
+.listtable table{border-collapse:collapse; width:100%; font-size:13.5px;}
+.listtable th{background:#faf9f5; font-size:12px; color:var(--sub); text-align:left; padding:7px 10px; border-bottom:1px solid var(--line); white-space:nowrap;}
+.listtable td{padding:9px 10px; border-bottom:1px solid #ece7db; vertical-align:top;}
+.listtable tr.lrow{cursor:pointer;}
+.listtable tr.lrow:hover td{background:#f7f6f1;}
+.listtable td.no{color:var(--sub); width:42px; text-align:right;}
+.listtable td.nm{white-space:nowrap; font-weight:700;}
+.listtable td.tx{color:var(--sub); min-width:200px;}
+.listtable td.len{white-space:nowrap; text-align:right; font-variant-numeric:tabular-nums;}
+.listtable td.len.bad{color:var(--warn); font-weight:700; background:var(--warn-soft);}
+.listtable td.ops{white-space:nowrap; text-align:right;}
+.listtable td.ops button{border:1px solid var(--line); background:var(--panel); border-radius:6px; padding:4px 9px; font-size:12px; font-family:inherit; cursor:pointer;}
+.listtable td.ops button.del{color:#b4ae9f; border:none;}
+.listtable td.ops button.del:hover{color:var(--warn);}
+.badge{display:inline-block; font-size:11.5px; padding:2px 9px; border-radius:10px; white-space:nowrap;}
+.badge.none{background:#f0eee7; color:var(--sub);}
+.badge.draft{background:var(--grow-soft); color:var(--grow); font-weight:700;}
+.badge.ok{background:#dff3e3; color:#1b6b34; font-weight:700;}
+.appfoot{max-width:820px; margin:-40px auto 30px; padding:0 22px; text-align:right;}
+.tourbox{width:min(520px,100%); padding:26px;}
+.tourpage h3{font-size:19px; margin:0 0 10px; color:var(--accent);}
+.tourpage p{font-size:15px; margin:0 0 8px;}
+.tourdots{display:flex; gap:6px; justify-content:center; margin-top:14px;}
+.tourdots span{width:8px; height:8px; border-radius:50%; background:var(--line);}
+.tourdots span.on{background:var(--accent);}
 </style>
 </head>
 <body>
-<header>
-  <h1>所見文アシスト<span class="ver" id="verBadge"></span></h1>
-  <p>チェックした項目から所見文の下書きを組み立てます。学級全員分をこのまま続けて作れます。生成後は必ず担任が加筆・修正してください。</p>
-  <div class="filerow">
-    <button id="expWorkBtn">作業ファイルを書き出す</button>
-    <button id="impWorkBtn">作業ファイルを読み込む</button>
-    <button id="expCsvBtn">所見文をCSVで書き出す</button>
-    <button id="wipeBtn" class="danger">学級をすべて消す</button>
+<header class="apphead">
+  <div class="headrow">
+    <h1>所見文アシスト<span class="ver" id="verBadge"></span></h1>
+    <nav class="headnav">
+      <button type="button" class="linkbtn" id="navHome">はじめの画面</button>
+      <button type="button" class="linkbtn" id="navList">所見一覧</button>
+    </nav>
   </div>
-  <input type="file" id="importFile" accept=".json,application/json" style="display:none;">
-  <div class="note">
-    入力した内容は、このパソコンのブラウザに自動で保存されます。<b>共有のパソコンでは、作業が終わったら「学級をすべて消す」を押してください。</b>
-    別のパソコンで続けるとき、バックアップを残すときは「作業ファイルを書き出す」を使います。
-  </div>
+  <ol class="stepbar" id="stepbar" style="display:none;"></ol>
 </header>
 
-<div class="wrap">
-  <!-- 左：設定 -->
-  <div>
-    <div class="panel">
-      <h2>児童（学級）　<span style="color:var(--accent); float:right;" id="rosterCount">—</span></h2>
-      <div class="field">
-        <label>学級名</label>
-        <input type="text" id="clsInput" placeholder="例）3年2組">
-        <p class="hint">書き出すファイルの名前に使います。</p>
-      </div>
-      <div class="roster" id="roster"></div>
-      <div class="btnrow" style="margin-top:10px;">
-        <button class="btn primary" id="addStuBtn">＋ 児童を追加</button>
-        <button class="btn ghost" id="impNamesBtn">名簿CSVを読み込む</button>
-      </div>
-      <p class="hint">名簿CSVは校務システムやExcelから出したものが使えます（Shift_JIS・UTF-8 のどちらでも可）。取り込む前に確認画面が出ます。出席番号と児童の名前（名簿の表示とCSV書き出しに使います）は、ここでの取り込みで決まります。所見文の文頭に児童の呼称は付きません。「＋ 児童を追加」で手入力した児童は、番号は自動採番、名前は空欄になります。</p>
-      <div class="btnrow" style="margin-top:12px;">
-        <button class="btn ghost" id="impEvalBtn" style="flex:1;">評価一覧（Excel）から観点を選ぶ</button>
-      </div>
-      <p class="hint">校務システムから出した「学習の記録（ABC）・行動の記録（○・△）」の一覧（.xls または CSV）を読み込み、各児童の観点に自動でチェックを付けます。Aと○は「できる」、△は「課題」になります（課題は1人1件まで）。名簿がまだなければ、この一覧から学級もつくれます。</p>
-      <div class="c4th">
-        <b>C4thでの出力方法</b>
-        <ol>
-          <li>「児童生徒」→「成績出力」→「成績Excel出力」を開く</li>
-          <li>追加する項目は「通年　必修観点」と「通年　行動の記録」</li>
-          <li>出力方法は「学年毎にシートを分ける」を選択</li>
-        </ol>
-      </div>
-      <p class="savestate ok" id="saveState">自動保存：オン</p>
-      <input type="file" id="namesFile" accept=".csv,.txt,text/csv" style="display:none;">
-      <input type="file" id="evalFile" accept=".xls,.csv,.txt,application/vnd.ms-excel,text/csv" style="display:none;">
-    </div>
+<main class="stage">
 
-    <div class="panel" style="margin-top:18px;">
-      <h2>基本設定</h2>
-      <div class="field">
-        <label>学年帯</label>
-        <div class="seg" id="gradeSeg">
-          <button data-grade="low" class="on">低学年</button>
-          <button data-grade="mid">中学年</button>
-          <button data-grade="high">高学年</button>
-        </div>
-        <p class="hint">生活全般・学習全般・健康体力・特別活動係活動・人とのかかわりは学年共通で表示されます。教科別・行事別の観点は、ここで選んだ学年帯のものだけが表示され、所見文にも反映されます。</p>
-      </div>
-
-      <div class="field">
-        <label>文字数のめやす</label>
-        <div class="seg" id="lenSeg">
-          <button data-len="150">150字</button>
-          <button data-len="175" class="on">175字</button>
-          <button data-len="200">200字</button>
-        </div>
-        <div class="row" style="margin-top:8px; align-items:center;">
-          <input type="number" id="lenInput" value="175" min="30" max="400" style="width:90px;">
-          <span class="hint" style="margin:0;">字前後で調整</span>
-        </div>
-      </div>
-
-      <div class="field">
-        <label>文のまとめ方</label>
-        <div class="seg" id="joinSeg">
-          <button data-join="off" class="on">1観点＝1文</button>
-          <button data-join="on">2観点をまとめる</button>
-        </div>
-        <p class="hint">同じカテゴリで評価も同じ（できる同士・伸長中同士）観点2件のうち、内容がつながる組み合わせを、用意してある1文にまとめます。教科は3観点のどの2つでもまとめられます。学習面・生活面などは、つながりのある組み合わせだけをまとめます。</p>
-      </div>
-
-    </div>
+<!-- ===== スタート ===== -->
+<section class="screen" id="scrStart" data-title="はじめの画面">
+  <p class="lead">どちらの方法で所見文を作りますか。</p>
+  <div class="bigchoice">
+    <button type="button" class="choice" id="goImport" data-primary>
+      <span class="ch-title">成績一覧から作る</span>
+      <span class="ch-sub">C4thから出した成績Excelを読み込み、学級全員分をまとめて作ります。</span>
+    </button>
+    <button type="button" class="choice" id="goSingle">
+      <span class="ch-title">一人ずつ作る</span>
+      <span class="ch-sub">名前を入れて、項目を選びながら一人分ずつ作ります。</span>
+    </button>
   </div>
+  <div class="sublinks">
+    <button type="button" class="linkbtn strong" id="goResume" style="display:none;"></button>
+    <button type="button" class="linkbtn" id="goListFromStart" style="display:none;">作った所見を見る</button>
+    <button type="button" class="linkbtn" id="goTour">使い方を見る</button>
+  </div>
+  <div class="note small">
+    入力した内容は、このパソコンのブラウザの中だけに自動で保存されます。<b>共有のパソコンでは、作業のあと「所見一覧」の「くわしい設定」から「学級をすべて消す」を押してください。</b>
+  </div>
+</section>
 
+<!-- ===== 成績一覧①：読み込み ===== -->
+<section class="screen" id="scrImport" data-title="成績一覧を読み込む">
+  <h2 class="scrtitle">成績一覧を読み込む</h2>
+  <p class="lead">C4thから出した成績Excelを、ここに入れてください。</p>
+  <div class="dropzone" id="dropZone">
+    <p class="dz-main">ここにファイルをドラッグ</p>
+    <p class="dz-or">または</p>
+    <button type="button" class="btn primary wide" id="impEvalBtn" data-primary>ファイルを選ぶ</button>
+  </div>
+  <div class="errbox" id="importErr" style="display:none;"></div>
+  <details class="fold">
+    <summary>C4thでの出し方</summary>
+    <div class="c4th">
+      <ol>
+        <li>「児童生徒」→「成績出力」→「成績Excel出力」を開く</li>
+        <li>追加する項目は「通年　必修観点」と「通年　行動の記録」</li>
+        <li>出力方法は「学年毎にシートを分ける」を選択</li>
+      </ol>
+    </div>
+  </details>
+  <details class="fold">
+    <summary>くわしい設定</summary>
+    <p class="hint">成績一覧がないときは、名簿CSVで学級だけを作ることもできます。そのあと「所見一覧」から一人ずつ項目を選びます。</p>
+    <button type="button" class="btn ghost" id="impNamesBtn">名簿CSVから学級をつくる</button>
+  </details>
+  <div class="navrow">
+    <button type="button" class="btn ghost" data-back>← 戻る</button>
+  </div>
+  <input type="file" id="namesFile" accept=".csv,.txt,text/csv" style="display:none;">
+  <input type="file" id="evalFile" accept=".xls,.csv,.txt,application/vnd.ms-excel,text/csv" style="display:none;">
+</section>
 
-  <!-- 右：項目選択＋出力 -->
-  <div>
-    <div class="panel">
-      <h2>観点と項目を選ぶ（各項目で「できる」／「伸長中」／「課題」を選択）　<span style="color:var(--accent); float:right;" id="selCount">0件選択中</span></h2>
+<!-- ===== 成績一覧②：読み取りの確認（旧 評価一覧の読み込みダイアログ） ===== -->
+<section class="screen" id="evalModal" data-title="読み取りの確認">
+  <h2 class="scrtitle">読み取った内容の確認</h2>
+  <p class="bignum" id="evalSummary"></p>
+  <p class="hint" id="evalInfo" style="margin:0;"></p>
+  <div class="field" id="evalSheetWrap" style="display:none;">
+    <label for="evalSheet">学年（シート）を選ぶ</label>
+    <select id="evalSheet" class="bigselect"></select>
+  </div>
+  <div class="field" id="evalModeWrap" style="display:none;">
+    <label>いまある学級をどうしますか</label>
+    <div class="seg big" id="evalModeSeg">
+      <button type="button" data-mode="match">いまの学級に取り込む</button>
+      <button type="button" data-mode="create">学級をつくり直す</button>
+    </div>
+    <p class="hint" id="evalModeHint"></p>
+  </div>
+  <div class="hint warnlist" id="evalWarn"></div>
+  <details class="fold">
+    <summary>児童ごとの内訳を見る</summary>
+    <p class="evalmap" id="evalMap"></p>
+    <div class="csvprev" id="evalPrev"></div>
+  </details>
+  <details class="fold">
+    <summary>くわしい設定</summary>
+    <div class="csvopts">
+      <label>取り込み方
+        <select id="evalMode">
+          <option value="match">いまの学級に、出席番号で照合して取り込む</option>
+          <option value="create">この一覧の名簿で学級をつくり直す</option>
+        </select>
+      </label>
+      <label id="evalMergeWrap">選択済みの項目
+        <select id="evalMerge">
+          <option value="add">足し合わせる（選んである項目はそのまま）</option>
+          <option value="replace">置き換える（対応する項目は一覧の内容にする）</option>
+        </select>
+      </label>
+      <label>「C」の扱い
+        <select id="evalC">
+          <option value="none">選択しない</option>
+          <option value="grow">「伸長中」にする</option>
+        </select>
+      </label>
+      <label>おすすめの★
+        <select id="evalStar">
+          <option value="on">付ける（学習面3・生活面2）</option>
+          <option value="off">付けない</option>
+        </select>
+      </label>
+      <span id="evalNameOpts" style="display:contents;">
+        <label>名前に使う部分
+          <select id="evalUse">
+            <option value="full">姓と名</option>
+            <option value="given">名だけ</option>
+            <option value="family">姓だけ</option>
+          </select>
+        </label>
+        <label>敬称
+          <select id="evalSuffix">
+            <option value="さん" selected>さん</option>
+            <option value="くん">くん</option>
+            <option value="">付けない</option>
+          </select>
+        </label>
+      </span>
+    </div>
+    <div class="note small">
+      <b>A</b>と<b>○</b>は「できる」、<b>△</b>は「課題」として選びます。B・空欄の観点は選びません（Cは上の設定に従います）。課題は1人1件までのため、<b>△が2つ以上ある児童には自動で付けません</b>。課題の文例がない観点（創意工夫・生命尊重・自然愛護・勤労・奉仕・公正・公平）の△も選びません。すでに課題を付けてある児童にも付けません。
+      名前は一覧の表示とCSV書き出しに使います（所見文の文頭には付きません）。
+    </div>
+  </details>
+  <div class="navrow">
+    <button type="button" class="btn ghost" id="evalCancel">← 戻る</button>
+    <button type="button" class="btn primary" id="evalApply" data-primary>この内容で取り込む（次へ）</button>
+  </div>
+</section>
 
-      <details class="guide">
-        <summary>できる／伸長中／課題 の使い分け（迷ったら開いてください）</summary>
-        <dl>
-          <dt class="lv-can">できる</dt>
-          <dd>その姿が身についています。保護者にそのまま伝えたいよさです。</dd>
-
-          <dt class="lv-grow">伸長中</dt>
-          <dd>まだ十分ではないが、伸びつつある姿です。<b>指導の予定は書きません。</b>
-              「以前よりできるようになってきた」と言えるならこちらです。</dd>
-
-          <dt class="lv-issue">課題</dt>
-          <dd>保護者に家庭でも意識してほしいことがある場合に選びます。
-              <b>課題の姿と、今後の手立てが必ずセットで出ます。</b></dd>
-        </dl>
-        <p class="guide-rule">
-          <b>迷ったら「伸長中」を選んでください。</b>
-          通知表の所見は一人一人のよさや進歩を伝えるものです。
-          「課題」は<b>1件まで</b>。2件以上入れると所見の半分以上が課題の話になります。<br>
-          なお、<b>「課題」ボタンが出ない項目があります。</b>体力や性格、思いやりのように、
-          指導で変わる行動として書けないものには、あえて課題を用意していません。
-          道徳・入学式等の儀式的行事・作品展・クラブ活動も同じ理由で課題を用意していません
-          （道徳は個人内評価の教科であり、他は技能の到達度より参加や鑑賞・興味関心が中心のため）。
-        </p>
-      </details>
-
-      <div class="field">
-        <label>表示するカテゴリ</label>
-        <div class="seg" id="topCatSeg">
-          <button data-topcat="common" class="on">全学年共通</button>
-          <button data-topcat="subject">教科別</button>
-        </div>
-        <p class="hint" id="topCatHint"></p>
-      </div>
-
-      <div class="cats" id="cats"></div>
-      <p class="prinote" id="priNote"></p>
-      <p class="issuenote" id="issueNote"></p>
-      <div class="btnrow" style="margin-top:16px;">
-        <button class="btn primary" id="genBtn">所見文をつくる</button>
-        <button class="btn ghost" id="clearBtn">選択解除</button>
+<!-- ===== 文字数 ===== -->
+<section class="screen" id="scrLen" data-title="文字数を選ぶ">
+  <h2 class="scrtitle">所見の文字数を選んでください</h2>
+  <p class="lead" id="lenLead">押すと次へ進みます。</p>
+  <div class="lenpick" id="lenPick">
+    <button type="button" data-len="150">150字</button>
+    <button type="button" data-len="175">175字</button>
+    <button type="button" data-len="200">200字</button>
+  </div>
+  <details class="fold">
+    <summary>くわしい設定</summary>
+    <div class="field">
+      <label for="lenFree">文字数を自由に決める</label>
+      <div class="row" style="align-items:center;">
+        <input type="number" id="lenFree" min="30" max="400" style="width:100px;">
+        <span class="hint" style="margin:0;">字前後</span>
+        <button type="button" class="btn ghost" id="lenFreeGo">この字数で次へ</button>
       </div>
     </div>
+    <div class="field">
+      <label>文のまとめ方（学級で共通）</label>
+      <div class="seg" id="joinSeg">
+        <button data-join="off" class="on">1観点＝1文</button>
+        <button data-join="on">2観点をまとめる</button>
+      </div>
+      <p class="hint">同じカテゴリで評価も同じ観点2件のうち、内容がつながる組み合わせを、用意してある1文にまとめます。成績一覧のおすすめ★（同じ教科の2件）は「2観点をまとめる」で1文になります。</p>
+    </div>
+  </details>
+  <div class="navrow">
+    <button type="button" class="btn ghost" data-back>← 戻る</button>
+  </div>
+</section>
 
-    <div class="panel" style="margin-top:18px;">
-      <h2>下書き</h2>
-      <div class="out empty" id="out">ここに所見文の下書きが表示されます。</div>
-      <div class="meta">
-        <span id="lenMeta">— 字</span>
-        <span id="tip"></span>
+<!-- ===== 一人ずつ①：名前と学年 ===== -->
+<section class="screen" id="scrName" data-title="名前と学年">
+  <h2 class="scrtitle">名前と学年を入れてください</h2>
+  <div class="field">
+    <label for="nameIn">名前（空欄でもかまいません）</label>
+    <input type="text" id="nameIn" class="bigin" placeholder="例）山田 花子さん" autocomplete="off">
+    <p class="hint">一覧の表示とCSVに使います。所見文の文頭には付きません。</p>
+  </div>
+  <div class="field">
+    <label for="noIn">出席番号</label>
+    <input type="number" id="noIn" class="bigin" min="1" max="99" style="width:120px;">
+  </div>
+  <div class="field">
+    <label>学年</label>
+    <div class="yearpick" id="yearPick">
+      <button type="button" data-year="1">1年</button><button type="button" data-year="2">2年</button>
+      <button type="button" data-year="3">3年</button><button type="button" data-year="4">4年</button>
+      <button type="button" data-year="5">5年</button><button type="button" data-year="6">6年</button>
+    </div>
+    <p class="hint">教科や行事の項目が、学年に合わせて変わります。</p>
+  </div>
+  <div class="navrow">
+    <button type="button" class="btn ghost" data-back>← 戻る</button>
+    <button type="button" class="btn primary" id="nameNext" data-primary>次へ →</button>
+  </div>
+</section>
+
+<!-- ===== 項目を選ぶ（1ページ＝1つのまとまり） ===== -->
+<section class="screen" id="scrItems" data-title="項目を選ぶ">
+  <div class="whobar" id="itemsWho"></div>
+  <div class="pagechips" id="pageChips"></div>
+  <h2 class="scrtitle" id="pageTitle"></h2>
+  <p class="lead" id="pageLead"></p>
+  <details class="fold mini">
+    <summary>できる／伸長中／課題 の使い分け</summary>
+    <dl class="guidedl">
+      <dt class="lv-can">できる</dt><dd>その姿が身についています。保護者にそのまま伝えたいよさです。</dd>
+      <dt class="lv-grow">伸長中</dt><dd>まだ十分ではないが、伸びつつある姿です。迷ったらこちらを選んでください。</dd>
+      <dt class="lv-issue">課題</dt><dd>家庭でも意識してほしいことがあるときに選びます。<b>1人1件まで</b>で、今後の手立てとセットで出ます。「課題」ボタンがない項目もあります。</dd>
+    </dl>
+  </details>
+  <div class="cats" id="cats"></div>
+  <p class="issuenote" id="issueNote"></p>
+  <div class="meterbar" id="itemsMeter"></div>
+  <div class="navrow">
+    <button type="button" class="btn ghost" id="pagePrev">← 前へ</button>
+    <button type="button" class="btn ghost" id="undoItems" disabled>元に戻す</button>
+    <button type="button" class="btn primary" id="pageNext" data-primary>次へ →</button>
+  </div>
+</section>
+
+<!-- ===== 文章の確認（一人分） ===== -->
+<section class="screen" id="scrDraft" data-title="文章の確認">
+  <div class="whobar" id="draftWho"></div>
+  <div class="out empty" id="out">ここに所見文の下書きが表示されます。</div>
+  <div class="meterbar">
+    <span id="lenMeta">— 字</span>
+    <span id="tip"></span>
+  </div>
+  <div class="onlyissue" id="onlyIssue" style="display:none;"></div>
+  <div class="tools">
+    <button id="copyBtn">コピー</button>
+    <button id="regenBtn">別の言い方にする</button>
+    <button id="editItems">項目を選び直す</button>
+    <button id="undoDraft" disabled>元に戻す</button>
+  </div>
+  <div class="navrow">
+    <button type="button" class="btn ghost" id="draftSub"></button>
+    <button type="button" class="btn primary" id="draftMain" data-primary></button>
+  </div>
+  <p class="hint center" id="draftKeys"></p>
+  <details class="fold" id="draftFold">
+    <summary>くわしい設定（文を足す・外す、まとめ方など）</summary>
+    <div class="picker" id="picker" style="display:none;"></div>
+    <p class="prinote" id="priNote"></p>
+    <div class="field">
+      <label>文のまとめ方（学級で共通）</label>
+      <div class="seg" id="joinSegD">
+        <button data-join="off">1観点＝1文</button>
+        <button data-join="on">2観点をまとめる</button>
       </div>
-      <div class="onlyissue" id="onlyIssue" style="display:none;"></div>
-      <div class="tools">
-        <button id="copyBtn">コピー</button>
-        <button id="regenBtn">別の言い回しにする</button>
+    </div>
+    <div class="field">
+      <label>この児童の文字数のめやす</label>
+      <div class="seg" id="lenSeg">
+        <button data-len="150">150字</button>
+        <button data-len="175" class="on">175字</button>
+        <button data-len="200">200字</button>
       </div>
-      <div class="picker" id="picker" style="display:none;"></div>
-      <div class="note">
-        この下書きは定型文を組み合わせたものです。児童の実態に合うよう、具体的な場面・エピソードを加え、事実と異なる表現がないか必ず確認してから通知表に転記してください。
-        <span class="notever" id="noteVer"></span>
+      <div class="row" style="margin-top:8px; align-items:center;">
+        <input type="number" id="lenInput" value="175" min="30" max="400" style="width:90px;">
+        <span class="hint" style="margin:0;">字前後で調整</span>
       </div>
+    </div>
+    <div class="field">
+      <label>学年帯</label>
+      <div class="seg" id="gradeSeg">
+        <button data-grade="low" class="on">低学年</button>
+        <button data-grade="mid">中学年</button>
+        <button data-grade="high">高学年</button>
+      </div>
+    </div>
+    <button type="button" class="btn ghost" id="clearBtn">選んだ項目をすべて外す</button>
+  </details>
+  <div class="note small">
+    この下書きは定型文を組み合わせたものです。具体的な場面・エピソードを加え、事実と異なる表現がないか必ず確認してから通知表に転記してください。
+    <span class="notever" id="noteVer"></span>
+  </div>
+</section>
+
+<!-- ===== 所見一覧 ===== -->
+<section class="screen" id="scrList" data-title="所見一覧">
+  <div class="banner" id="listBanner" style="display:none;"></div>
+  <div class="listhead">
+    <div class="field" style="margin:0;">
+      <label for="clsInput">学級名</label>
+      <input type="text" id="clsInput" placeholder="例）3年2組" style="width:180px;">
+    </div>
+    <div class="listcount" id="rosterCount">—</div>
+  </div>
+  <div class="listtools">
+    <button type="button" class="btn ghost" id="copyAllBtn">全員分コピー</button>
+    <button type="button" class="btn ghost" id="expCsvBtn">CSVで保存</button>
+    <button type="button" class="btn primary" id="addStuBtn">＋ 児童を追加</button>
+  </div>
+  <p class="hint">「全員分コピー」は、番号・名前・所見をタブで区切ってコピーします。Excelに貼り付けると表になります。行を押すと、その児童の文章を開きます。</p>
+  <div class="listtable" id="listTable"></div>
+  <details class="fold">
+    <summary>くわしい設定（作業ファイル・学級の消去）</summary>
+    <div class="filerow">
+      <button id="expWorkBtn">作業ファイルを書き出す</button>
+      <button id="impWorkBtn">作業ファイルを読み込む</button>
+      <button id="wipeBtn" class="danger">学級をすべて消す</button>
+    </div>
+    <p class="hint">別のパソコンで続けるとき、バックアップを残すときは「作業ファイルを書き出す」を使います。</p>
+  </details>
+  <div class="note small">
+    <b>共有のパソコンでは、作業が終わったら「学級をすべて消す」を押してください。</b>転記の前に、必ず担任が一人一人の文章を確かめてください。
+  </div>
+  <input type="file" id="importFile" accept=".json,application/json" style="display:none;">
+</section>
+
+</main>
+
+<footer class="appfoot"><span class="savestate ok" id="saveState">自動保存：オン</span></footer>
+
+<!-- 以前の画面にあった部品。生成処理が参照するため残すが、画面には出さない（v1.33） -->
+<div id="legacy" hidden>
+  <div id="roster"></div>
+  <div id="topCatSeg"><button data-topcat="common" class="on"></button><button data-topcat="subject"></button></div>
+  <p id="topCatHint"></p>
+  <span id="selCount"></span>
+  <button id="genBtn"></button>
+</div>
+
+<!-- 初回の案内（v1.33） -->
+<div class="modal" id="tourModal" style="display:none;">
+  <div class="modalbox tourbox">
+    <div class="tourpage" id="tourPage"></div>
+    <div class="tourdots" id="tourDots"></div>
+    <div class="navrow">
+      <button type="button" class="btn ghost" id="tourSkip">とばす</button>
+      <button type="button" class="btn primary" id="tourNext">次へ</button>
     </div>
   </div>
 </div>
@@ -420,73 +735,13 @@
   </div>
 </div>
 
-<div class="modal" id="evalModal" style="display:none;">
-  <div class="modalbox">
-    <h3>評価一覧の読み込み（観点の自動選択）</h3>
-    <p class="hint" id="evalInfo" style="margin:0;"></p>
-    <div class="csvopts">
-      <label>取り込み方
-        <select id="evalMode">
-          <option value="match">いまの学級に、出席番号で照合して取り込む</option>
-          <option value="create">この一覧の名簿で学級をつくり直す</option>
-        </select>
-      </label>
-      <label id="evalMergeWrap">選択済みの項目
-        <select id="evalMerge">
-          <option value="add">足し合わせる（選んである項目はそのまま）</option>
-          <option value="replace">置き換える（対応する項目は一覧の内容にする）</option>
-        </select>
-      </label>
-      <label>「C」の扱い
-        <select id="evalC">
-          <option value="none">選択しない</option>
-          <option value="grow">「伸長中」にする</option>
-        </select>
-      </label>
-      <label>おすすめの★
-        <select id="evalStar">
-          <option value="on">付ける（学習面3・生活面2）</option>
-          <option value="off">付けない</option>
-        </select>
-      </label>
-      <span id="evalNameOpts" style="display:contents;">
-        <label>名前に使う部分
-          <select id="evalUse">
-            <option value="full">姓と名</option>
-            <option value="given">名だけ</option>
-            <option value="family">姓だけ</option>
-          </select>
-        </label>
-        <label>敬称
-          <select id="evalSuffix">
-            <option value="さん" selected>さん</option>
-            <option value="くん">くん</option>
-            <option value="">付けない</option>
-          </select>
-        </label>
-      </span>
-    </div>
-    <p class="evalmap" id="evalMap"></p>
-    <div class="csvprev" id="evalPrev"></div>
-    <p class="hint" id="evalWarn" style="margin:8px 0 0;"></p>
-    <div class="btnrow" style="margin-top:14px;">
-      <button class="btn primary" id="evalApply">取り込む</button>
-      <button class="btn ghost" id="evalCancel">キャンセル</button>
-    </div>
-    <div class="note" style="margin-top:12px;">
-      <b>A</b>と<b>○</b>は「できる」、<b>△</b>は「課題」として選びます。B・空欄の観点は選びません（Cは上の設定に従います）。課題は1人1件までのため、<b>△が2つ以上ある児童には自動で付けません</b>（一覧の「課題」欄を見て担任が選んでください）。課題の文例がない観点（創意工夫・生命尊重・自然愛護・勤労・奉仕・公正・公平）の△も選びません。すでに課題を付けてある児童にも付けません。
-      取り込んだあとも、各児童の観点と下書きは担任が確認してください。
-      名前は名簿の表示とCSV書き出しに使います（所見文の文頭には付きません）。「この一覧の名簿で学級をつくり直す」を選ぶと、<b>いま入力してある児童はすべて消えます。</b>
-    </div>
-  </div>
-</div>
-
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "v1.32";
+const APP_VERSION = "v1.33";
 const APP_DATE    = "2026-11-03";
 const APP_HISTORY = [
+  {v:"v1.33", d:"2026-11-03", note:"操作に慣れていない人でも使えるよう、画面を1ステップずつ切り替える構成に作り直した（生成の処理は v1.32 のまま）。(1) 起動すると「成績一覧から作る」「一人ずつ作る」の2択を出す。成績一覧からは 読み込み→確認→文字数→一人ずつ確認→仕上げ、一人ずつは 名前と学年→文字数→項目を選ぶ→文章の確認 の順に1画面ずつ進む。画面上部に進み具合の帯を出し、ブラウザの戻るボタンでも1つ前に戻れる。(2) 項目は学習面・生活・行動面・健康・体力面・特別活動・係活動・人とのかかわり・各教科・特別活動・学校行事の7ページに分け、各項目に「選ばない」を追加。★は選んだ項目にだけ出す。(3) 成績一覧から作るときは、1画面に1人ずつ文章を出し「OK・次の児童へ」で順に確認する。(4) 所見一覧の画面を追加（番号・名前・書き出し・字数・状態）。状態は 未作成／下書き／確認済み で、確認済みは担任が確認ボタンを押した文章だけ（その後に文章が変わると下書きに戻る）。全員分コピー（タブ区切り）・1人分コピー・CSV保存、＋児童を追加（成績一覧から作った学級にも手で1人足せる）。(5) 文を足す・外す、文のまとめ方、文字数の自由入力、学年帯、作業ファイル、学級の消去は「くわしい設定」にたたんだ。(6) 文字数メーター（めやすの±15%を範囲内とし、足りない／多い字数を出す）、元に戻す（1回分）、Enter・←→キーでの操作、初回の3枚の案内、読み込みエラーを画面に出す（C4thでの出し方つき）、続きから（自動保存から再開）を追加。(7) 評価一覧に学年のシートが複数あるときは確認画面で選べるようにした。(8) 児童のレコードに seed（言い回し）・okOut（確認した文章）・year（学年）を保存するようにした。"},
   {v:"v1.32", d:"2026-11-03", note:"「2観点をまとめる」で使う文を、すべて専用の文にした。(1) 教科の伸長中どうし（知識・技能／思考・判断・表現／態度のどの2つでも）の専用の文 PAIR_GROW を75件用意した（できる同士の PAIR_TEXT 75件と対になる）。(2) 学年共通の5カテゴリ（学習面・生活・行動面・健康・体力面・特別活動・係活動・人とのかかわり）は、内容がつながる組み合わせ43組を選び、できる・伸長中それぞれの専用の文（86件）を用意した（JOIN_TEXT）。(3) 道徳・特別活動・学校行事の27カテゴリ（各2項目）は、できる・伸長中それぞれの専用の文（54件）を用意した。(4) 専用の文が無い組み合わせはまとめない。v1.26〜v1.31の機械的なつなぎ（「〜し、〜」「〜てきており、〜」）は廃止した。文法は正しくても内容が並んでいるだけの文が多かったため。(5) 1つの所見の中で「また、」が2回出ないよう、2回目（生活系の伸長中の前）は「さらに、」にした。(6) 同じカテゴリ・同じ評価の観点が3件以上あるとき、まとめられる2件が隣り合うように並べ替える（pairUp）。DBの並び順のままだと、まとめられる2件のあいだに別の観点が入ってまとまらないことがあったため。"},
   {v:"v1.31", d:"2026-11-03", note:"不自然な文ができないように、生成される文をすべて洗い出して直した。(0) 健康・体力面 h3 の「できる」の文例を「〜運動する力を高めている」から「〜運動する力を高める」に変えた（「高めていることができました」になっていたため）。(1) 因果文「〜することで、〜てきました。」（v1.18）は、同じ教科の「主体的に学習に取り組む態度」の「できる」と、同じ教科の「知識・技能」か「思考・判断・表現」の「伸長中」が続くときだけ作る（causalPair）。v1.30までは取り組み方の語（EFFORT_MARK）だけで判定しており、全156通りのうち学年共通の観点や行事では「進んで挙手して発言することで、資料やICT機器を〜」のような意味のつながらない文が大半だった。それ以外はこれまでどおり「また、」でつなぐ。(2) v1.21 の体育系 can→can の因果文を廃止した。自分の「できる」と自分の「伸長中」をつなぐ形のため、全16通りで内容が重なり（「最後まで活動をやり抜くことで、最後まで活動をやり抜こうとする姿が〜」）、「できる」を選んだ観点が「伸長中」の書き方で出ていた。(3) 因果文の前半の「〜しようとすることで、」を「〜することで、」に直した（取り組もうとする→取り組む）。(4) 「〜しようとすることができました。」（6件）を「〜しようとしていました。」にした。(5) 2観点をまとめるとき（v1.26）、「高めている」が「高めてい、」になる活用の誤りを「高めており、」に直した。(6) 伸長中どうしをまとめるとき、「〜姿が増えてきており、〜姿が増えてきました。」のように同じ言い方が1文に2回出る組み合わせはまとめないようにした。(7) 2観点をまとめるとき、前の文が「〜しようとする」で終わるもの（「深めようとし、」）と、同じ副詞が2回出るもの（「素直に伝え、〜素直に言葉にできました」）はまとめないようにした。"},
   {v:"v1.30", d:"2026-11-03", note:"(1) 因果文（v1.18 の can→grow「〜することで、〜てきました。」、v1.21 の体育系 can→can）を、同じカテゴリ（DBのグループ）の2文のときだけ作るようにした。v1.24からは「同じ領域（学習系／生活系）」で判定していたため、「人とのかかわり」の「進んで手を差し伸べる」と「特別活動・係活動」の「自分から仕事を見つけて動こうとする姿が増えてきました」のように、意味のつながらない2文までつないでいた。別のカテゴリの文が続くときは「また、」でつなぐ。2観点をまとめるとき（v1.26）の「因果文になるならまとめない」判定も同じ条件にそろえた。(2) ★重点の上限を3件から5件にし、評価一覧取り込み時のおすすめの★を「学習面2・生活面1」から「学習面3・生活面2」にした。学習面の3件は、1文にまとめられる同じ教科の2件（v1.27と同じ選び方）に、別の教科の1件を足す。生活面の2件は、なるべく別のカテゴリから選ぶ。いずれも出席番号で振り分ける。所見が150〜200字になり、5観点がそろうと175字前後になるため。"},
@@ -1570,6 +1825,7 @@ DB.forEach((group, gidx)=>{
   const d = document.createElement('details'); d.className='cat'; d.open=true;
   d.dataset.grade = group.grade || 'all';   // v1.13：学年帯フィルタで使う
   d.dataset.kind = kind;   // v1.19：全学年共通／教科別の切り替えで使う
+  d.dataset.cat = group.cat;   // v1.33：項目の画面のページ分けで使う
   const n = group.items.length;
   d.innerHTML = `<summary>${group.cat}<span class="count" data-gidx="${gidx}">0/${n}</span></summary>`;
   const box = document.createElement('div'); box.className='items';
@@ -1581,11 +1837,12 @@ DB.forEach((group, gidx)=>{
       ? `<label title="家庭でも意識してほしいことがある"><input type="checkbox" data-id="${it.id}" data-lvl="issue"><span class="issue">課題</span></label>`
       : `<span class="noissue"></span>`;
     row.innerHTML=`<span class="txt">${it.txt}</span>
-      <button type="button" class="star" data-id="${it.id}" title="重点にする（最大${MAX_PRI}件・必ず所見に入ります）">★</button>
+      <button type="button" class="star" data-id="${it.id}" title="★おすすめ：必ず所見に入れる（最大${MAX_PRI}件）">★</button>
       <span class="lvlpick">
         <label title="できている"><input type="checkbox" data-id="${it.id}" data-lvl="can"><span class="can">できる</span></label>
         <label title="伸びつつある"><input type="checkbox" data-id="${it.id}" data-lvl="grow"><span class="grow">伸長中</span></label>
         ${issueBtn}
+        <button type="button" class="clr" title="この項目は使わない">選ばない</button>
       </span>`;
     row.querySelector('.star').addEventListener('click', ()=>{
       if(state.pri.has(it.id)){
@@ -1645,7 +1902,9 @@ function applyCatFilters(){
   document.querySelectorAll('#cats > .cat, #cats > .cat-divider').forEach(d=>{
     const g = d.dataset.grade;
     const gradeOk = (g==='all' || g===state.grade);
-    const catOk = (topCat==='common') ? (d.dataset.kind==='common') : (d.dataset.kind!=='common');
+    // v1.33：項目の画面のページ（pageFilter）で絞る。
+    const catOk = (typeof pageFilter === 'function') ? pageFilter(d)
+      : (topCat==='common') ? (d.dataset.kind==='common') : (d.dataset.kind!=='common');
     d.style.display = (gradeOk && catOk) ? '' : 'none';
   });
   const hint = document.getElementById('topCatHint');
@@ -1704,8 +1963,8 @@ function updateCounts(){
   const pn = document.getElementById('priNote');
   if(pn){
     pn.innerHTML = state.pri.size
-      ? `★重点 <b>${state.pri.size}/${MAX_PRI}</b> 件：字数のめやすに関わらず必ず所見に入ります。`
-      : `★を押すと重点指定（最大${MAX_PRI}件）。★の観点は字数のめやすに関わらず必ず所見に入ります。`;
+      ? `★おすすめ <b>${state.pri.size}/${MAX_PRI}</b> 件：字数のめやすに関わらず必ず所見に入ります。外すときは「項目を選び直す」で★を押してください。`
+      : `項目の画面で、選んだ項目の★を押すと、その項目を必ず所見に入れます（最大${MAX_PRI}件）。`;
   }
   // 観点・★・めやすが変わると、いま出ている一覧は中身が合わなくなる。
   // 古い「入れる」を押せてしまうほうが危ないので、その場で片づける。
@@ -1731,17 +1990,17 @@ document.getElementById('gradeSeg').addEventListener('click',e=>{
 /* 文のまとめ方（v1.26）。学級で共通の設定。
    手で決めた顔ぶれは変えず、下書きがあれば同じ顔ぶれ（自動判定なら判定し直し）で作り直す。 */
 function syncJoinSeg(){
-  document.querySelectorAll('#joinSeg button').forEach(b=>{
+  document.querySelectorAll('#joinSeg button, #joinSegD button').forEach(b=>{
     b.classList.toggle('on', (b.dataset.join==='on') === state.join);
   });
 }
-document.getElementById('joinSeg').addEventListener('click',e=>{
+['joinSeg','joinSegD'].forEach(id=>document.getElementById(id).addEventListener('click',e=>{
   if(!e.target.dataset.join) return;
   state.join = e.target.dataset.join === 'on';
   syncJoinSeg();
   if(state.adopted.length) runAdoption();
   save();
-});
+}));
 
 /* 文字数セグメント */
 document.getElementById('lenSeg').addEventListener('click',e=>{
@@ -2320,7 +2579,7 @@ function runAdoption(){
     .map(i=>({it:i, lvl:state.sel.get(i.id)}));
   if(chosen.length===0){
     clearPicker();
-    setOut("項目の「できる」「伸長中」「課題」のいずれかを1つ以上選んでから「所見文をつくる」を押してください。", true);
+    setOut("この学年の項目がまだ選ばれていません。「項目を選び直す」から選んでください。", true);
     return;
   }
   const isPri = c => state.pri.has(c.it.id);
@@ -2364,7 +2623,7 @@ function runAdoption(){
 function render(){
   if(!state.adopted.length){
     // 担任がすべて外した状態。下書きは空だが、一覧は出したままにして戻せるようにする。
-    setOut("下書きに入れる観点がありません。下の「入っていない観点」から入れてください。", true);
+    setOut("下書きに入れる観点がありません。「くわしい設定」の「入っていない観点」から入れてください。", true);
     renderPicker(null);
     return;
   }
@@ -2458,8 +2717,8 @@ function renderPicker(b){
   const note = document.createElement('p');
   note.className = 'picknote';
   note.innerHTML = '下書きに入れる観点を、実際の文を見ながら入れ替えられます。'
-    + '<b>「入れる」「外す」は下書きだけの調整で、左の観点のチェックは変わりません。</b>'
-    + 'この調整は「所見文をつくる」を押し直しても残ります。'
+    + '<b>「入れる」「外す」は下書きだけの調整で、選んだ項目は変わりません。</b>'
+    + 'この調整は文章を作り直しても残ります。'
     + (state.manual
         ? '<br>いまは<b>手で決めた顔ぶれ</b>で組み立てています。'
           + '文字数のめやすによる自動の選び直しは止まっています。'
@@ -2498,7 +2757,7 @@ function renderPicker(b){
       if(star){
         // ★は「生成前の指定」、出し入れは「生成後の調整」。役割が違うので混ぜない。
         btn.disabled = true;
-        btn.title = '★重点は外せません。左の★を解除してから外してください。';
+        btn.title = '★の項目は外せません。「項目を選び直す」で★を解除してから外してください。';
       }else{
         btn.addEventListener('click', ()=>setManual(c.it.id, 'out'));
       }
@@ -2550,7 +2809,7 @@ function setOut(t, empty){
   o.textContent=t; o.classList.toggle('empty', !!empty);
   if(empty){
     document.getElementById('lenMeta').textContent='— 字';
-    document.getElementById('tip').textContent='';
+    document.getElementById('tip').textContent=''; document.getElementById('tip').className='';
     const o2=document.getElementById('onlyIssue'); if(o2){ o2.style.display='none'; o2.innerHTML=''; }
     // ここで一覧は片づけない。観点を全部外して下書きが空になった状態でも、
     // 一覧が残っていないと戻せなくなるため。片づけが要る経路では clearPicker() を明示的に呼ぶ。
@@ -2559,12 +2818,11 @@ function setOut(t, empty){
 function updateMeta(text, target){
   const n=[...text].length;
   const meta=document.getElementById('lenMeta');
-  meta.textContent = n+' 字（めやす '+target+'字）';
+  meta.textContent = n+'字（めやす '+target+'字）';
+  // v1.33：めやすの±15%を範囲内とし、足りない／多い字数を示す（lenJudge）
   const tip=document.getElementById('tip');
-  const diff=n-target;
-  if(Math.abs(diff)<=target*0.2){ tip.textContent='めやすの範囲内です'; tip.className=''; }
-  else if(diff>0){ tip.innerHTML='<span class="over">やや長め：項目を減らすと近づきます</span>'; }
-  else { tip.textContent='やや短め：項目を足すと近づきます'; }
+  const j = lenJudge(n, target);
+  tip.textContent = j.msg; tip.className = j.cls;
 }
 
 document.getElementById('genBtn').addEventListener('click', generate);
@@ -2626,7 +2884,8 @@ function newId(){ return "s" + Date.now().toString(36) + Math.random().toString(
    いま画面に出ている設定を引き継ぐ。 */
 function blankStudent(){
   return { id:newId(), no:"", name:"", len:state.len, grade:state.grade,
-           sel:{}, pri:[], manual:false, mIn:[], out:"", updated:"" };
+           sel:{}, pri:[], manual:false, mIn:[], out:"", updated:"",
+           seed:0, okOut:"", year:0 };   // v1.33：言い回し・確認した文章・学年
 }
 
 /* ---- 画面 ⇄ レコード ---- */
@@ -2647,6 +2906,7 @@ function captureCurrent(){
   rec.mIn     = [...state.mIn];
   const o = document.getElementById('out');
   rec.out     = o.classList.contains('empty') ? "" : o.textContent;
+  rec.seed    = state.seed;   // v1.33：言い回しを保存し、開き直しても同じ文章にする
   rec.updated = new Date().toISOString();
 }
 
@@ -2734,8 +2994,7 @@ function renderRoster(){
     el.appendChild(row);
   });
   const done = roster.students.filter(s=>s.out).length;
-  document.getElementById('rosterCount').textContent =
-    `${roster.students.length}人／所見済み ${done}人`;
+  renderList();   // v1.33：所見一覧の画面
 }
 
 function switchTo(id){
@@ -2789,7 +3048,7 @@ function serialize(){
   captureCurrent();
   roster.cls = document.getElementById('clsInput').value;
   return { app:"所見文アシスト", ver:APP_VERSION, saved:new Date().toISOString(),
-           cls:roster.cls, join:state.join, curId:roster.curId, students:roster.students };
+           cls:roster.cls, join:state.join, curId:roster.curId, flow:nav.flow, students:roster.students };
 }
 
 function saveNow(){
@@ -2828,12 +3087,16 @@ function normalizeStudent(s){
   const grade = ['low','mid','high'].includes(s.grade) ? s.grade : 'low';
   return { id: s.id || newId(), no: String(s.no||""), name: String(s.name||""),
            len, grade, sel, pri, manual: !!s.manual, mIn,
-           out: String(s.out||""), updated: s.updated||"" };
+           out: String(s.out||""), updated: s.updated||"",
+           seed: Math.min(SEED_CYCLE-1, Math.max(0, parseInt(s.seed,10) || 0)),
+           okOut: String(s.okOut||""),
+           year: [1,2,3,4,5,6].includes(+s.year) ? +s.year : 0 };
 }
 
 function loadData(data){
   if(!data || !Array.isArray(data.students) || !data.students.length) return false;
   roster.cls = String(data.cls || "");
+  savedFlow = ['import','single'].includes(data.flow) ? data.flow : '';   // v1.33
   state.join = !!data.join;   // v1.26（それ以前のファイルには無いので「1観点＝1文」になる）
   syncJoinSeg();
   roster.students = data.students.map(normalizeStudent);
@@ -2908,6 +3171,7 @@ function importWork(file){
     if(loadData(data)){
       saveNow();
       setSaveState(`読み込みました（${roster.students.length}人分）`, true);
+      navAfterLoad();
     }
   };
   reader.readAsText(file);
@@ -2925,11 +3189,12 @@ function wipeAll(){
   renderRoster();
   saveNow();
   setSaveState("消去しました", true);
+  nav.flow = ''; savedFlow = '';
+  showScreen('scrStart');
 }
 
 /* ---- 画面のつなぎこみ ---- */
 
-document.getElementById('addStuBtn').addEventListener('click', addStudent);
 document.getElementById('expWorkBtn').addEventListener('click', exportWork);
 document.getElementById('expCsvBtn').addEventListener('click', exportCsv);
 document.getElementById('wipeBtn').addEventListener('click', wipeAll);
@@ -3179,6 +3444,7 @@ function csvApply(mode){
   saveNow();
   closeCsvModal();
   setSaveState(`名簿から${list.length}人を取り込みました`, true);
+  csvAfterApply(list.length);
 }
 
 document.getElementById('impNamesBtn').addEventListener('click', ()=>{
@@ -3711,7 +3977,7 @@ const hasGaiji = s => /[\uE000-\uF8FF]/.test(String(s));
 
 /* ---- 取り込み画面 ---- */
 
-const evalState = { ana:null, file:"", sheet:"" };
+const evalState = { ana:null, file:"", sheet:"", sheets:[] };
 
 function evalOpts(){
   return {
@@ -3834,6 +4100,7 @@ function evalRenderPreview(){
 
   const can = o.mode==='create' ? ana.students.length>0 : (matched>0 && total>0);
   document.getElementById('evalApply').disabled = !can;
+  evalScreenSync(ana, o, matched);
 }
 
 function openEvalModal(ana, fname, sheet){
@@ -3854,11 +4121,10 @@ function openEvalModal(ana, fname, sheet){
     `読み取った列：学習の記録 <b>${nG}列</b>・行動の記録 <b>${nK}列</b>`
     + (ana.unmapped.length ? `<br>対応する観点がないため使わない列：${ana.unmapped.map(s=>String(s).replace(/[<>&]/g,'')).join('、')}` : '');
   evalRenderPreview();
-  document.getElementById('evalModal').style.display = 'flex';
+  evalScreenOpen();
 }
 
 function closeEvalModal(){
-  document.getElementById('evalModal').style.display = 'none';
   evalState.ana = null;
 }
 
@@ -3880,6 +4146,7 @@ function evalApply(){
       const rec = blankStudent();
       rec.no = st.no; rec.name = evalYobi(st.name, o.use, o.suffix);
       rec.grade = r.band;
+      if(st.year) rec.year = st.year;
       rec.sel = Object.fromEntries(r.marks);
       if(r.marks.size) changed++;
       if(o.star === 'on'){
@@ -3906,6 +4173,7 @@ function evalApply(){
       if(m.skipIss) skipIss++;
       rec.sel = sel;
       rec.grade = r.band;
+      if(st.year) rec.year = st.year;
       rec.pri = (rec.pri||[]).filter(id=>sel[id]);
       // おすすめ★（v1.27）。担任がすでに★を付けている児童は変えない。
       if(o.star === 'on' && !rec.pri.length){
@@ -3926,10 +4194,12 @@ function evalApply(){
   setSaveState(`評価一覧から観点を選びました（${changed}人分）`
     + (skipIss ? `。すでに課題がある ${skipIss}人 には△の課題を付けていません` : '')
     + (starred ? `。${starred}人におすすめの★を付けました` + (state.join ? '' : '（同じ教科の2件を1文にするには「文のまとめ方」を「2観点をまとめる」に）') : ''), true);
+  evalAfterApply();
 }
 
 /* ファイルを開いて、評価一覧として読めるシートを探す */
 function readEvalFile(file){
+  showImportErr('');   // v1.33：前のエラー表示を消す
   const reader = new FileReader();
   reader.onload = ()=>{
     const buf = reader.result;
@@ -3939,7 +4209,7 @@ function readEvalFile(file){
       if(b[0]===0xD0 && b[1]===0xCF){
         sheets = xlsParse(buf);
       }else if(b[0]===0x50 && b[1]===0x4B){
-        alert("このファイルは .xlsx 形式のため読み込めません。\n"
+        showImportErr("<b>このファイルは .xlsx 形式のため読み込めません。</b><br>"
           + "Excelで開き、「名前を付けて保存」で「Excel 97-2003 ブック（.xls）」か"
           + "「CSV（コンマ区切り）」を選んで保存し直してから読み込んでください。");
         return;
@@ -3948,18 +4218,23 @@ function readEvalFile(file){
         sheets = [{ name:"", rows:parseCsv(text) }];
       }
     }catch(e){
-      alert("このファイルは読み込めませんでした。\n校務システムから出した評価一覧（.xls）か、Excelで保存したCSVを選んでください。");
+      showImportErr("<b>このファイルは読み込めませんでした。</b><br>" + C4TH_HOW
+        + "<br>Excelで保存したCSVでも読み込めます。");
       return;
     }
+    // v1.33：読める学年のシートをすべて集め、複数あれば確認画面で選べるようにする
+    const ok = [];
     for(const sh of sheets){
       const ana = evalAnalyze(sh.rows);
-      if(ana && ana.students.length && ana.cols.length){
-        openEvalModal(ana, file.name, sheets.length>1 ? sh.name : "");
-        return;
-      }
+      if(ana && ana.students.length && ana.cols.length) ok.push({ name: sh.name, ana });
     }
-    alert("このファイルからは評価一覧を読み取れませんでした。\n"
-      + "「番号」「氏名」の見出しと、教科名・観点名（知識・技能 など）や行動の記録の項目名が入った一覧を選んでください。");
+    if(ok.length){
+      evalState.sheets = ok;
+      openEvalModal(ok[0].ana, file.name, sheets.length>1 ? ok[0].name : "");
+      return;
+    }
+    showImportErr("<b>このファイルからは成績一覧を読み取れませんでした。</b><br>"
+      + "「番号」「氏名」の見出しと、教科名・観点名（知識・技能 など）や行動の記録の項目名が入った一覧が必要です。<br>" + C4TH_HOW);
   };
   reader.readAsArrayBuffer(file);
 }
@@ -3976,13 +4251,648 @@ document.getElementById('evalFile').addEventListener('change', e=>{
   document.getElementById(id).addEventListener('change', evalRenderPreview);
 });
 document.getElementById('evalApply').addEventListener('click', evalApply);
-document.getElementById('evalCancel').addEventListener('click', closeEvalModal);
-document.getElementById('evalModal').addEventListener('click', e=>{
-  if(e.target.id === 'evalModal') closeEvalModal();
+
+
+/* ==================================================================
+   画面の切り替え（v1.33）
+   ------------------------------------------------------------------
+   1画面で決めることを1つにし、ステップごとに画面を変える。
+   生成・保存・取り込みの処理は v1.32 までのものをそのまま使い、
+   ここでは「どの画面を出すか」と「次にどこへ進むか」だけを受け持つ。
+     nav.flow … 'import'（成績一覧から作る）／'single'（一人ずつ作る）
+     nav.mode … 文章の確認画面の使われ方
+                'seq'（全員を順に確認）／'new'（一人ずつ作って次へ）／'one'（一覧から開いた1人）
+     nav.from … 項目の画面を文章の確認画面から開いたとき 'draft'
+   var で宣言している理由は ready と同じ（この節より前の処理から参照されることがあるため）。
+   ================================================================== */
+var navReady = false;
+var savedFlow = "";
+var nav = { scr:'scrStart', flow:'', mode:'', page:0, from:'', undo:null, banner:'', withLen:false };
+
+const STEPS = {
+  import: ['読み込み','確認','文字数','一人ずつ確認','仕上げ'],
+  single: ['名前と学年','文字数','項目を選ぶ','文章の確認'],
+};
+function stepOf(scr){
+  if(nav.flow === 'import') return {scrImport:0, evalModal:1, scrLen:2, scrItems:3, scrDraft:3, scrList:4}[scr];
+  if(nav.flow === 'single') return {scrName:0, scrLen:1, scrItems:2, scrDraft:3}[scr];
+}
+
+/* 項目の画面の1ページ＝1つのまとまり。学年共通の5つは1ページずつ、
+   教科と行事は数が多いので1ページにまとめ、名前を押すと開く形にする。 */
+const PAGES = [
+  {title:'学習面', lead:'学び方や授業への取り組みの様子です。', test:d=>d.dataset.cat==='学習面'},
+  {title:'生活・行動面', lead:'日々の生活の習慣やきまりを守る様子です。', test:d=>d.dataset.cat==='生活・行動面'},
+  {title:'健康・体力面', lead:'運動や健康への気配りの様子です。', test:d=>d.dataset.cat==='健康・体力面'},
+  {title:'特別活動・係活動', lead:'当番・係・学級会などでの様子です。', test:d=>d.dataset.cat==='特別活動・係活動'},
+  {title:'人とのかかわり', lead:'友達との関わり方の様子です。', test:d=>d.dataset.cat==='人とのかかわり'},
+  {title:'各教科', lead:'教科ごとの学習の様子です。教科名を押すと項目が開きます。', test:d=>d.dataset.kind==='subject'},
+  {title:'特別活動・学校行事', lead:'学級活動や行事での様子です。行事名を押すと項目が開きます。', test:d=>d.dataset.kind==='event'},
+];
+/* applyCatFilters() から呼ばれる。見出し（.cat-divider）は使わない。 */
+function pageFilter(d){
+  if(!navReady) return true;   // 起動前（PAGES の初期化前）は絞らない
+  if(d.classList.contains('cat-divider')) return false;
+  return PAGES[nav.page].test(d);
+}
+
+const EMPTY_DRAFT = "項目がまだ選ばれていません。「項目を選び直す」から選んでください。";
+const $ = id => document.getElementById(id);
+
+function curRec(){ return roster.students.find(s=>s.id===roster.curId); }
+function isConfirmed(s){ return !!s.out && s.okOut === s.out; }
+function statusOf(s){ return !s.out ? 'none' : isConfirmed(s) ? 'ok' : 'draft'; }
+const STATUS_LABEL = { none:'未作成', draft:'下書き', ok:'確認済み' };
+function hasContent(){
+  return roster.students.some(s=>(s.name||'').trim() || s.out || Object.keys(s.sel||{}).length);
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function whoLabel(s){
+  const nm = (s.name||'').trim() || '（名前なし）';
+  const no = (s.no||'').trim();
+  const yr = s.year ? s.year + '年' : gradeLabel(s.grade);
+  return { nm, sub: (no ? no + '番　' : '') + yr };
+}
+
+/* ---- 画面を出す ---- */
+function showScreen(id, opt){
+  opt = opt || {};
+  if(id === 'evalModal' && !evalState.ana) id = 'scrImport';   // 戻るボタンで読み取り前に戻ったとき
+  // 隠れる画面のボタンにフォーカスが残ると、Enterキーでそのボタンが押されてしまう
+  const a = document.activeElement;
+  if(a && a.blur && a !== document.body && !$(id).contains(a)) a.blur();
+  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on', s.id === id));
+  nav.scr = id;
+  if(id !== 'scrList') nav.banner = '';
+  ({ scrStart:renderStart, scrLen:renderLen, scrName:renderName, scrItems:renderItems,
+     scrDraft:renderDraft, scrList:renderList }[id] || (()=>{}))();
+  renderStepbar();
+  if(opt.push !== false && navReady){
+    try{ history.pushState(navSnap(), ''); }catch(e){}
+  }
+  window.scrollTo(0, 0);
+}
+function navSnap(){
+  return { scr:nav.scr, flow:nav.flow, mode:nav.mode, page:nav.page, from:nav.from, id:roster.curId };
+}
+window.addEventListener('popstate', e=>{
+  const s = e.state;
+  if(!s || !s.scr) return;
+  nav.flow = s.flow; nav.mode = s.mode; nav.page = s.page || 0; nav.from = s.from || '';
+  if(s.id && s.id !== roster.curId && roster.students.some(x=>x.id===s.id)){ nav.undo = null; switchTo(s.id); }
+  showScreen(s.scr, {push:false});
 });
+
+function renderStepbar(){
+  const bar = $('stepbar');
+  const steps = STEPS[nav.flow];
+  const idx = stepOf(nav.scr);
+  if(!steps || idx == null || nav.mode === 'one' || nav.scr === 'scrStart'){ bar.style.display = 'none'; return; }
+  bar.innerHTML = steps.map((t,i)=>`<li class="${i<idx?'done':i===idx?'cur':''}">${t}</li>`).join('');
+  bar.style.display = '';
+}
+
+/* ---- スタート ---- */
+function renderStart(){
+  const show = hasContent();
+  const n = roster.students.length, ok = roster.students.filter(isConfirmed).length;
+  const r = $('goResume');
+  r.style.display = show ? '' : 'none';
+  r.textContent = `続きから（${(roster.cls||'').trim() || '学級'}・確認済み ${ok}/${n}人）`;
+  $('goListFromStart').style.display = show ? '' : 'none';
+}
+$('goImport').addEventListener('click', ()=>{
+  nav.flow = 'import'; nav.mode = 'seq'; nav.from = '';
+  $('importErr').style.display = 'none';
+  showScreen('scrImport');
+});
+$('goSingle').addEventListener('click', ()=>{
+  nav.flow = 'single';
+  startNewChild('new', true);
+});
+$('goResume').addEventListener('click', ()=>{
+  nav.flow = savedFlow || nav.flow || 'single';
+  if(nav.flow === 'import'){
+    const list = sortedStudents();
+    const next = list.find(s=>!isConfirmed(s));
+    if(next){ openDraft(next.id, 'seq'); return; }
+  }
+  showScreen('scrList');
+});
+$('goListFromStart').addEventListener('click', ()=>showScreen('scrList'));
+$('navHome').addEventListener('click', ()=>showScreen('scrStart'));
+$('navList').addEventListener('click', ()=>showScreen('scrList'));
+document.querySelectorAll('[data-back]').forEach(b=>b.addEventListener('click', ()=>history.back()));
+
+/* ---- 成績一覧の読み込み ---- */
+function showImportErr(html){
+  const el = $('importErr');
+  el.innerHTML = html; el.style.display = html ? 'block' : 'none';
+  if(html && nav.scr !== 'scrImport') showScreen('scrImport');
+}
+const C4TH_HOW = "C4thの「児童生徒」→「成績出力」→「成績Excel出力」で、追加する項目を「通年　必修観点」「通年　行動の記録」、出力方法を「学年毎にシートを分ける」にして出したファイルを選んでください。";
+(function(){
+  const dz = $('dropZone');
+  ['dragenter','dragover'].forEach(t=>dz.addEventListener(t, e=>{ e.preventDefault(); dz.classList.add('over'); }));
+  ['dragleave','drop'].forEach(t=>dz.addEventListener(t, ()=>dz.classList.remove('over')));
+  dz.addEventListener('drop', e=>{
+    e.preventDefault();
+    const f = e.dataTransfer && e.dataTransfer.files[0];
+    if(f){ showImportErr(''); readEvalFile(f); }
+  });
+  $('impEvalBtn').addEventListener('click', ()=>showImportErr(''));
+})();
+
+/* 読み取りの確認画面。openEvalModal() と evalRenderPreview() から呼ばれる。 */
+function evalScreenOpen(){
+  const sh = evalState.sheets || [];
+  const sel = $('evalSheet');
+  if(sh.length > 1){
+    sel.innerHTML = sh.map((x,i)=>`<option value="${i}">${esc(x.name || ('シート' + (i+1)))}（${x.ana.students.length}人）</option>`).join('');
+    sel.value = String(Math.max(0, sh.findIndex(x=>x.ana === evalState.ana)));
+    $('evalSheetWrap').style.display = '';
+  }else{
+    $('evalSheetWrap').style.display = 'none';
+  }
+  if(nav.scr !== 'evalModal') showScreen('evalModal');
+}
+$('evalSheet').addEventListener('change', e=>{
+  const x = (evalState.sheets || [])[+e.target.value];
+  if(x) openEvalModal(x.ana, evalState.file, x.name);
+});
+function evalScreenSync(ana, o, matched){
+  const years = [...new Set(ana.students.map(s=>s.year).filter(Boolean))];
+  const yr = years.length ? years.join('・') + '年　' : '';
+  $('evalSummary').textContent = o.mode === 'create'
+    ? `${yr}${ana.students.length}人を読み取りました`
+    : `${yr}${matched}人を照合できました（一覧 ${ana.students.length}人）`;
+  const blank = rosterIsBlank();
+  $('evalModeWrap').style.display = blank ? 'none' : '';
+  document.querySelectorAll('#evalModeSeg button').forEach(b=>b.classList.toggle('on', b.dataset.mode === o.mode));
+  $('evalModeHint').innerHTML = o.mode === 'create'
+    ? `いまの学級（${roster.students.length}人）は消え、この一覧の名簿で作り直します。`
+    : `いまの学級（${roster.students.length}人）に、出席番号で照合して項目を選びます。`;
+}
+document.querySelectorAll('#evalModeSeg button').forEach(b=>b.addEventListener('click', ()=>{
+  $('evalMode').value = b.dataset.mode;
+  evalRenderPreview();
+}));
+$('evalCancel').addEventListener('click', ()=>{ closeEvalModal(); showScreen('scrImport'); });
+function evalAfterApply(){
+  nav.flow = 'import'; nav.mode = 'seq';
+  showScreen('scrLen');
+}
+function csvAfterApply(n){
+  if(!nav.flow) nav.flow = 'single';
+  nav.banner = `名簿から${n}人を取り込みました。行を押して、一人ずつ項目を選んでください。`;
+  showScreen('scrList');
+}
+function navAfterLoad(){ nav.flow = savedFlow || nav.flow; showScreen('scrList'); }
+
+/* ---- 文字数 ---- */
+function renderLen(){
+  $('lenLead').textContent = nav.flow === 'import'
+    ? '学級全員に同じ文字数を使います。押すと次へ進みます。'
+    : '押すと次へ進みます。';
+  document.querySelectorAll('#lenPick button').forEach(b=>b.classList.toggle('on', +b.dataset.len === state.len));
+  $('lenFree').value = state.len;
+}
+function applyLen(L){
+  L = Math.min(400, Math.max(30, parseInt(L,10) || 175));
+  if(nav.flow === 'import'){
+    captureCurrent();
+    roster.students.forEach(s=>{
+      if(s.len !== L){ s.len = L; s.manual = false; s.mIn = []; s.out = ''; s.okOut = ''; }
+    });
+    applyRecord(curRec());
+    renderRoster(); saveNow();
+    const list = sortedStudents();
+    const next = list.find(s=>!isConfirmed(s)) || list[0];
+    openDraft(next.id, 'seq');
+  }else{
+    state.len = L; resetManual();
+    captureCurrent(); applyRecord(curRec()); renderRoster(); saveNow();
+    nav.withLen = false;
+    openItems(0, '');
+  }
+}
+document.querySelectorAll('#lenPick button').forEach(b=>b.addEventListener('click', ()=>applyLen(b.dataset.len)));
+$('lenFreeGo').addEventListener('click', ()=>applyLen($('lenFree').value));
+
+/* ---- 一人ずつ：名前と学年 ---- */
+function startNewChild(mode, withLen){
+  captureCurrent();
+  const prev = sortedStudents().filter(s=>s.year).pop();
+  let rec;
+  const only = roster.students.length === 1 && !(roster.students[0].name||'').trim()
+    && !roster.students[0].out && !Object.keys(roster.students[0].sel||{}).length;
+  if(only){
+    rec = roster.students[0];
+  }else{
+    rec = blankStudent();
+    const nums = roster.students.map(s=>parseInt(s.no,10)).filter(n=>!isNaN(n));
+    rec.no = String(nums.length ? Math.max(...nums)+1 : 1);
+    roster.students.push(rec);
+  }
+  if(!rec.year && prev){ rec.year = prev.year; rec.grade = bandOfYear(prev.year); }
+  roster.curId = rec.id;
+  nav.undo = null;
+  applyRecord(rec);
+  renderRoster(); saveNow();
+  nav.mode = mode; nav.withLen = !!withLen; nav.from = '';
+  showScreen('scrName');
+  setTimeout(()=>{ try{ $('nameIn').focus(); }catch(e){} }, 0);
+}
+function renderName(){
+  const rec = curRec();
+  $('nameIn').value = state.name;
+  $('noIn').value = state.no;
+  document.querySelectorAll('#yearPick button').forEach(b=>b.classList.toggle('on', rec && +b.dataset.year === rec.year));
+  $('nameNext').disabled = !(rec && rec.year);
+}
+document.querySelectorAll('#yearPick button').forEach(b=>b.addEventListener('click', ()=>{
+  const rec = curRec(); if(!rec) return;
+  rec.year = +b.dataset.year;
+  document.querySelectorAll('#yearPick button').forEach(x=>x.classList.toggle('on', x===b));
+  $('nameNext').disabled = false;
+}));
+$('nameNext').addEventListener('click', ()=>{
+  const rec = curRec(); if(!rec || !rec.year) return;
+  state.name = $('nameIn').value.trim();
+  state.no = String($('noIn').value || '').trim();
+  const band = bandOfYear(rec.year);
+  if(band !== state.grade){ state.grade = band; resetManual(); }
+  captureCurrent(); applyRecord(curRec()); renderRoster(); saveNow();
+  if(nav.withLen) showScreen('scrLen'); else openItems(0, '');
+});
+
+/* ---- 項目を選ぶ ---- */
+function openItems(page, from){
+  nav.page = page; nav.from = from;
+  showScreen('scrItems');
+}
+function pageCount(i){
+  const ids = new Set();
+  document.querySelectorAll('#cats > .cat').forEach(d=>{
+    const g = d.dataset.grade;
+    if(!(g==='all' || g===state.grade)) return;
+    if(!PAGES[i].test(d)) return;
+    d.querySelectorAll('.item').forEach(r=>{ if(state.sel.has(r.dataset.id)) ids.add(r.dataset.id); });
+  });
+  return ids.size;
+}
+function renderItems(){
+  const rec = curRec(); if(!rec) return;
+  const w = whoLabel(rec);
+  $('itemsWho').innerHTML = `<span><b>${esc(w.nm)}</b>　${esc(w.sub)}</span>` + progText(rec);
+  $('pageChips').innerHTML = PAGES.map((p,i)=>{
+    const n = pageCount(i);
+    return `<button type="button" data-page="${i}" class="${i===nav.page?'cur':''}">${p.title}${n?`<span class="n">${n}</span>`:''}</button>`;
+  }).join('');
+  $('pageChips').querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>openItems(+b.dataset.page, nav.from)));
+  const P = PAGES[nav.page];
+  $('pageTitle').textContent = `${P.title}（${nav.page+1}/${PAGES.length}）`;
+  $('pageLead').textContent = P.lead;
+  applyCatFilters();
+  // 教科・行事は数が多いので、選んであるものだけ開いておく
+  const many = nav.page >= 5;
+  document.querySelectorAll('#cats > .cat').forEach(d=>{
+    if(d.style.display === 'none') return;
+    d.open = many ? [...d.querySelectorAll('.item')].some(r=>state.sel.has(r.dataset.id)) : true;
+  });
+  $('pagePrev').textContent = nav.page === 0 ? (nav.from === 'draft' ? '← 文章に戻る' : '← 戻る') : '← 前へ';
+  $('pageNext').textContent = nav.page === PAGES.length-1 ? '文章を見る →' : '次へ →';
+  renderItemsMeter();
+  syncUndoBtns();
+}
+function renderItemsMeter(){
+  const n = DB.filter(g=>(g.grade||'all')==='all' || g.grade===state.grade)
+    .flatMap(g=>g.items).filter(i=>state.sel.has(i.id)).length;
+  const el = $('itemsMeter');
+  if(!n){ el.innerHTML = '<span>まだ項目が選ばれていません。</span>'; return; }
+  const o = $('out');
+  const len = o.classList.contains('empty') ? 0 : [...o.textContent].length;
+  const j = lenJudge(len, state.len);
+  el.innerHTML = `<span>選んだ項目 <b>${n}件</b>　いまの文章 <b>${len}字</b>（めやす ${state.len}字）</span>`
+    + `<span class="${j.cls}">${j.msg}</span>`
+    + `<button type="button" class="linkbtn strong" id="toDraft">文章を見る →</button>`;
+  $('toDraft').addEventListener('click', ()=>openDraft(roster.curId, nav.mode));
+}
+$('pagePrev').addEventListener('click', ()=>{
+  if(nav.page > 0){ openItems(nav.page-1, nav.from); return; }
+  if(nav.from === 'draft') openDraft(roster.curId, nav.mode);
+  else history.back();
+});
+$('pageNext').addEventListener('click', ()=>{
+  if(nav.page < PAGES.length-1) openItems(nav.page+1, nav.from);
+  else openDraft(roster.curId, nav.mode);
+});
+
+/* ---- 文章の確認 ---- */
+function progText(rec){
+  if(nav.mode !== 'seq') return `<span class="badge ${statusOf(rec)}">${STATUS_LABEL[statusOf(rec)]}</span>`;
+  const list = sortedStudents();
+  const i = list.indexOf(rec);
+  return `<span><span class="prog">${i+1} / ${list.length}人</span>　<span class="badge ${statusOf(rec)}">${STATUS_LABEL[statusOf(rec)]}</span></span>`;
+}
+function openDraft(id, mode){
+  nav.mode = mode;
+  if(id && id !== roster.curId){ nav.undo = null; switchTo(id); }
+  showScreen('scrDraft');
+}
+function regenCurrent(){
+  const rec = curRec();
+  if(state.sel.size){
+    state.seed = (rec && rec.seed) || 0;
+    runAdoption();
+    // 他の学年帯の観点しか選ばれていないと runAdoption は空の下書きを出す
+  }else{
+    clearPicker();
+    setOut(EMPTY_DRAFT, true);
+    renderRoster(); saveNow();
+  }
+}
+function renderDraft(){
+  regenCurrent();
+  renderDraftHead();
+  syncUndoBtns();
+}
+function renderDraftHead(){
+  const rec = curRec(); if(!rec) return;
+  const w = whoLabel(rec);
+  $('draftWho').innerHTML = `<span><b>${esc(w.nm)}</b>　${esc(w.sub)}</span>` + progText(rec);
+  const empty = $('out').classList.contains('empty');
+  const main = $('draftMain'), sub = $('draftSub');
+  main.disabled = false; sub.disabled = false;
+  if(nav.mode === 'seq'){
+    const list = sortedStudents(), i = list.indexOf(rec);
+    const last = i === list.length - 1;
+    main.textContent = empty ? (last ? 'とばして一覧へ →' : 'とばして次の児童へ →')
+                             : (last ? 'OK・一覧へ →' : 'OK・次の児童へ →');
+    sub.textContent = '← 前の児童';
+    sub.disabled = i <= 0;
+    $('draftKeys').textContent = 'Enterキー：OK・次へ　／　← →キー：前後の児童へ（確認はしません）';
+  }else if(nav.mode === 'new'){
+    main.textContent = '保存して次の児童へ →';
+    sub.textContent = '一覧を見る';
+    main.disabled = empty;
+    $('draftKeys').textContent = 'Enterキー：保存して次の児童へ';
+  }else{
+    main.textContent = '確認して一覧へ戻る';
+    sub.textContent = '一覧へ戻る（あとで確認）';
+    main.disabled = empty;
+    $('draftKeys').textContent = 'Enterキー：確認して一覧へ戻る';
+  }
+}
+function confirmCur(){
+  captureCurrent();
+  const rec = curRec();
+  if(rec && rec.out) rec.okOut = rec.out;
+  renderRoster(); saveNow();
+}
+function seqMove(d){
+  const list = sortedStudents(), i = list.indexOf(curRec());
+  const j = i + d;
+  if(j >= 0 && j < list.length){ openDraft(list[j].id, 'seq'); return true; }
+  return false;
+}
+$('draftMain').addEventListener('click', ()=>{
+  const empty = $('out').classList.contains('empty');
+  if(nav.mode === 'seq'){
+    if(!empty) confirmCur();
+    if(!seqMove(1)){
+      const left = roster.students.filter(s=>!isConfirmed(s)).length;
+      nav.banner = left ? `最後の児童まで進みました。まだ確認していない児童が ${left}人 います（「状態」の列を見てください）。`
+                        : '全員の確認が終わりました。「全員分コピー」か「CSVで保存」で書き出せます。';
+      showScreen('scrList');
+      nav.banner = '';
+    }
+  }else if(nav.mode === 'new'){
+    if(empty) return;
+    confirmCur();
+    startNewChild('new', false);
+  }else{
+    if(empty) return;
+    confirmCur();
+    showScreen('scrList');
+  }
+});
+$('draftSub').addEventListener('click', ()=>{
+  if(nav.mode === 'seq') seqMove(-1);
+  else showScreen('scrList');
+});
+$('editItems').addEventListener('click', ()=>{
+  // 選んである項目がある最初のページから開く
+  let p = 0;
+  for(let i=0;i<PAGES.length;i++){ if(pageCount(i)){ p = i; break; } }
+  openItems(p, 'draft');
+});
+
+/* ---- 所見一覧 ---- */
+function renderList(){
+  const box = $('listTable');
+  if(!box) return;
+  const list = sortedStudents();
+  const c = { none:0, draft:0, ok:0 };
+  list.forEach(s=>c[statusOf(s)]++);
+  $('rosterCount').innerHTML = `<b>${list.length}人</b>　確認済み <b>${c.ok}</b>・下書き <b>${c.draft}</b>・未作成 <b>${c.none}</b>`;
+  const bn = $('listBanner');
+  bn.textContent = nav.banner; bn.style.display = nav.banner ? '' : 'none';
+  let html = '<table><thead><tr><th>番号</th><th>名前</th><th>所見（書き出し）</th><th>字数</th><th>状態</th><th></th></tr></thead><tbody>';
+  list.forEach(s=>{
+    const n = s.out ? [...s.out].length : 0;
+    const bad = s.out && lenJudge(n, s.len || 175).cls !== 'meter-ok';
+    const st = statusOf(s);
+    const head = s.out ? ([...s.out].slice(0, 36).join('') + (n > 36 ? '…' : '')) : '';
+    html += `<tr class="lrow" data-id="${esc(s.id)}"><td class="no">${esc((s.no||'').trim() || '—')}</td>`
+      + `<td class="nm">${esc((s.name||'').trim() || '（名前なし）')}</td>`
+      + `<td class="tx">${esc(head)}</td>`
+      + `<td class="len${bad?' bad':''}" title="${bad?'めやす（'+(s.len||175)+'字）から離れています':''}">${n ? n + '字' : ''}</td>`
+      + `<td><span class="badge ${st}">${STATUS_LABEL[st]}</span></td>`
+      + `<td class="ops">${s.out ? '<button type="button" class="cp">コピー</button>' : ''}<button type="button" class="del" title="この児童を削除">×</button></td></tr>`;
+  });
+  html += '</tbody></table>';
+  box.innerHTML = html;
+  box.querySelectorAll('tr.lrow').forEach(tr=>{
+    const id = tr.dataset.id;
+    tr.addEventListener('click', e=>{
+      if(e.target.closest('button')) return;
+      openFromList(id);
+    });
+    const cp = tr.querySelector('.cp');
+    if(cp) cp.addEventListener('click', ()=>{
+      const s = roster.students.find(x=>x.id===id);
+      copyText(s.out, cp, 'コピー');
+    });
+    tr.querySelector('.del').addEventListener('click', ()=>delStudent(id));
+  });
+}
+function openFromList(id){
+  if(id !== roster.curId){ nav.undo = null; switchTo(id); }
+  nav.mode = 'one';
+  if(!state.sel.size) openItems(0, 'draft');
+  else openDraft(id, 'one');
+}
+function copyText(text, btn, label){
+  const done = ()=>{ if(btn){ btn.textContent = 'コピーしました'; setTimeout(()=>btn.textContent = label, 1400); } };
+  const fallback = ()=>{
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); done(); }catch(e){}
+    document.body.removeChild(ta);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback);
+  else fallback();
+}
+function allTsv(){
+  captureCurrent();
+  return sortedStudents().map(s=>[s.no, s.name, s.out].map(v=>String(v||'').replace(/[\t\r\n]+/g,' ')).join('\t')).join('\r\n');
+}
+$('copyAllBtn').addEventListener('click', ()=>{
+  const blank = roster.students.filter(s=>!s.out).length;
+  if(blank && !confirm(`所見文がまだできていない児童が ${blank}人 います。\nその分は空欄のままコピーしますか。`)) return;
+  copyText(allTsv(), $('copyAllBtn'), '全員分コピー');
+});
+$('addStuBtn').addEventListener('click', ()=>{
+  if(!nav.flow) nav.flow = 'single';
+  startNewChild('one', false);
+});
+
+/* ---- 文字数の判定（文章の画面・項目の画面・一覧で共通） ----
+   めやすの ±15% を範囲内とする（175字なら149〜201字）。 */
+function lenJudge(n, target){
+  const lo = Math.round(target * 0.85), hi = Math.round(target * 1.15);
+  if(n >= lo && n <= hi) return { cls:'meter-ok', msg:'めやすの範囲内です' };
+  if(n < lo) return { cls:'meter-short', msg:`あと${target - n}字ほどでめやすです（項目を足すと近づきます）` };
+  return { cls:'meter-over', msg:`めやすより${n - target}字多いです（項目を減らすと近づきます）` };
+}
+
+/* ---- 元に戻す（1回分） ----
+   項目・★・文の出し入れ・言い回し・字数・学年帯を変える直前の状態を1つだけ覚えておく。 */
+function snapUndo(){
+  if(!navReady) return;
+  nav.undo = { id:roster.curId, sel:[...state.sel], pri:[...state.pri], manual:state.manual,
+               mIn:[...state.mIn], seed:state.seed, len:state.len, grade:state.grade,
+               draft: !$('out').classList.contains('empty') };
+  syncUndoBtns();
+}
+function syncUndoBtns(){
+  const can = !!(nav.undo && nav.undo.id === roster.curId);
+  ['undoItems','undoDraft'].forEach(id=>{ const b = $(id); if(b) b.disabled = !can; });
+}
+function doUndo(){
+  const u = nav.undo;
+  if(!u || u.id !== roster.curId) return;
+  nav.undo = null;
+  const rec = curRec();
+  applyRecord(Object.assign({}, rec, { sel:Object.fromEntries(u.sel), pri:u.pri, manual:u.manual,
+    mIn:u.mIn, len:u.len, grade:u.grade, out:'' }));
+  if(u.draft && state.sel.size){ state.seed = u.seed; runAdoption(); }
+  else{ clearPicker(); setOut(EMPTY_DRAFT, true); renderRoster(); saveNow(); }
+  if(nav.scr === 'scrItems') renderItems();
+  if(nav.scr === 'scrDraft'){ renderDraftHead(); syncUndoBtns(); }
+}
+$('undoItems').addEventListener('click', doUndo);
+$('undoDraft').addEventListener('click', doUndo);
+
+/* 変更の直前（捕捉段階）に控えを取り、変更のあと（通常の段階）に文章を作り直す */
+document.addEventListener('click', e=>{
+  if(e.target.closest && e.target.closest('#cats .star, #cats .clr, #picker .pickbtn, #regenBtn, #lenSeg button, #gradeSeg button, #clearBtn')) snapUndo();
+}, true);
+document.addEventListener('change', e=>{
+  if(e.target.closest && e.target.closest('#cats')) snapUndo();
+}, true);
+
+/* 項目を変えたら、その場で文章を作り直す。一覧と保存がいつも最新になる。 */
+function afterSelEdit(){
+  if(!navReady) return;
+  regenCurrent();
+  if(nav.scr === 'scrItems'){
+    renderItemsMeter();
+    PAGES.forEach((p,i)=>{
+      const b = $('pageChips').querySelector(`button[data-page="${i}"]`);
+      if(!b) return;
+      const n = pageCount(i);
+      b.innerHTML = p.title + (n ? `<span class="n">${n}</span>` : '');
+    });
+  }
+  if(nav.scr === 'scrDraft') renderDraftHead();
+  syncUndoBtns();
+}
+document.addEventListener('change', e=>{ if(e.target.closest && e.target.closest('#cats')) afterSelEdit(); });
+document.addEventListener('click', e=>{
+  if(e.target.closest && e.target.closest('#cats .star, #lenSeg button, #gradeSeg button')) afterSelEdit();
+});
+$('lenInput').addEventListener('input', afterSelEdit);
+['regenBtn','clearBtn','joinSegD'].forEach(id=>$(id).addEventListener('click', ()=>{
+  if(nav.scr === 'scrDraft'){ captureCurrent(); renderDraftHead(); syncUndoBtns(); }
+}));
+// 「選ばない」（v1.33）。選んである評価のチェックを外し、ふだんの変更と同じ処理に流す
+document.addEventListener('click', e=>{
+  const b = e.target.closest && e.target.closest('#cats .clr');
+  if(!b) return;
+  const inp = b.closest('.item').querySelector('input:checked');
+  if(!inp) return;
+  inp.checked = false;
+  inp.dispatchEvent(new Event('change', {bubbles:true}));
+});
+
+/* ---- キーボード ----
+   Enter：その画面の主なボタン。← →：前後の児童（文章の画面）／前後のページ（項目の画面）。 */
 document.addEventListener('keydown', e=>{
-  if(e.key === 'Escape' && document.getElementById('evalModal').style.display !== 'none') closeEvalModal();
+  if([...document.querySelectorAll('.modal')].some(m=>m.style.display !== 'none')) return;
+  const a = document.activeElement, tag = a ? a.tagName : '';
+  if(e.key === 'Enter'){
+    if(a && a.id === 'nameIn'){ e.preventDefault(); if(!$('nameNext').disabled) $('nameNext').click(); return; }
+    if(['INPUT','TEXTAREA','SELECT','BUTTON','SUMMARY','A'].includes(tag)) return;
+    const p = document.querySelector('.screen.on [data-primary]');
+    if(p && !p.disabled){ e.preventDefault(); p.click(); }
+    return;
+  }
+  if(e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+  if(['INPUT','TEXTAREA','SELECT'].includes(tag)) return;
+  const d = e.key === 'ArrowRight' ? 1 : -1;
+  if(nav.scr === 'scrDraft' && nav.mode === 'seq'){ e.preventDefault(); seqMove(d); }
+  else if(nav.scr === 'scrItems'){
+    const p = nav.page + d;
+    if(p >= 0 && p < PAGES.length){ e.preventDefault(); openItems(p, nav.from); }
+  }
 });
+
+/* ---- 初回の案内（3枚） ---- */
+const TOUR_KEY = "shoken_tour_v1";
+const TOUR = [
+  ['2つの作り方があります', '<p><b>成績一覧から作る</b>：C4thから出した成績Excelを読み込み、学級全員分をまとめて作ります。</p><p><b>一人ずつ作る</b>：名前を入れて、項目を選びながら一人分ずつ作ります。</p>'],
+  ['1画面ずつ進みます', '<p>画面の上の帯で、いまどこにいるかが分かります。</p><p>「← 戻る」やブラウザの戻るボタンで、1つ前の画面に戻れます。「くわしい設定」は、開かなくても最後まで進めます。</p>'],
+  ['保存と確認', '<p>入力は自動で保存されます。途中で閉じても「続きから」で再開できます。</p><p>下書きは定型文の組み合わせです。<b>必ず担任が読み、加筆してから通知表に転記してください。</b></p>'],
+];
+let tourAt = 0;
+function showTour(){ tourAt = 0; renderTour(); $('tourModal').style.display = 'flex'; }
+function renderTour(){
+  const [t, h] = TOUR[tourAt];
+  $('tourPage').innerHTML = `<h3>${t}</h3>${h}`;
+  $('tourDots').innerHTML = TOUR.map((_,i)=>`<span class="${i===tourAt?'on':''}"></span>`).join('');
+  $('tourNext').textContent = tourAt === TOUR.length-1 ? 'はじめる' : '次へ';
+}
+function closeTour(){
+  $('tourModal').style.display = 'none';
+  try{ localStorage.setItem(TOUR_KEY, '1'); }catch(e){}
+}
+$('tourNext').addEventListener('click', ()=>{ if(tourAt < TOUR.length-1){ tourAt++; renderTour(); } else closeTour(); });
+$('tourSkip').addEventListener('click', closeTour);
+$('goTour').addEventListener('click', showTour);
+
+function navBoot(){
+  nav.flow = savedFlow;
+  navReady = true;
+  showScreen('scrStart', {push:false});
+  try{ history.replaceState(navSnap(), ''); }catch(e){}
+  let seen = false;
+  try{ seen = !!localStorage.getItem(TOUR_KEY); }catch(e){ seen = true; }
+  if(!seen) showTour();
+}
+
 
 /* ---- 起動 ---- */
 (function boot(){
@@ -4003,6 +4913,7 @@ document.addEventListener('keydown', e=>{
   setSaveState(restored
     ? `前回の続きを読み込みました（${roster.students.length}人分）`
     : "オン（入力すると自動で保存します）", true);
+  navBoot();   // v1.33
 })();
 
 </script>
