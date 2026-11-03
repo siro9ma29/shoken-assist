@@ -168,158 +168,477 @@
   .anlvl.verbal{background:var(--accent-soft); color:var(--accent);}
   .anlvl.together{background:var(--warn-soft); color:var(--warn);}
   .ankw{flex:0 0 auto; font-size:11px; opacity:.55; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+
+/* ==== v1.33：1画面1ステップの画面構成 ==== */
+.apphead{padding:12px 22px 10px;}
+.headrow{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; max-width:820px; margin:0 auto;}
+.headnav{display:flex; gap:6px;}
+.linkbtn{border:none; background:none; color:var(--accent); font:inherit; font-size:13.5px; cursor:pointer;
+  padding:6px 8px; border-radius:6px; text-decoration:underline; text-underline-offset:3px;}
+.linkbtn:hover{background:var(--accent-soft);}
+.linkbtn.strong{font-weight:700; font-size:15px;}
+.stepbar{list-style:none; display:flex; gap:4px; margin:10px auto 0; padding:0; max-width:820px; counter-reset:st;}
+.stepbar li{flex:1; text-align:center; font-size:12.5px; color:var(--sub); padding:6px 4px 5px;
+  border-bottom:4px solid var(--line); counter-increment:st; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.stepbar li::before{content:counter(st) " "; font-weight:700;}
+.stepbar li.done{color:var(--accent); border-color:color-mix(in srgb, var(--accent) 40%, white);}
+.stepbar li.cur{color:var(--accent); border-color:var(--accent); font-weight:700;}
+.stage{max-width:820px; margin:0 auto; padding:22px 22px 60px;}
+.screen{display:none; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:24px 26px;}
+.screen.on{display:block;}
+.scrtitle{font-size:20px; margin:0 0 6px; letter-spacing:.02em;}
+.lead{font-size:16px; margin:0 0 18px;}
+.small{font-size:12.5px;}
+.center{text-align:center;}
+.bigchoice{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:8px 0 18px;}
+@media(max-width:640px){.bigchoice{grid-template-columns:1fr;}}
+.choice{display:flex; flex-direction:column; gap:8px; text-align:left; padding:26px 22px; border-radius:14px; cursor:pointer;
+  border:2px solid var(--accent); background:var(--accent-soft); font-family:inherit; color:var(--ink);}
+.choice:hover{background:var(--accent-soft);}
+.choice:focus-visible{outline:3px solid var(--accent); outline-offset:2px;}
+.ch-title{font-size:21px; font-weight:700; color:var(--accent);}
+.ch-sub{font-size:13.5px; color:var(--sub); line-height:1.6;}
+.sublinks{display:flex; flex-wrap:wrap; gap:6px 14px; margin-bottom:14px;}
+.btn.wide{flex:none; min-width:220px;}
+.btn:disabled{opacity:.45; cursor:not-allowed;}
+.navrow{display:flex; gap:10px; justify-content:space-between; align-items:center; margin-top:22px; flex-wrap:wrap;}
+.navrow .btn{flex:none; min-width:130px; padding:13px 18px;}
+.navrow .btn.primary{min-width:200px; font-size:16px;}
+.dropzone{border:2px dashed color-mix(in srgb, var(--accent) 40%, white); border-radius:14px; padding:30px 16px; text-align:center; background:var(--accent-soft);}
+.dropzone.over{background:var(--accent-soft); border-color:var(--accent);}
+.dz-main{font-size:17px; font-weight:700; margin:0;}
+.dz-or{color:var(--sub); margin:6px 0 12px; font-size:13px;}
+.errbox{margin-top:14px; padding:12px 14px; border-radius:8px; background:#f7e6e0; border:1px solid #d9b3a6; color:#7a3424; font-size:14px; line-height:1.7;}
+details.fold{margin-top:16px; border-top:1px solid var(--line); padding-top:10px;}
+details.fold>summary{cursor:pointer; color:var(--accent); font-weight:700; font-size:14px; padding:4px 0;}
+details.fold[open]>summary{margin-bottom:10px;}
+details.fold.mini{margin-top:4px; border-top:none; padding-top:0;}
+details.fold.mini>summary{font-size:13px; font-weight:600;}
+.guidedl{margin:0; font-size:13px;}
+.guidedl dt{font-weight:700; margin-top:6px;}
+.guidedl dd{margin:2px 0 0 1em; color:var(--sub);}
+.guidedl .lv-can{color:var(--accent);} .guidedl .lv-grow{color:var(--grow);} .guidedl .lv-issue{color:var(--warn);}
+.bignum{font-size:22px; font-weight:700; margin:6px 0 4px; color:var(--accent);}
+.bigselect{font-family:inherit; font-size:15px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; min-width:260px;}
+.seg.big button{padding:12px 8px; font-size:14.5px;}
+.warnlist{font-size:13.5px; line-height:1.8; margin-top:14px; color:var(--ink);}
+.lenpick{display:flex; gap:14px;}
+.lenpick button{flex:1; padding:28px 10px; font-size:24px; font-weight:700; font-family:inherit; cursor:pointer;
+  border:2px solid var(--line); border-radius:14px; background:var(--panel); color:var(--ink);}
+.lenpick button:hover{border-color:var(--accent); background:var(--accent-soft);}
+.lenpick button.on{border-color:var(--accent); background:var(--accent-soft); color:var(--accent);}
+.bigin{font-size:17px !important; padding:11px 12px !important;}
+.yearpick{display:grid; grid-template-columns:repeat(6,1fr); gap:8px;}
+@media(max-width:560px){.yearpick{grid-template-columns:repeat(3,1fr);}}
+.yearpick button{padding:14px 4px; font-size:16px; font-family:inherit; border:2px solid var(--line); border-radius:10px; background:var(--panel); cursor:pointer;}
+.yearpick button.on{border-color:var(--accent); background:var(--accent); color:#fff; font-weight:700;}
+.whobar{display:flex; justify-content:space-between; align-items:baseline; gap:10px; flex-wrap:wrap;
+  font-size:13.5px; color:var(--sub); margin:-6px 0 12px; padding-bottom:8px; border-bottom:1px solid var(--line);}
+.whobar b{font-size:18px; color:var(--ink);}
+.whobar .prog{font-weight:700; color:var(--accent);}
+.pagechips{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px;}
+.pagechips button{border:1px solid var(--line); background:var(--panel); border-radius:16px; padding:4px 11px;
+  font-size:12.5px; font-family:inherit; cursor:pointer; color:var(--sub);}
+.pagechips button.cur{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:700;}
+.pagechips button .n{margin-left:4px; font-weight:700;}
+.meterbar{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;
+  margin-top:12px; padding:10px 14px; border-radius:8px; background:#faf9f5; font-size:14px;}
+.meter-ok{color:#1b6b34; font-weight:700;}
+.meter-short{color:var(--grow); font-weight:700;}
+.meter-over{color:var(--warn); font-weight:700;}
+#scrDraft .out{font-size:17px; line-height:2; min-height:170px; padding:18px 20px;}
+#scrDraft .tools{flex-wrap:wrap;}
+#scrDraft .tools button{padding:9px 14px; font-size:13.5px;}
+/* 項目の行（1ページ分）。ボタンを大きくし、「選ばない」を足す */
+#scrItems .cat-divider{display:none;}
+#scrItems .item{padding:11px 0; flex-wrap:wrap;}
+#scrItems .item .txt{font-size:15px; min-width:220px;}
+#scrItems .lvlpick{gap:6px;}
+#scrItems .lvlpick span{padding:8px 14px; font-size:13.5px; border-radius:18px;}
+#scrItems .lvlpick span.noissue{width:62px; border:none; background:none; padding:0;}
+.clr{border:1px solid var(--line); background:var(--panel); border-radius:18px; padding:8px 12px; font-size:13px;
+  font-family:inherit; color:var(--sub); cursor:pointer;}
+.item:not(.sel) .clr{background:#efede6; color:var(--ink); font-weight:700;}
+.item:not(.sel) .star{visibility:hidden;}
+details.cat>summary{font-size:15px;}
+.banner{background:#dff3e3; color:#1b6b34; border-radius:8px; padding:12px 14px; margin-bottom:14px; font-weight:700;}
+.listhead{display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; margin-bottom:12px;}
+.listcount{font-size:14px; color:var(--sub);}
+.listcount b{color:var(--ink);}
+.listtools{display:flex; gap:10px; flex-wrap:wrap;}
+.listtools .btn{flex:none; padding:10px 16px; font-size:14px;}
+.listtable{margin-top:12px; border:1px solid var(--line); border-radius:8px; overflow:auto;}
+.listtable table{border-collapse:collapse; width:100%; font-size:13.5px;}
+.listtable th{background:#faf9f5; font-size:12px; color:var(--sub); text-align:left; padding:7px 10px; border-bottom:1px solid var(--line); white-space:nowrap;}
+.listtable td{padding:9px 10px; border-bottom:1px solid #ece7db; vertical-align:top;}
+.listtable tr.lrow{cursor:pointer;}
+.listtable tr.lrow:hover td{background:#f7f6f1;}
+.listtable td.no{color:var(--sub); width:42px; text-align:right;}
+.listtable td.nm{white-space:nowrap; font-weight:700;}
+.listtable td.tx{color:var(--sub); min-width:200px;}
+.listtable td.len{white-space:nowrap; text-align:right; font-variant-numeric:tabular-nums;}
+.listtable td.len.bad{color:var(--warn); font-weight:700; background:var(--warn-soft);}
+.listtable td.ops{white-space:nowrap; text-align:right;}
+.listtable td.ops button{border:1px solid var(--line); background:var(--panel); border-radius:6px; padding:4px 9px; font-size:12px; font-family:inherit; cursor:pointer;}
+.listtable td.ops button.del{color:#b4ae9f; border:none;}
+.listtable td.ops button.del:hover{color:var(--warn);}
+.badge{display:inline-block; font-size:11.5px; padding:2px 9px; border-radius:10px; white-space:nowrap;}
+.badge.none{background:#f0eee7; color:var(--sub);}
+.badge.draft{background:var(--grow-soft); color:var(--grow); font-weight:700;}
+.badge.ok{background:#dff3e3; color:#1b6b34; font-weight:700;}
+.appfoot{max-width:820px; margin:-40px auto 30px; padding:0 22px; text-align:right;}
+.tourbox{width:min(520px,100%); padding:26px;}
+.tourpage h3{font-size:19px; margin:0 0 10px; color:var(--accent);}
+.tourpage p{font-size:15px; margin:0 0 8px;}
+.tourdots{display:flex; gap:6px; justify-content:center; margin-top:14px;}
+.tourdots span{width:8px; height:8px; border-radius:50%; background:var(--line);}
+.tourdots span.on{background:var(--accent);}
+/* ---- 共通の枠組み（外国語活動版・特別支援学級版） ---- */
+:root{ --radius:10px; --grow:#8a7a3a; --grow-soft:#f3efdf; }
+.modal{position:fixed; inset:0; background:rgba(43,43,40,.45); z-index:100; display:flex; align-items:center; justify-content:center; padding:20px;}
+.modalbox{background:var(--panel); border-radius:var(--radius); border:1px solid var(--line); padding:20px 22px; width:min(680px,100%); max-height:88vh; overflow:auto; box-shadow:0 10px 40px rgba(0,0,0,.2);}
+.csvopts{display:flex; flex-wrap:wrap; gap:10px 14px; margin:6px 0 0; padding:12px; background:var(--bg); border-radius:8px;}
+.csvopts label{font-size:12.5px; font-weight:700; display:flex; align-items:center; gap:6px;}
+.csvopts select{font-family:inherit; font-size:13px; padding:5px 7px; border:1px solid var(--line); border-radius:6px; background:var(--panel); color:var(--ink);}
+.csvprev{margin-top:6px; border:1px solid var(--line); border-radius:8px; overflow:auto; max-height:320px;}
+.csvprev table{border-collapse:collapse; width:100%; font-size:13px;}
+.csvprev th,.csvprev td{padding:6px 10px; border-bottom:1px solid var(--line); text-align:left;}
+.csvprev th{background:#faf9f5; font-size:11.5px; color:var(--sub); position:sticky; top:0;}
+.csvprev td.num{color:var(--sub); font-size:12px; width:60px;}
+.csvprev td.raw{color:var(--sub); font-size:12px;}
+.filerow{display:flex; flex-wrap:wrap; gap:7px; margin-top:4px;}
+.filerow button{padding:7px 10px; border:1px solid var(--line); border-radius:8px; background:var(--panel); font-size:12px; cursor:pointer; font-family:inherit; color:var(--ink);}
+.filerow button.danger{color:var(--warn, #b06a3a);}
+.savestate{font-size:12px;}
+.savestate.ok{color:var(--accent);}
+.savestate.ng{color:var(--warn, #b06a3a); font-weight:700;}
+.note.small{margin-top:16px;}
+.secname{display:inline-block; font-size:13px; font-weight:700; color:#fff; background:var(--accent); border-radius:6px; padding:1px 9px; margin-left:4px;}
+.prog2{font-weight:700; color:var(--sub);}
+.sechip{display:inline-block; font-size:11px; padding:1px 7px; border-radius:9px; margin:2px 3px 2px 0; background:#f0eee7; color:var(--sub);}
+.sechip.draft{background:var(--grow-soft, #f3efdf); color:var(--grow, #8a7a3a); font-weight:700;}
+.sechip.ok{background:#dff3e3; color:#1b6b34; font-weight:700;}
+.crow{border:1px solid var(--line); border-radius:8px; padding:10px 14px; margin-top:10px; cursor:pointer; background:var(--panel);}
+.crow:hover{border-color:var(--accent); background:#fafcfa;}
+.chead{display:flex; justify-content:space-between; align-items:center; font-size:14px; color:var(--sub);}
+.chead b{color:var(--ink); font-size:15px;}
+.ctext{font-size:14.5px; line-height:1.85; margin-top:4px;}
+.ctext.none{color:var(--sub); font-size:13px;}
+.childcount{font-size:14px; color:var(--sub); margin:0 0 4px;}
+#scrDraft .out{white-space:pre-wrap;}
+#scrUse .uselist label{font-size:15px; padding:10px 14px;}
 </style>
 </head>
 <body>
-<header>
-  <h1>所見文アシスト（特別支援学級・知的障害）<span class="ver" id="verBadge"></span></h1>
-  <p>教科等の欄ごとに、項目のようすを「一人でできる／言葉かけがあればできる／一緒に取り組めばできる」から選ぶと、その欄の所見文の下書きを組み立てます。生成後は必ず担任が加筆・修正してください。</p>
+<header class="apphead">
+  <div class="headrow">
+    <h1>所見文アシスト（特別支援学級・知的障害）<span class="ver" id="verBadge"></span></h1>
+    <nav class="headnav">
+      <button type="button" class="linkbtn" id="navHome">はじめの画面</button>
+      <button type="button" class="linkbtn" id="navList">所見一覧</button>
+    </nav>
+  </div>
+  <ol class="stepbar" id="stepbar" style="display:none;"></ol>
 </header>
 
-<div class="wrap">
-  <!-- 左：設定＋メモ -->
-  <div>
-    <div class="panel">
-      <h2>基本設定</h2>
+<main class="stage">
 
-      <div class="field">
-        <label>児童の呼び方（文頭）</label>
-        <input type="text" id="nameInput" placeholder="例）○○さん／空欄可">
-        <p class="hint">入力すると各欄の文頭に付きます。空欄なら名前なしで生成します。</p>
-      </div>
-
-      <div class="field">
-        <label>使う欄</label>
-        <div class="uselist" id="useList"></div>
-        <p class="hint">通知表にある欄だけにチェックを入れてください。チェックした欄だけがタブに並びます。</p>
-      </div>
-
-      <div class="field">
-        <label>この欄の文字数のめやす</label>
-        <div class="seg" id="lenSeg">
-          <button data-len="100">100字</button>
-          <button data-len="150" class="on">150字</button>
-          <button data-len="200">200字</button>
-        </div>
-        <div class="row" style="margin-top:8px; align-items:center;">
-          <input type="number" id="lenInput" value="150" min="30" max="600" style="width:90px;">
-          <span class="hint" style="margin:0;">字前後で調整</span>
-        </div>
-        <p class="hint">欄ごとに別々に覚えます（今開いている欄の設定です）。</p>
-      </div>
-
-      <div class="field" id="sceneField" style="display:none;">
-        <label>単元名・活動場面</label>
-        <input type="text" id="sceneInput" placeholder="例）お店やさんをひらこう">
-        <div class="chips" id="sceneChips">
-          <button data-scene="お店やさん">お店やさん</button>
-          <button data-scene="なかよし会">なかよし会</button>
-          <button data-scene="さつまいもを育てよう">さつまいもを育てよう</button>
-          <button data-scene="おたのしみ会">おたのしみ会</button>
-          <button data-scene="調理活動">調理活動</button>
-          <button data-scene="校外学習">校外学習</button>
-        </div>
-        <p class="hint">入力すると「『お店やさん』の学習では、〜」と単元から書き起こします。</p>
-      </div>
-
-      <div class="field">
-        <label>結びの一文（身に付いた力）</label>
-        <div class="seg" id="closeSeg">
-          <button data-close="off">付けない</button>
-          <button data-close="on" class="on">付ける</button>
-        </div>
-        <p class="hint">その欄に応じた「〜する力が育っています。」などの締めを自動で付けます。</p>
-      </div>
-
-      <div class="field">
-        <label>文のまとめ方</label>
-        <div class="seg" id="joinSeg">
-          <button data-join="off" class="on">1項目＝1文</button>
-          <button data-join="on">2項目をまとめる</button>
-        </div>
-        <p class="hint">同じ支援の程度の項目2件を「〜し、〜」で1文にまとめます。</p>
-      </div>
-
-      <div class="field">
-        <label>文末表現のばらつき</label>
-        <div class="seg" id="varSeg">
-          <button data-var="off">そろえる</button>
-          <button data-var="on" class="on">変化をつける</button>
-        </div>
-        <p class="hint">語尾や支援の言い回しの重複を避けます。</p>
-      </div>
-
-      <div class="saveline">
-        <span id="saveState">自動保存：—</span>
-        <button class="btn ghost" id="wipeBtn" style="padding:6px 10px; font-size:12px; font-weight:400;">この児童の入力を全部消す</button>
-      </div>
-      <p class="hint">入力内容はこのパソコンのブラウザ内にだけ残ります（通信はしません）。共用のパソコンでは、作業が終わったら必ず「この児童の入力を全部消す」を押してください。</p>
-    </div>
-
-    <div class="panel" style="margin-top:18px;">
-      <h2>この児童への支援　<span style="float:right; font-weight:400;" id="planCount">0/3 件</span></h2>
-      <p class="hint" style="margin:-6px 0 12px;">個別の指導計画の「支援の程度表」から、実際に行った手立てを選んでください。選んだ手立ては、所見文の「言葉かけがあればできる」「一緒に取り組めばできる」の文に具体的な形で入ります。</p>
-      <div class="seg" id="planGrpSeg"></div>
-      <div class="chips" id="planObsChips" style="margin-top:10px;"></div>
-      <div id="planLevels" style="margin-top:10px;"></div>
-      <div id="planChosen" style="margin-top:12px;"></div>
-    </div>
-
-    <div class="panel" style="margin-top:18px;">
-      <h2>観察メモを読み取る</h2>
-      <textarea id="memo" placeholder="担任の観察メモを貼り付けてください。&#10;例）名前を呼ばれると返事ができる。&#10;　　言葉かけを受けて、10までの数を数えることができた。&#10;　　教師と一緒に、はさみを使って形を切った。&#10;　　給食の準備は自分から進んで行う。"></textarea>
-      <div class="btnrow" style="margin-top:10px;">
-        <button class="btn primary" id="analyzeBtn">メモから項目を読み取る</button>
-        <button class="btn ghost" id="memoClearBtn">メモを消す</button>
-      </div>
-      <div id="analysis" style="display:none; margin-top:12px;"></div>
-      <p class="hint">使う欄すべてを対象にキーワードを照合します（AIは使わずローカル処理）。結果は必ず目視で確認・修正してください。</p>
-    </div>
+<!-- ===== スタート ===== -->
+<section class="screen" id="scrStart">
+  <p class="lead">教科等の欄ごとに、項目のようすを「一人でできる／言葉かけがあればできる／一緒に取り組めばできる」から選び、欄ごとの所見文の下書きを作ります。</p>
+  <p class="lead">どちらの方法で所見文を作りますか。</p>
+  <div class="bigchoice">
+    <button type="button" class="choice" id="goRoster" data-primary>
+      <span class="ch-title">名簿から作る</span>
+      <span class="ch-sub">C4thから出した学級名簿を読み込み、出席番号の順に一人ずつ作ります。</span>
+    </button>
+    <button type="button" class="choice" id="goSingle">
+      <span class="ch-title">一人ずつ作る</span>
+      <span class="ch-sub">名前を入れて、項目を選びながら一人分ずつ作ります。</span>
+    </button>
   </div>
+  <div class="sublinks">
+    <button type="button" class="linkbtn strong" id="goResume" style="display:none;"></button>
+    <button type="button" class="linkbtn" id="goListFromStart" style="display:none;">作った所見を見る</button>
+    <button type="button" class="linkbtn" id="goTour">使い方を見る</button>
+  </div>
+  <div class="note small">
+    入力した内容は、このパソコンのブラウザの中だけに自動で保存されます（通信はしません）。<b>共有のパソコンでは、作業のあと「所見一覧」の「くわしい設定」から「学級をすべて消す」を押してください。</b>
+  </div>
+</section>
 
-  <!-- 右：項目選択＋出力 -->
-  <div>
-    <div class="panel">
-      <h2>欄を選ぶ</h2>
-      <div class="subtabs" id="subTabs"></div>
-      <div style="display:flex; justify-content:space-between; align-items:baseline; border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:12px;">
-        <b style="font-size:14px;" id="curName">国語</b>
-        <span style="font-size:12px; color:var(--accent);" id="selCount">0件選択中</span>
+<!-- ===== 名簿の読み込み ===== -->
+<section class="screen" id="scrRoster">
+  <h2 class="scrtitle">学級名簿を読み込む</h2>
+  <p class="lead">C4thから出した学級名簿を、ここに入れてください。</p>
+  <div class="dropzone" id="dropZone">
+    <p class="dz-main">ここにファイルをドラッグ</p>
+    <p class="dz-or">または</p>
+    <button type="button" class="btn primary wide" id="rosterBtn" data-primary>ファイルを選ぶ</button>
+  </div>
+  <div class="errbox" id="rosterErr" style="display:none;"></div>
+  <details class="fold">
+    <summary>読み込める名簿</summary>
+    <p class="hint">出席番号と氏名が入った一覧なら読み込めます。Excel（.xlsx／.xls）とCSVのどちらでもかまいません。「出席番号」「氏名」の見出しの行を探して読み取ります（ふりがなの列は使いません）。姓と名が別の列になっていても読み込めます。</p>
+  </details>
+  <div class="navrow">
+    <button type="button" class="btn ghost" data-back>← 戻る</button>
+  </div>
+  <input type="file" id="rosterFile" accept=".csv,.txt,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none;">
+</section>
+
+<!-- ===== 名簿の確認 ===== -->
+<section class="screen" id="scrRosterOk">
+  <h2 class="scrtitle">読み取った名簿の確認</h2>
+  <p class="bignum" id="rosSummary"></p>
+  <p class="hint" id="rosInfo" style="margin:0;"></p>
+  <div class="field" id="rosSheetWrap" style="display:none;">
+    <label for="rosSheet">シートを選ぶ</label>
+    <select id="rosSheet" class="bigselect"></select>
+  </div>
+  <div class="field" id="rosModeWrap" style="display:none;">
+    <label>いまある学級をどうしますか</label>
+    <div class="seg big" id="rosModeSeg">
+      <button type="button" data-mode="replace">学級をつくり直す</button>
+      <button type="button" data-mode="add">いまの学級に足す</button>
+    </div>
+    <p class="hint" id="rosModeHint"></p>
+  </div>
+  <div class="hint warnlist" id="rosWarn"></div>
+  <details class="fold">
+    <summary>名前の一覧を見る</summary>
+    <div class="csvprev" id="rosPrev"></div>
+  </details>
+  <details class="fold">
+    <summary>くわしい設定（名前の表し方）</summary>
+    <div class="csvopts">
+      <label>名前に使う部分
+        <select id="rosUse"><option value="full">姓と名</option><option value="given">名だけ</option><option value="family">姓だけ</option></select>
+      </label>
+      <label>敬称
+        <select id="rosSuffix"><option value="さん" selected>さん</option><option value="くん">くん</option><option value="">付けない</option></select>
+      </label>
+      <select id="rosMode" style="display:none;"><option value="replace">replace</option><option value="add">add</option></select>
+    </div>
+    <p class="hint">名前は一覧の表示とCSVに使います。</p>
+  </details>
+  <div class="navrow">
+    <button type="button" class="btn ghost" id="rosCancel">← 戻る</button>
+    <button type="button" class="btn primary" id="rosApply" data-primary>この名簿で始める（次へ）</button>
+  </div>
+</section>
+
+
+
+<!-- ===== 名前 ===== -->
+<section class="screen" id="scrName">
+  <h2 class="scrtitle">名前を入れてください</h2>
+  <div class="field">
+    <label for="nameIn">名前（空欄でもかまいません）</label>
+    <input type="text" id="nameIn" class="bigin" placeholder="例）山田 花子さん" autocomplete="off">
+    <p class="hint">一覧の表示とCSVに使います。</p>
+  </div>
+  <div class="field">
+    <label for="noIn">出席番号</label>
+    <input type="number" id="noIn" class="bigin" min="1" max="99" style="width:120px;">
+  </div>
+  <div class="navrow">
+    <button type="button" class="btn ghost" data-back>← 戻る</button>
+    <button type="button" class="btn primary" id="nameNext" data-primary>次へ →</button>
+  </div>
+</section>
+
+<!-- ===== 使う欄 ===== -->
+<section class="screen" id="scrUse">
+  <h2 class="scrtitle">使う欄を選んでください</h2>
+  <p class="lead" id="useLead"></p>
+  <div class="uselist" id="useList"></div>
+  <div class="navrow">
+    <button type="button" class="btn ghost" data-back>← 戻る</button>
+    <button type="button" class="btn primary" id="useNext" data-primary>次へ →</button>
+  </div>
+</section>
+
+<!-- ===== 支援の手立て ===== -->
+<section class="screen" id="scrPlan">
+  <div class="whobar" id="planWho"></div>
+  <h2 class="scrtitle">この児童への支援の手立て　<span style="font-size:14px; font-weight:400; color:var(--sub);" id="planCount">0/3 件</span></h2>
+  <p class="lead">個別の指導計画の「支援の程度表」から、実際に行った手立てを選んでください（最大3件・選ばなくても進めます）。</p>
+  <div class="seg" id="planGrpSeg"></div>
+  <div class="chips" id="planObsChips" style="margin-top:10px;"></div>
+  <div id="planLevels" style="margin-top:10px;"></div>
+  <div id="planChosen" style="margin-top:12px;"></div>
+  <details class="fold">
+    <summary>くわしい設定（文頭の呼び方）</summary>
+    <div class="field">
+      <label for="nameInput">文頭の呼び方（任意）</label>
+      <input type="text" id="nameInput" placeholder="例）○○さん／空欄可">
+      <p class="hint">入力すると各欄の文頭に付きます。空欄なら名前なしで作ります。</p>
+    </div>
+  </details>
+  <div class="navrow">
+    <button type="button" class="btn ghost" data-back>← 戻る</button>
+    <button type="button" class="btn primary" id="planNext" data-primary>次へ →</button>
+  </div>
+</section>
+
+<!-- ===== 項目を選ぶ ===== -->
+<section class="screen" id="scrItems">
+  <div class="whobar" id="itemsWho"></div>
+  <div class="pagechips" id="pageChips"></div>
+  <h2 class="scrtitle" id="pageTitle"></h2>
+  <p class="lead" id="pageLead"></p>
+  <details class="fold mini">
+    <summary>一人で／言葉かけ／一緒に の使い分け</summary>
+    <dl class="guidedl">
+      <dt>一人で</dt><dd>支援がなくても一人で取り組めます。</dd>
+      <dt>言葉かけ</dt><dd>言葉かけや見守りがあれば取り組めます。</dd>
+      <dt>一緒に</dt><dd>教師と一緒に取り組めばできます。</dd>
+    </dl>
+    <p class="hint">★を押すと、その項目を必ずこの欄の所見に入れます（最大3件）。★は選んだ項目にだけ出ます。</p>
+  </details>
+  <div class="cats" id="cats"></div>
+  <div class="meterbar" id="itemsMeter"></div>
+  <details class="fold">
+    <summary>くわしい設定（観察メモから項目を読み取る）</summary>
+    <textarea id="memo" placeholder="担任の観察メモを貼り付けてください。&#10;例）名前を呼ばれると返事ができる。&#10;　　言葉かけを受けて、10までの数を数えることができた。"></textarea>
+    <div class="btnrow" style="margin-top:10px;">
+      <button class="btn primary" id="analyzeBtn">メモから項目を読み取る</button>
+      <button class="btn ghost" id="memoClearBtn">メモを消す</button>
+    </div>
+    <div id="analysis" style="display:none; margin-top:12px;"></div>
+    <p class="hint">使う欄すべてを対象にキーワードを照合します（AIは使わずローカル処理）。結果は必ず目視で確認・修正してください。</p>
+  </details>
+  <div class="navrow">
+    <button type="button" class="btn ghost" id="pagePrev">← 前へ</button>
+    <button type="button" class="btn ghost" id="undoItems" disabled>元に戻す</button>
+    <button type="button" class="btn primary" id="pageNext" data-primary>次へ →</button>
+  </div>
+</section>
+
+<!-- ===== 文章の確認 ===== -->
+<section class="screen" id="scrDraft">
+  <div class="whobar" id="draftWho"></div>
+  <div class="out empty" id="out">ここに所見文の下書きが表示されます。</div>
+  <div class="meterbar">
+    <span id="lenMeta">— 字</span>
+    <span id="tip"></span>
+  </div>
+  <div class="nglint" id="nglint" style="display:none;"></div>
+  <div class="dropped" id="dropped" style="display:none;"></div>
+  <div class="tools">
+    <button id="copyBtn">コピー</button>
+    <button id="regenBtn">別の言い方にする</button>
+    <button id="editItems">項目を選び直す</button>
+    <button id="undoDraft" disabled>元に戻す</button>
+  </div>
+  <div class="navrow">
+    <button type="button" class="btn ghost" id="draftSub"></button>
+    <button type="button" class="btn primary" id="draftMain" data-primary></button>
+  </div>
+  <p class="hint center" id="draftKeys"></p>
+  <details class="fold">
+    <summary>くわしい設定（単元名・文字数・まとめ方など）</summary>
+    <p class="prinote" id="priNote"></p>
+    <div class="field" id="sceneField" style="display:none;">
+      <label for="sceneInput">単元名・活動場面</label>
+      <input type="text" id="sceneInput" placeholder="例）お店やさんをひらこう">
+      <div class="chips" id="sceneChips">
+        <button data-scene="お店やさん">お店やさん</button><button data-scene="なかよし会">なかよし会</button>
+        <button data-scene="さつまいもを育てよう">さつまいもを育てよう</button><button data-scene="おたのしみ会">おたのしみ会</button>
+        <button data-scene="調理活動">調理活動</button><button data-scene="校外学習">校外学習</button>
       </div>
-      <div class="cats" id="cats"></div>
-      <p class="prinote" id="priNote"></p>
-      <div class="btnrow" style="margin-top:16px;">
-        <button class="btn primary" id="genBtn">この欄の所見文をつくる</button>
-        <button class="btn ghost" id="clearBtn">この欄の選択を解除</button>
+      <p class="hint">入力すると「『お店やさん』の学習では、〜」と単元から書き起こします。</p>
+    </div>
+    <div class="field">
+      <label>この欄の文字数のめやす</label>
+      <div class="seg" id="lenSeg"><button data-len="100">100字</button><button data-len="150" class="on">150字</button><button data-len="200">200字</button></div>
+      <div class="row" style="margin-top:8px; align-items:center;">
+        <input type="number" id="lenInput" value="150" min="30" max="600" style="width:90px;">
+        <span class="hint" style="margin:0;">字前後で調整</span>
       </div>
     </div>
+    <div class="field"><label>結びの一文（身に付いた力）（学級で共通）</label><div class="seg" id="closeSeg"><button data-close="off">付けない</button><button data-close="on" class="on">付ける</button></div></div>
+    <div class="field"><label>文のまとめ方（学級で共通）</label><div class="seg" id="joinSeg"><button data-join="off" class="on">1項目＝1文</button><button data-join="on">2項目をまとめる</button></div>
+      <p class="hint">同じ支援の程度の項目2件を「〜し、〜」で1文にまとめます。</p></div>
+    <div class="field"><label>文末表現のばらつき（学級で共通）</label><div class="seg" id="varSeg"><button data-var="off">そろえる</button><button data-var="on" class="on">変化をつける</button></div></div>
+    <button type="button" class="btn ghost" id="clearBtn">選んだ項目をすべて外す</button>
+  </details>
+  <div class="note small">
+    この下書きは定型文を組み合わせたものです。知的障害のある児童の評価は、他の児童と比べるのではなく、その子自身の伸びを捉える個人内評価です。具体的な場面やエピソードを加え、事実と異なる表現がないか必ず確認してから通知表に転記してください。
+    <span class="notever" id="noteVer"></span>
+  </div>
+</section>
 
-    <div class="panel" style="margin-top:18px;">
-      <h2>下書き（<span id="outSubName">国語</span>）</h2>
-      <div class="out empty" id="out">ここに所見文の下書きが表示されます。</div>
-      <div class="meta">
-        <span id="lenMeta">— 字</span>
-        <span id="tip"></span>
-      </div>
-      <div class="nglint" id="nglint" style="display:none;"></div>
-      <div class="dropped" id="dropped" style="display:none;"></div>
-      <div class="tools">
-        <button id="copyBtn">この欄をコピー</button>
-        <button id="regenBtn">別の言い回しで再生成</button>
-      </div>
-      <div class="note">
-        この下書きは定型文を組み合わせたものです。知的障害のある児童の評価は、他の児童と比べるのではなく、その子自身の伸びを捉える個人内評価です。「いつ・どの学習で・どのような姿だったか」という具体的な事実（単元名・エピソード・支援の内容）を加え、事実と異なる表現がないか必ず確認してから通知表に転記してください。
-        <span class="notever" id="noteVer"></span>
-      </div>
+<!-- ===== この児童のまとめ（欄ごとの文章） ===== -->
+<section class="screen" id="scrChild">
+  <div class="whobar" id="childWho"></div>
+  <h2 class="scrtitle">この児童の所見（欄ごと）</h2>
+  <p class="childcount" id="childCount"></p>
+  <p class="hint">欄を押すと、その欄の文章を開きます。</p>
+  <div id="childList"></div>
+  <div class="navrow">
+    <button type="button" class="btn ghost" id="childSub"></button>
+    <button type="button" class="btn primary" id="childMain" data-primary></button>
+  </div>
+  <details class="fold">
+    <summary>くわしい設定（使う欄・支援の手立て・コピー）</summary>
+    <div class="filerow">
+      <button type="button" id="childUse">使う欄を変える</button>
+      <button type="button" id="childPlan">支援の手立て・呼び方を直す</button>
+      <button type="button" id="childCopy">この児童の全欄をコピー</button>
     </div>
+  </details>
+</section>
 
-    <div class="panel" style="margin-top:18px;">
-      <h2>全欄の一覧　<span style="float:right; font-weight:400;" id="doneCount"></span></h2>
-      <div class="alllist" id="allList"></div>
-      <div class="tools">
-        <button id="copyAllBtn">全欄をまとめてコピー</button>
-      </div>
-      <p class="hint">できた欄から順にたまっていきます。「まとめてコピー」は「国語：〜」の形で全欄を書き出します。</p>
+<!-- ===== 所見一覧 ===== -->
+<section class="screen" id="scrList">
+  <div class="banner" id="listBanner" style="display:none;"></div>
+  <div class="listhead">
+    <div class="field" style="margin:0;">
+      <label for="clsInput">学級名</label>
+      <input type="text" id="clsInput" placeholder="例）4年1組" style="width:180px;">
+    </div>
+    <div class="listcount" id="rosterCount">—</div>
+  </div>
+  <div class="listtools">
+    <button type="button" class="btn ghost" id="copyAllBtn">全員分コピー</button>
+    <button type="button" class="btn ghost" id="expCsvBtn">CSVで保存</button>
+    <button type="button" class="btn primary" id="addStuBtn">＋ 児童を追加</button>
+  </div>
+  <p class="hint">「全員分コピー」は、番号・名前・各欄の所見をタブで区切ってコピーします（1行目は欄の名前）。Excelに貼り付けると表になります。行を押すと、その児童の欄ごとの所見を開きます。</p>
+  <div class="listtable" id="listTable"></div>
+  <details class="fold">
+    <summary>くわしい設定（作業ファイル・学級の消去）</summary>
+    <div class="filerow">
+      <button id="expWorkBtn">作業ファイルを書き出す</button>
+      <button id="impWorkBtn">作業ファイルを読み込む</button>
+      <button id="wipeBtn2" class="danger">学級をすべて消す</button>
+    </div>
+    <p class="hint">別のパソコンで続けるとき、バックアップを残すときは「作業ファイルを書き出す」を使います。</p>
+  </details>
+  <div class="note small">
+    <b>共有のパソコンでは、作業が終わったら「学級をすべて消す」を押してください。</b>転記の前に、必ず担任が一人一人の文章を確かめてください。
+  </div>
+  <input type="file" id="importFile" accept=".json,application/json" style="display:none;">
+</section>
+
+</main>
+
+<footer class="appfoot"><span class="savestate ok" id="saveState">自動保存：オン</span></footer>
+
+<!-- 以前の画面にあった部品。各版の処理が参照するため残すが、画面には出さない -->
+<div id="legacy" hidden>
+  <div id="subTabs"></div><b id="curName"></b><span id="selCount"></span><button id="genBtn"></button><span id="outSubName"></span><div id="allList"></div><span id="doneCount"></span><button id="wipeBtn"></button><button id="copyAllBtnOld"></button>
+</div>
+
+<div class="modal" id="tourModal" style="display:none;">
+  <div class="modalbox tourbox">
+    <div class="tourpage" id="tourPage"></div>
+    <div class="tourdots" id="tourDots"></div>
+    <div class="navrow">
+      <button type="button" class="btn ghost" id="tourSkip">とばす</button>
+      <button type="button" class="btn primary" id="tourNext">次へ</button>
     </div>
   </div>
 </div>
@@ -327,9 +646,14 @@
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "SN v1.3";
-const APP_DATE    = "2026-08-03";
+const APP_VERSION = "SN v1.4";
+const APP_DATE    = "2026-11-03";
 const APP_HISTORY = [
+  "SN v1.4 通常版 v1.33 と同じ、1画面ずつ進む画面構成にした（生成の処理は SN v1.3 のまま）。",
+  "　　　　学級全員分を持てるようにし、C4thから出した学級名簿（.xlsx／.xls／CSV）を読み込めるようにした。",
+  "　　　　1人分は 名前→使う欄→支援の手立て→欄ごとに 項目→文章→その児童のまとめ の順。所見一覧・確認済みの印・全員分コピー・CSVを追加。",
+  "　　　　観察メモは項目の画面、呼び方は支援の手立ての画面、単元名・文字数・まとめ方などは文章の画面の「くわしい設定」にたたんだ。",
+  "　　　　前の版（1人分）の保存内容は、最初の1人として引き継ぐ。",
   "SN v1.3 個別の指導計画の「支援の程度表」から手立て77件を取り込み。",
   "　　　　最大3件を登録すると、支援を要する文が具体的な手立ての表現になる。",
   "SN v1.2 低学年の生活科（生活）を追加。13項目。既定では「使う欄」オフ。",
@@ -1406,7 +1730,9 @@ const curSub = () => SUB_BY_KEY[state.cur];
 
 /* ============ 保存（このパソコンのブラウザ内） ============ */
 let saveOK = true;
-function saveNow(){
+/* SN v1.4：保存は共通の枠組み（学級全員分）が受け持つ。以前の1人分の保存は使わない。 */
+function saveNow(){ if(window.SHELL) window.SHELL.save(); }
+function saveNow_v13(){
   try{
     const data = {
       name: state.name, variant: state.variant, join: state.join, closer: state.closer,
@@ -1852,7 +2178,7 @@ function renderAll(){
   document.getElementById('doneCount').textContent = `${done} / ${state.active.length} 欄`;
 }
 
-document.getElementById('copyAllBtn').addEventListener('click',()=>{
+document.getElementById('copyAllBtnOld').addEventListener('click',()=>{
   const lines = state.active
     .filter(k=>state.sub[k].out)
     .map(k=>`【${SUB_BY_KEY[k].name}】\n${state.sub[k].out}`);
@@ -1942,7 +2268,7 @@ function showAnalysis(hits, msg){
   const bad = lintDB();
   if(bad.length) console.warn("[所見文アシスト] 文例データの点検で問題が見つかりました：\n" + bad.join("\n"));
 
-  load();
+  // SN v1.4：読み込みは共通の枠組みが行う（load は使わない）
   document.getElementById('nameInput').value = state.name;
   [...document.querySelectorAll('#closeSeg button')].forEach(b=>b.classList.toggle('on', (b.dataset.close==='on')===state.closer));
   [...document.querySelectorAll('#joinSeg button')].forEach(b=>b.classList.toggle('on', (b.dataset.join==='on')===state.join));
@@ -1953,6 +2279,1426 @@ function showAnalysis(hits, msg){
   switchTo(state.cur);
   renderAll();
 })();
+
+/* ==================================================================
+   特別支援学級版の受け渡し役（SN v1.4）
+   ------------------------------------------------------------------
+   共通の枠組み（下の SHELL）と、この版の文例・生成の処理（===TEXT-CORE=== の中と generate）を
+   つなぐ。生成の処理には手を入れず、state を「いまの児童」の内容に入れ替えて使う。
+   児童のレコード：{ yobi（文頭の呼び方）, memo, plan（支援の手立て）, active（使う欄）,
+                    secs:{ 欄のキー:{ sel, pri, scene, len, out, okOut, seed } } }
+   ================================================================== */
+function snBlankSecs(){
+  const o = {};
+  SUBJECTS.forEach(s=>{ o[s.key] = { sel:[], pri:[], scene:"", len:s.defLen, out:"", okOut:"", seed:0 }; });
+  return o;
+}
+const APP = {
+  appName: "所見文アシスト（特別支援学級）",
+  storeKey: "shoken_sn_class_v1",
+  oldKey: STORE_KEY,
+  filePrefix: "所見文_特別支援学級",
+  multi: true, lenStep: false, defLen: 150,
+  steps: {
+    roster: ['名簿の読み込み','確認','使う欄','一人ずつ作る','仕上げ'],
+    single: ['名前','使う欄','支援の手立て','欄ごとの所見','まとめ'],
+  },
+  stepOf(scr, flow){
+    return flow === 'roster'
+      ? {scrRoster:0, scrRosterOk:1, scrUse:2, scrPlan:3, scrItems:3, scrDraft:3, scrChild:3, scrList:4}[scr]
+      : {scrName:0, scrUse:1, scrPlan:2, scrItems:3, scrDraft:3, scrChild:4}[scr];
+  },
+  allSecs(){ return SUBJECTS.map(s=>({ key:s.key, name:s.name })); },
+  activeSecs(rec){ return rec.active; },
+  secName(k){ return SUB_BY_KEY[k] ? SUB_BY_KEY[k].name : k; },
+  blankRec(){ return { yobi:"", memo:"", plan:[], active:DEFAULT_ACTIVE.slice(), secs:snBlankSecs() }; },
+  /* 新しい児童は、前の児童の使う欄・欄ごとの文字数・単元名を引き継ぐ */
+  onNewRec(rec, prev){
+    if(!prev) return;
+    rec.active = prev.active.slice();
+    SUBJECTS.forEach(s=>{ rec.secs[s.key].len = prev.secs[s.key].len; rec.secs[s.key].scene = prev.secs[s.key].scene; });
+  },
+  normRec(s){
+    const secs = snBlankSecs();
+    SUBJECTS.forEach(sub=>{
+      const f = (s.secs && s.secs[sub.key]) || {}, t = secs[sub.key];
+      const valid = new Set(sub.groups.flatMap(g=>g.items).map(i=>i.id));
+      t.sel = (Array.isArray(f.sel) ? f.sel : []).filter(x=>Array.isArray(x) && valid.has(x[0]) && LEVEL_ORDER.includes(x[1]));
+      const ids = new Set(t.sel.map(x=>x[0]));
+      t.pri = (Array.isArray(f.pri) ? f.pri : []).filter(id=>ids.has(id)).slice(0, MAX_PRI);
+      t.scene = String(f.scene||""); t.len = Math.min(600, Math.max(30, parseInt(f.len,10) || sub.defLen));
+      t.out = String(f.out||""); t.okOut = String(f.okOut||""); t.seed = Math.max(0, parseInt(f.seed,10) || 0);
+    });
+    const active = (Array.isArray(s.active) ? s.active : []).filter(k=>SUB_BY_KEY[k]);
+    return { yobi:String(s.yobi||""), memo:String(s.memo||""),
+             plan:(Array.isArray(s.plan) ? s.plan : []).filter(id=>PLAN_BY_ID[id]).slice(0, MAX_PLAN),
+             active: active.length ? SUBJECTS.map(x=>x.key).filter(k=>active.includes(k)) : DEFAULT_ACTIVE.slice(),
+             secs };
+  },
+  hasWork(s){ return s.plan.length > 0 || Object.values(s.secs).some(f=>f.sel.length || f.out); },
+  capture(rec){
+    rec.yobi = state.name; rec.plan = state.plan.slice(); rec.active = state.active.slice();
+    rec.memo = document.getElementById('memo').value;
+    SUBJECTS.forEach(s=>{
+      const st = state.sub[s.key], f = rec.secs[s.key] || {};
+      rec.secs[s.key] = { sel:[...st.sel], pri:[...st.pri], scene:st.scene, len:st.len, out:st.out,
+                          okOut: f.okOut || "", seed: s.key === state.cur ? state.regenSeed : (f.seed || 0) };
+    });
+  },
+  apply(rec, k){
+    state.name = rec.yobi; state.plan = rec.plan.slice(); state.active = rec.active.slice();
+    SUBJECTS.forEach(s=>{
+      const f = rec.secs[s.key];
+      state.sub[s.key] = { sel:new Map(f.sel), pri:new Set(f.pri), scene:f.scene, len:f.len, out:f.out };
+    });
+    document.getElementById('nameInput').value = rec.yobi;
+    document.getElementById('memo').value = rec.memo;
+    const an = document.getElementById('analysis'); an.innerHTML = ''; an.style.display = 'none';
+    state.cur = (k && state.active.includes(k)) ? k : state.active[0];
+    renderPlan(); buildUseList();
+    switchTo(state.cur);
+    state.regenSeed = rec.secs[state.cur].seed || 0;
+    renderAll();
+  },
+  setSec(rec, k){
+    switchTo(k);
+    state.regenSeed = (rec.secs[k] && rec.secs[k].seed) || 0;
+  },
+  pages(k){
+    return [{ title: (SUB_BY_KEY[k] ? SUB_BY_KEY[k].name : '') + 'の項目',
+              lead: '各項目で、取り組めた支援の程度（一人で／言葉かけ／一緒に）を選びます。', show:()=>true }];
+  },
+  regen(){
+    const st = cur();
+    if(st.sel.size) generate();
+    else{ st.out = ""; setOut(SHELL_EMPTY(), true); showDropped([]); showLint(""); }
+  },
+  curLen(){ return cur().len; },
+  classCapture(){ return { variant:state.variant, join:state.join, closer:state.closer }; },
+  classApply(d){
+    state.variant = d.variant !== false; state.join = !!d.join; state.closer = d.closer !== false;
+    document.querySelectorAll('#varSeg button').forEach(b=>b.classList.toggle('on', (b.dataset.var==='on') === state.variant));
+    document.querySelectorAll('#joinSeg button').forEach(b=>b.classList.toggle('on', (b.dataset.join==='on') === state.join));
+    document.querySelectorAll('#closeSeg button').forEach(b=>b.classList.toggle('on', (b.dataset.close==='on') === state.closer));
+  },
+  /* 名簿を読み込んだあとは、学級で使う欄を1回だけ決める */
+  afterRoster(){ SHELL.SH.useScope = 'class'; return 'scrUse'; },
+  /* 児童の最初の画面。一人ずつ作るときは使う欄から、名簿の順に作るときは支援の手立てから */
+  childPre(flow, mode){
+    SHELL.SH.useScope = 'child';
+    return (mode === 'new' || mode === 'add') ? 'scrUse' : 'scrPlan';
+  },
+  render: {
+    scrUse(){
+      buildUseList();
+      const cls = SHELL.SH.useScope === 'class';
+      document.getElementById('useLead').textContent = cls
+        ? '通知表にある欄だけを選んでください。学級の全員に同じ欄を使います（あとで一人ずつ変えられます）。'
+        : '通知表にある欄だけを選んでください。前の児童と同じ欄が選んであります。';
+      document.getElementById('useNext').textContent = SHELL.SH.ret === 'child' ? 'まとめに戻る' : '次へ →';
+    },
+    scrPlan(){
+      renderPlan();
+      document.getElementById('planNext').textContent = SHELL.SH.ret === 'child' ? 'まとめに戻る' : '次へ →';
+      const r = SHELL.curRec();
+      document.getElementById('planWho').innerHTML = '<span><b>' + String((r.name||'').trim() || '（名前なし）').replace(/[&<>]/g,'') + '</b>　' + (r.no ? r.no + '番' : '') + '</span>';
+    },
+  },
+  renderChildExtra(){},
+  /* 以前の版（1人分だけ）の保存内容を、最初の1人として引き継ぐ */
+  migrate(){
+    const old = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
+    if(!old || !old.sub) return null;
+    const rec = { id:"s_old", no:"1", name:"", yobi:old.name||"", memo:old.memo||"", plan:old.plan||[], active:old.active||[], secs:{} };
+    SUBJECTS.forEach(s=>{ const d = old.sub[s.key]; if(d) rec.secs[s.key] = { sel:d.sel||[], pri:d.pri||[], scene:d.scene||"", len:d.len||s.defLen, out:d.out||"", okOut:"", seed:0 }; });
+    return { students:[rec], cfg:{ variant:old.variant, join:old.join, closer:old.closer } };
+  },
+  tour: [
+    ['2つの作り方があります', '<p><b>名簿から作る</b>：C4thから出した学級名簿を読み込み、出席番号の順に一人ずつ作ります。</p><p><b>一人ずつ作る</b>：名前を入れて、一人分ずつ作ります。</p>'],
+    ['1画面ずつ進みます', '<p>使う欄と支援の手立てを選んだら、欄ごとに「項目を選ぶ→文章を確かめる」を順に進み、最後にその児童の全部の欄をまとめて見ます。</p><p>「← 戻る」やブラウザの戻るボタンで1つ前に戻れます。</p>'],
+    ['保存と確認', '<p>入力は自動で保存されます。途中で閉じても「続きから」で再開できます。</p><p>下書きは定型文の組み合わせです。<b>その子自身の伸びを捉える個人内評価になるよう、必ず担任が確かめてから通知表に転記してください。</b></p>'],
+  ],
+};
+function SHELL_EMPTY(){ return "項目がまだ選ばれていません。「項目を選び直す」から選んでください。"; }
+document.getElementById('useNext').addEventListener('click', ()=>{
+  const SH = SHELL.SH;
+  SHELL.capture();
+  if(SH.useScope === 'class'){
+    const act = SHELL.curRec().active.slice();
+    SHELL.R.students.forEach(s=>{ s.active = act.slice(); });
+    SHELL.saveNow();
+    SHELL.startSeq();
+    return;
+  }
+  SHELL.saveNow();
+  if(SH.ret === 'child'){ SHELL.show('scrChild'); return; }
+  SHELL.show('scrPlan');
+});
+document.getElementById('planNext').addEventListener('click', ()=>{
+  SHELL.capture();
+  SHELL.regenAll();   // 支援の手立て・呼び方は、作ってある欄の文章にも入るので作り直す
+  if(SHELL.SH.ret === 'child'){ SHELL.show('scrChild'); return; }
+  SHELL.firstSec();
+});
+document.getElementById('childUse').addEventListener('click', ()=>{ SHELL.SH.useScope = 'child'; SHELL.SH.ret = 'child'; SHELL.show('scrUse'); });
+document.getElementById('childPlan').addEventListener('click', ()=>{ SHELL.SH.ret = 'child'; SHELL.show('scrPlan'); });
+document.getElementById('childCopy').addEventListener('click', e=>{
+  const t = SHELL.recText(SHELL.curRec());
+  if(!t){ alert("まだ所見文が1つも作られていません。"); return; }
+  const b = e.currentTarget;
+  navigator.clipboard?.writeText(t).then(()=>{ b.textContent = 'コピーしました'; setTimeout(()=>b.textContent='この児童の全欄をコピー', 1400); });
+});
+
+
+/* ==================================================================
+   共通の画面の枠組み（通常版 v1.33 と同じ操作）
+   ------------------------------------------------------------------
+   外国語活動版・特別支援学級版で同じものを使う。各版の文例・生成の処理には
+   手を入れず、APP（各版の受け渡し役）を通して「いまの児童」を出し入れする。
+     R      … 学級（児童のレコードの配列）。児童を切り替えるたびに APP.capture/apply で往復
+     SH     … いまの画面・流れ
+       flow … 'roster'（名簿から作る）／'single'（一人ずつ作る）
+       mode … 'seq'（名簿の順に作る）／'new'（一人ずつ作って次へ）／'one'（一覧から開いた1人）
+       sec  … いま作っている欄（外国語活動版は常に1つ）
+       ret  … 'child'：児童のまとめ画面から欄を開いたとき（特別支援学級版）
+   関数はこの囲みの中に閉じ込め、各版の同名の関数（save・switchTo など）とぶつからないようにする。
+   ================================================================== */
+(function(){
+const $ = id => document.getElementById(id);
+const R  = { cls:"", students:[], curId:null };
+const SH = { ready:false, scr:'scrStart', flow:'', mode:'', sec:'', page:0, from:'', ret:'',
+             undo:null, banner:'', withLen:false, savedFlow:'' };
+const EMPTY = "項目がまだ選ばれていません。「項目を選び直す」から選んでください。";
+
+/* ---------- ファイルの読み取り（通常版から移植） ---------- */
+function decodeText(buf){
+  const b = new Uint8Array(buf);
+  if(b[0]===0xEF && b[1]===0xBB && b[2]===0xBF){
+    return { text:new TextDecoder('utf-8').decode(b.subarray(3)), enc:'UTF-8' };
+  }
+  try{
+    return { text:new TextDecoder('utf-8',{fatal:true}).decode(b), enc:'UTF-8' };
+  }catch(e){ /* UTF-8 として不正 → Shift_JIS とみなす */ }
+  try{
+    return { text:new TextDecoder('shift_jis').decode(b), enc:'Shift_JIS' };
+  }catch(e){
+    return { text:new TextDecoder().decode(b), enc:'不明' };
+  }
+}
+
+/* CSVを行×列に分解する。引用符の中のカンマ・改行・二重引用符に対応する。 */
+function parseCsv(text){
+  const rows = [];
+  let row = [], cell = "", quoted = false;
+  const s = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+  for(let i=0;i<s.length;i++){
+    const c = s[i];
+    if(quoted){
+      if(c === '"'){
+        if(s[i+1] === '"'){ cell += '"'; i++; }
+        else quoted = false;
+      }else cell += c;
+    }else{
+      if(c === '"' && cell === '') quoted = true;
+      else if(c === ','){ row.push(cell); cell = ""; }
+      else if(c === '\n'){ row.push(cell); rows.push(row); row = []; cell = ""; }
+      else cell += c;
+    }
+  }
+  if(cell !== "" || row.length){ row.push(cell); rows.push(row); }
+  // 全部空欄の行は落とす
+  return rows.filter(r=>r.some(v=>String(v).trim() !== ""));
+}
+
+
+/* ---- .xls（BIFF8）の読み取り ----
+   .xls は「複合ファイル」という入れ物の中に Workbook というデータ列が入っている。
+   (1) 入れ物を開いて Workbook を取り出し、(2) その中のレコードからセルの値を拾う。
+   拾うのは文字列（共有文字列表・LABEL）と数値（NUMBER・RK・MULRK・数式の結果）だけで、
+   書式や結合セルなどは読まない。評価一覧の取り込みにはそれで足りる。 */
+function xlsParse(buf){
+  const u8 = new Uint8Array(buf);
+  const dv = new DataView(buf);
+  const sig = [0xD0,0xCF,0x11,0xE0,0xA1,0xB1,0x1A,0xE1];
+  if(u8.length < 512 || sig.some((b,i)=>u8[i]!==b)) throw new Error("xls形式ではありません");
+
+  const u16 = o => dv.getUint16(o, true);
+  const u32 = o => dv.getUint32(o, true);
+  const secSize  = 1 << u16(0x1E);
+  const miniSize = 1 << u16(0x20);
+  const nFat     = u32(0x2C);
+  const dirStart = u32(0x30);
+  const cutoff   = u32(0x38);
+  const miniFatStart = u32(0x3C);
+  const difatStart   = u32(0x44);
+  const nDifat       = u32(0x48);
+  const END = 0xFFFFFFFE;
+  // ヘッダーは512バイト（セクタ512バイトの版）。セクタ4096バイトの版ではヘッダーも4096バイト分を占める。
+  const hdr = secSize === 4096 ? 4096 : 512;
+  const offOf = s => hdr + s * secSize;
+
+  // FAT（セクタのつながり表）を組み立てる
+  const fatSecs = [];
+  for(let i=0;i<109 && fatSecs.length<nFat;i++){
+    const s = u32(0x4C + i*4);
+    if(s < 0xFFFFFFFA) fatSecs.push(s);
+  }
+  let d = difatStart, guard = 0;
+  while(fatSecs.length < nFat && d < 0xFFFFFFFA && guard++ < 10000){
+    const base = offOf(d), per = secSize/4 - 1;
+    for(let i=0;i<per && fatSecs.length<nFat;i++){
+      const s = u32(base + i*4);
+      if(s < 0xFFFFFFFA) fatSecs.push(s);
+    }
+    d = u32(base + per*4);
+  }
+  const fat = [];
+  fatSecs.forEach(fs=>{
+    const base = offOf(fs);
+    for(let i=0;i<secSize/4;i++) fat.push(u32(base + i*4));
+  });
+
+  const chain = (start, table)=>{
+    const out = []; let s = start, g = 0;
+    while(s !== END && s < 0xFFFFFFFA && g++ < 1000000){
+      out.push(s);
+      if(s >= table.length) break;
+      s = table[s];
+    }
+    return out;
+  };
+  const readChain = (start, size)=>{
+    const secs = chain(start, fat);
+    const out = new Uint8Array(secs.length * secSize);
+    secs.forEach((s,i)=>{
+      const o = offOf(s);
+      out.set(u8.subarray(o, Math.min(o + secSize, u8.length)), i*secSize);
+    });
+    return size == null ? out : out.subarray(0, Math.min(size, out.length));
+  };
+
+  // ディレクトリ（入れ物の目次）
+  const dirBytes = readChain(dirStart);
+  const ddv = new DataView(dirBytes.buffer, dirBytes.byteOffset, dirBytes.byteLength);
+  const entries = [];
+  for(let o=0; o+128<=dirBytes.length; o+=128){
+    const nlen = ddv.getUint16(o+0x40, true);
+    let name = "";
+    for(let i=0;i+1<nlen-1 && i<64;i+=2) name += String.fromCharCode(ddv.getUint16(o+i, true));
+    entries.push({ name, type:dirBytes[o+0x42],
+                   start:ddv.getUint32(o+0x74, true), size:ddv.getUint32(o+0x78, true) });
+  }
+  const root = entries[0];
+  const wb = entries.find(e=>e.type===2 && (e.name==="Workbook" || e.name==="Book"));
+  if(!wb) throw new Error("Workbook が見つかりません");
+  if(wb.name === "Book") throw new Error("古い形式（Excel 5.0/95）のため読めません");
+
+  let data;
+  if(wb.size < cutoff){
+    // 小さいデータ列は「ミニストリーム」に64バイト単位で入っている
+    const ministream = readChain(root.start, root.size);
+    const mfBytes = readChain(miniFatStart);
+    const mdv = new DataView(mfBytes.buffer, mfBytes.byteOffset, mfBytes.byteLength);
+    const miniFat = [];
+    for(let i=0;i+4<=mfBytes.length;i+=4) miniFat.push(mdv.getUint32(i, true));
+    const secs = chain(wb.start, miniFat);
+    data = new Uint8Array(secs.length * miniSize);
+    secs.forEach((s,i)=>data.set(ministream.subarray(s*miniSize, s*miniSize+miniSize), i*miniSize));
+    data = data.subarray(0, wb.size);
+  }else{
+    data = readChain(wb.start, wb.size);
+  }
+  return biffParse(data);
+}
+
+/* BIFF8 のレコード列からシートごとのセル値（文字列の2次元配列）を取り出す */
+function biffParse(data){
+  const dv = new DataView(data.buffer, data.byteOffset, data.byteLength);
+  const u16 = o => dv.getUint16(o, true);
+  const u32 = o => dv.getUint32(o, true);
+
+  // 1パス目：レコードの一覧を作る
+  const recs = [];
+  for(let p=0; p+4<=data.length; ){
+    const type = u16(p), len = u16(p+2);
+    recs.push({ type, off:p+4, len });
+    p += 4 + len;
+  }
+
+  // 共有文字列表（SST）。CONTINUE レコードにまたがって続くことがある。
+  let sst = [];
+  const iSst = recs.findIndex(r=>r.type===0x00FC);
+  if(iSst >= 0){
+    const segs = [recs[iSst]];
+    for(let j=iSst+1; j<recs.length && recs[j].type===0x003C; j++) segs.push(recs[j]);
+    sst = sstParse(data, segs);
+  }
+
+  // シートの一覧（BOUNDSHEET）
+  const sheets = [];
+  recs.forEach(r=>{
+    if(r.type !== 0x0085) return;
+    const pos = u32(r.off), kind = data[r.off+5];
+    const cch = data[r.off+6], hi = data[r.off+7] & 1;
+    let name = "";
+    for(let i=0;i<cch;i++){
+      name += hi ? String.fromCharCode(u16(r.off+8+i*2)) : String.fromCharCode(data[r.off+8+i]);
+    }
+    if(kind === 0) sheets.push({ name, pos });   // 0 = ワークシート
+  });
+
+  const rk = v=>{
+    let n;
+    if(v & 2){ n = (v | 0) >> 2; }
+    else{
+      const b = new DataView(new ArrayBuffer(8));
+      b.setUint32(4, v & 0xFFFFFFFC, true); b.setUint32(0, 0, true);
+      n = b.getFloat64(0, true);
+    }
+    return (v & 1) ? n / 100 : n;
+  };
+  const num = n => Number.isInteger(n) ? String(n) : String(+n.toFixed(10));
+
+  return sheets.map(sh=>{
+    const rows = [];
+    const put = (r,c,v)=>{ (rows[r] || (rows[r] = []))[c] = v; };
+    let k = recs.findIndex(r=>r.off-4 === sh.pos);
+    if(k < 0) return { name:sh.name, rows:[] };
+    let pendingStr = null;
+    for(k=k+1; k<recs.length; k++){
+      const r = recs[k], o = r.off;
+      if(r.type === 0x000A) break;                       // EOF
+      if(r.type === 0x00FD){ put(u16(o), u16(o+2), sst[u32(o+6)] ?? ""); }          // LABELSST
+      else if(r.type === 0x0203){ put(u16(o), u16(o+2), num(dv.getFloat64(o+6, true))); } // NUMBER
+      else if(r.type === 0x027E){ put(u16(o), u16(o+2), num(rk(u32(o+6)))); }        // RK
+      else if(r.type === 0x00BD){                                                    // MULRK
+        const row = u16(o), c0 = u16(o+2), n = (r.len - 6) / 6;
+        for(let i=0;i<n;i++) put(row, c0+i, num(rk(u32(o+4+i*6+2))));
+      }
+      else if(r.type === 0x0204){                                                    // LABEL
+        const cch = u16(o+6), hi = data[o+8] & 1;
+        let s = "";
+        for(let i=0;i<cch;i++) s += hi ? String.fromCharCode(u16(o+9+i*2)) : String.fromCharCode(data[o+9+i]);
+        put(u16(o), u16(o+2), s);
+      }
+      else if(r.type === 0x0006){                                                    // FORMULA（結果だけ使う）
+        const row = u16(o), col = u16(o+2);
+        if(u16(o+12) === 0xFFFF){
+          if(data[o+6] === 0) pendingStr = [row, col];   // 結果の文字列は直後の STRING レコードにある
+        }else{
+          put(row, col, num(dv.getFloat64(o+6, true)));
+        }
+      }
+      else if(r.type === 0x0207 && pendingStr){                                      // STRING
+        const cch = u16(o), hi = data[o+2] & 1;
+        let s = "";
+        for(let i=0;i<cch;i++) s += hi ? String.fromCharCode(u16(o+3+i*2)) : String.fromCharCode(data[o+3+i]);
+        put(pendingStr[0], pendingStr[1], s);
+        pendingStr = null;
+      }
+    }
+    // 穴あきの配列を、空文字で埋めた長方形にそろえる
+    const width = Math.max(0, ...rows.filter(Boolean).map(r=>r.length));
+    const out = [];
+    for(let i=0;i<rows.length;i++){
+      const r = rows[i] || [];
+      out.push(Array.from({length:width}, (_,j)=> r[j]==null ? "" : String(r[j])));
+    }
+    return { name:sh.name, rows:out };
+  });
+}
+
+/* 共有文字列表を読む。文字列の途中で CONTINUE レコードに切り替わる場合、
+   切り替わった先の先頭1バイトが「2バイト文字かどうか」の印になっている点に注意する。 */
+function sstParse(data, segs){
+  let si = 0, pos = segs[0].off, end = segs[0].off + segs[0].len;
+  const next = ()=>{ si++; if(si >= segs.length) throw new Error("SST"); pos = segs[si].off; end = pos + segs[si].len; };
+  const byte = ()=>{ if(pos >= end) next(); return data[pos++]; };
+  const u16 = ()=> byte() | (byte() << 8);
+  const u32 = ()=> (u16() | (u16() << 16)) >>> 0;
+  const skip = n=>{ while(n > 0){ if(pos >= end) next(); const k = Math.min(n, end-pos); pos += k; n -= k; } };
+
+  u32();                    // 総数（使わない）
+  const unique = u32();
+  const out = [];
+  try{
+    for(let i=0;i<unique;i++){
+      const cch = u16();
+      const flags = byte();
+      let hi = flags & 1;
+      const runs = (flags & 8) ? u16() : 0;
+      const ext  = (flags & 4) ? u32() : 0;
+      let s = "", left = cch;
+      while(left > 0){
+        if(pos >= end){ next(); hi = data[pos++] & 1; }
+        const avail = hi ? Math.floor((end-pos)/2) : (end-pos);
+        const k = Math.min(left, avail);
+        for(let j=0;j<k;j++){
+          if(hi){ s += String.fromCharCode(data[pos] | (data[pos+1] << 8)); pos += 2; }
+          else  { s += String.fromCharCode(data[pos]); pos += 1; }
+        }
+        left -= k;
+      }
+      skip(runs * 4);
+      skip(ext);
+      out.push(s);
+    }
+  }catch(e){ /* 途中で壊れていたら、読めた分だけ使う */ }
+  return out;
+}
+
+
+
+/* .xlsx（Excel 2007以降）。zip の中の XML を取り出して読む。
+   展開にはブラウザの DecompressionStream を使う（外部の部品は使わない）。 */
+async function xlsxParse(buf){
+  const u8 = new Uint8Array(buf), dv = new DataView(buf);
+  let eocd = -1;
+  for(let i=u8.length-22; i>=Math.max(0, u8.length-65557); i--){ if(dv.getUint32(i,true)===0x06054b50){ eocd=i; break; } }
+  if(eocd < 0) throw new Error("zip");
+  const n = dv.getUint16(eocd+10,true);
+  let p = dv.getUint32(eocd+16,true);
+  const files = {};
+  for(let k=0;k<n;k++){
+    if(dv.getUint32(p,true)!==0x02014b50) break;
+    const method = dv.getUint16(p+10,true), csize = dv.getUint32(p+20,true);
+    const nlen = dv.getUint16(p+28,true), xlen = dv.getUint16(p+30,true), clen = dv.getUint16(p+32,true);
+    const loc = dv.getUint32(p+42,true);
+    const name = new TextDecoder().decode(u8.subarray(p+46, p+46+nlen));
+    files[name] = { method, csize, loc };
+    p += 46 + nlen + xlen + clen;
+  }
+  const read = async name=>{
+    const f = files[name]; if(!f) return null;
+    const ln = dv.getUint16(f.loc+26,true), lx = dv.getUint16(f.loc+28,true);
+    const data = u8.subarray(f.loc+30+ln+lx, f.loc+30+ln+lx+f.csize);
+    if(f.method === 0) return new TextDecoder().decode(data);
+    const ds = new DecompressionStream('deflate-raw');
+    const out = await new Response(new Blob([data]).stream().pipeThrough(ds)).arrayBuffer();
+    return new TextDecoder().decode(out);
+  };
+  const xml = t => new DOMParser().parseFromString(t, 'application/xml');
+  const all = (doc, tag) => [...doc.getElementsByTagName(tag)];
+  const sst = [];
+  const ss = await read('xl/sharedStrings.xml');
+  if(ss) all(xml(ss), 'si').forEach(si=>sst.push(all(si,'t').map(t=>t.textContent).join('')));
+  const wb = xml(await read('xl/workbook.xml') || '<w/>');
+  const rels = xml(await read('xl/_rels/workbook.xml.rels') || '<r/>');
+  const target = {};
+  all(rels,'Relationship').forEach(r=>{ target[r.getAttribute('Id')] = r.getAttribute('Target'); });
+  const sheets = [];
+  for(const sh of all(wb,'sheet')){
+    const rid = sh.getAttribute('r:id') || sh.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships','id');
+    let t = target[rid] || ''; t = t.replace(/^\//,''); if(!t.startsWith('xl/')) t = 'xl/' + t;
+    const body = await read(t); if(!body) continue;
+    const rows = [];
+    all(xml(body),'row').forEach(rw=>{
+      const r = (parseInt(rw.getAttribute('r'),10) || rows.length+1) - 1;
+      const row = [];
+      all(rw,'c').forEach(c=>{
+        const ref = c.getAttribute('r') || '';
+        const col = ref.replace(/[0-9]/g,'').split('').reduce((a,ch)=>a*26 + ch.charCodeAt(0)-64, 0) - 1;
+        const tp = c.getAttribute('t');
+        const v = c.getElementsByTagName('v')[0];
+        let val = '';
+        if(tp === 's') val = sst[+(v ? v.textContent : 0)] || '';
+        else if(tp === 'inlineStr') val = all(c,'t').map(x=>x.textContent).join('');
+        else val = v ? v.textContent : '';
+        row[col >= 0 ? col : row.length] = val;
+      });
+      rows[r] = row;
+    });
+    sheets.push({ name: sh.getAttribute('name') || '', rows: rows.filter(Boolean).map(r=>Array.from(r, v=>v==null?'':v)) });
+  }
+  return sheets;
+}
+async function readSheets(file){
+  const buf = await file.arrayBuffer();
+  const b = new Uint8Array(buf);
+  if(b[0]===0xD0 && b[1]===0xCF) return xlsParse(buf);
+  if(b[0]===0x50 && b[1]===0x4B) return xlsxParse(buf);
+  const { text } = decodeText(buf);
+  return [{ name:"", rows:parseCsv(text) }];
+}
+
+/* ---------- 学級名簿の読み解き ----------
+   見出しの行（「番号」と「氏名」）を探す。見出しが無ければ中身の形から推測する。
+   ふりがな・ローマ字の列は名前に使わない。 */
+const nrm = v => String(v==null?'':v).normalize('NFKC').replace(/[\s　]+/g,'').trim();
+const KANA = /かな|カナ|ふりがな|フリガナ|ローマ|英字|読み|よみ/;
+function rosterAnalyze(rows){
+  rows = rows.filter(r=>r && r.some(v=>String(v==null?'':v).trim()!==''));
+  if(!rows.length) return null;
+  let hi = -1, cNo = -1, cName = -1, cGiven = -1, cYear = -1, cKumi = -1;
+  for(let r=0; r<Math.min(rows.length, 20); r++){
+    const h = rows[r].map(nrm);
+    const nm = h.findIndex(v=>/氏名|名前|児童名|生徒名/.test(v) && !KANA.test(v));
+    const fam = h.findIndex(v=>(v==='姓'||v==='氏') );
+    if(nm < 0 && fam < 0) continue;
+    hi = r;
+    cName = nm >= 0 ? nm : fam;
+    if(nm < 0) cGiven = h.findIndex(v=>v==='名');
+    cNo = h.findIndex(v=>/^(出席番号|出席No|番号|No|NO|no|児童番号|整理番号)$/.test(v));
+    if(cNo < 0) cNo = h.findIndex(v=>/番号/.test(v) && !/管理|学籍|電話|郵便/.test(v));
+    cYear = h.findIndex(v=>v==='学年');
+    cKumi = h.findIndex(v=>v==='組' || v==='学級' || v==='クラス');
+    break;
+  }
+  let body;
+  if(hi < 0){
+    // 見出しが無いときは、数字だけの列（番号）と日本語の列（氏名）がそろっている一覧だけを名簿とみなす
+    const g = guessColsLite(rows);
+    if(g.no < 0 || g.a < 0 || rows.length < 2) return null;
+    cNo = g.no; cName = g.a; body = rows;
+  }else body = rows.slice(hi+1);
+  const title = hi > 0 ? rows.slice(0, hi).map(r=>r.join(' ')).join(' ') : '';
+  const yr = t => { const m = nrm(t).match(/([1-6])年/); return m ? +m[1] : 0; };
+  const students = [];
+  body.forEach(r=>{
+    let name = String(r[cName]==null?'':r[cName]).trim();
+    if(cGiven >= 0){ const g = String(r[cGiven]==null?'':r[cGiven]).trim(); if(g) name = name + ' ' + g; }
+    if(!name || /^(氏名|名前|児童名)$/.test(nrm(name))) return;
+    let no = cNo >= 0 ? nrm(r[cNo]) : '';
+    if(no && !/^[0-9]+$/.test(no)) return;   // 合計行などは飛ばす
+    const year = (cYear >= 0 ? yr(r[cYear]) || (parseInt(nrm(r[cYear]),10) || 0) : 0) || yr(title);
+    const tk = nrm(title).match(/[1-6]年([0-9]+)組/);
+    const kumi = cKumi >= 0 ? nrm(r[cKumi]).replace(/組$/,'') : (tk ? tk[1] : '');
+    students.push({ no: no ? String(parseInt(no,10)) : '', name, year: year>=1 && year<=6 ? year : 0, kumi });
+  });
+  let k = 1;
+  students.forEach(s=>{ if(!s.no) s.no = String(k); k = (parseInt(s.no,10)||k) + 1; });
+  return students.length ? { students, header: hi >= 0 } : null;
+}
+function guessColsLite(rows){
+  let no = -1, a = -1;
+  const cols = Math.max(...rows.map(r=>r.length), 0);
+  for(let i=0;i<cols;i++){
+    const vals = rows.map(r=>String(r[i]==null?'':r[i]).trim()).filter(Boolean);
+    if(!vals.length) continue;
+    const allNum = vals.every(v=>/^\d{1,3}$/.test(v));
+    if(allNum && no<0){ no = i; continue; }
+    if(!allNum && a<0 && vals.some(v=>/[぀-ヿ一-鿿]/.test(v))) a = i;
+  }
+  return { no, a };
+}
+function yobiOf(full, use, suffix){
+  const parts = String(full).trim().split(/[\s　]+/).filter(Boolean);
+  const latin = /^[\x20-\x7E]+$/.test(full);
+  const family = parts[0] || "", given = parts.slice(1).join(latin ? " " : "");
+  let base;
+  if(use === 'given')       base = given || family;
+  else if(use === 'family') base = family;
+  else                      base = latin ? parts.join(" ") : family + given;
+  return base ? base + suffix : "";
+}
+
+/* ---------- レコード ---------- */
+function newId(){ return "s" + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function blankRec(){
+  const r = Object.assign({ id:newId(), no:"", name:"", updated:"" }, APP.blankRec());
+  return r;
+}
+function curRec(){ return R.students.find(s=>s.id===R.curId); }
+function sorted(){
+  return R.students.map((s,i)=>({s,i})).sort((a,b)=>{
+    const na = parseInt(a.s.no,10), nb = parseInt(b.s.no,10);
+    if(isNaN(na) && isNaN(nb)) return a.i-b.i; if(isNaN(na)) return 1; if(isNaN(nb)) return -1;
+    return na!==nb ? na-nb : a.i-b.i;
+  }).map(x=>x.s);
+}
+function secsOf(rec){ return APP.activeSecs(rec); }
+function sec(rec, k){ return (rec.secs && rec.secs[k]) || {}; }
+function secOk(rec, k){ const s = sec(rec,k); return !!s.out && s.okOut === s.out; }
+function secStatus(rec, k){ const s = sec(rec,k); return !s.out ? 'none' : secOk(rec,k) ? 'ok' : 'draft'; }
+function recStatus(rec){
+  const ks = secsOf(rec);
+  if(!ks.some(k=>sec(rec,k).out)) return 'none';
+  return ks.every(k=>secOk(rec,k)) ? 'ok' : 'draft';
+}
+const ST_LABEL = { none:'未作成', draft:'下書き', ok:'確認済み' };
+function isBlank(s){ return !(s.name||'').trim() && !APP.hasWork(s); }
+function hasContent(){ return R.students.some(s=>!isBlank(s)); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* いまの画面の内容をレコードへ／レコードを画面へ */
+function capture(){
+  const rec = curRec(); if(!rec) return;
+  APP.capture(rec, SH.sec);
+  rec.updated = new Date().toISOString();
+}
+function switchStudent(id){
+  if(id === R.curId) return;
+  capture();
+  R.curId = id;
+  SH.undo = null;
+  const rec = curRec();
+  SH.sec = secsOf(rec)[0] || '';
+  APP.apply(rec, SH.sec);
+  saveNow();
+}
+function setSec(k){
+  capture();
+  SH.sec = k;
+  APP.setSec(curRec(), k);
+}
+
+/* ---------- 保存 ---------- */
+function setSave(msg, ok){
+  const el = $('saveState'); if(!el) return;
+  el.textContent = "自動保存：" + msg;
+  el.className = "savestate " + (ok ? "ok" : "ng");
+}
+function serialize(){
+  capture();
+  R.cls = $('clsInput').value;
+  return { app: APP.appName, ver: APP_VERSION, saved: new Date().toISOString(), cls: R.cls,
+           flow: SH.flow, curId: R.curId, cfg: APP.classCapture(), students: R.students };
+}
+function saveNow(){
+  if(!SH.ready) return;
+  try{
+    localStorage.setItem(APP.storeKey, JSON.stringify(serialize()));
+    setSave("保存しました（このパソコンのブラウザ内）", true);
+  }catch(e){
+    setSave("このブラウザには保存できません。「作業ファイルを書き出す」で控えを取ってください。", false);
+  }
+}
+let saveTimer = null;
+function save(){ clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 400); }
+function normRec(s){
+  s = s || {};
+  return Object.assign({ id: s.id || newId(), no: String(s.no||""), name: String(s.name||""),
+                         updated: s.updated || "" }, APP.normRec(s));
+}
+function loadData(data){
+  if(!data || !Array.isArray(data.students) || !data.students.length) return false;
+  R.cls = String(data.cls||"");
+  SH.savedFlow = ['roster','single'].includes(data.flow) ? data.flow : '';
+  APP.classApply(data.cfg || {});
+  R.students = data.students.map(normRec);
+  R.curId = R.students.some(s=>s.id===data.curId) ? data.curId : R.students[0].id;
+  $('clsInput').value = R.cls;
+  const rec = curRec();
+  SH.sec = secsOf(rec)[0] || '';
+  APP.apply(rec, SH.sec);
+  return true;
+}
+function stamp(){
+  const d = new Date(), p = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`;
+}
+const safeName = s => String(s||'').replace(/[\\\/:*?"<>|]/g,'_').trim();
+function download(filename, text, mime){
+  const url = URL.createObjectURL(new Blob([text], {type:mime}));
+  const a = document.createElement('a'); a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+const cell = v => '"' + String(v==null?'':v).replace(/"/g,'""') + '"';
+/* 一覧・書き出しで使う欄（学級の誰かが使っている欄を、欄の並び順で） */
+function usedSecs(){
+  const set = new Set(); R.students.forEach(s=>secsOf(s).forEach(k=>set.add(k)));
+  return APP.allSecs().map(x=>x.key).filter(k=>set.has(k));
+}
+function exportCsv(){
+  capture();
+  const list = sorted();
+  const blank = list.filter(s=>recStatus(s)==='none').length;
+  if(blank && !confirm(`所見文がまだできていない児童が ${blank}人 います。\nその分は空欄のまま書き出しますか。`)) return;
+  const ks = usedSecs();
+  let rows;
+  if(APP.multi){
+    rows = [['番号','児童名', ...ks.map(k=>APP.secName(k))]];
+    list.forEach(s=>rows.push([s.no, s.name, ...ks.map(k=>secsOf(s).includes(k) ? (sec(s,k).out||'') : '')]));
+  }else{
+    const k = ks[0] || APP.allSecs()[0].key;
+    rows = [['番号','児童名','字数','所見文']];
+    list.forEach(s=>{ const o = sec(s,k).out || ''; rows.push([s.no, s.name, o ? [...o].length : 0, o]); });
+  }
+  download(`${APP.filePrefix}_${safeName(R.cls)||'学級'}_${stamp()}.csv`,
+    '﻿' + rows.map(r=>r.map(cell).join(',')).join('\r\n') + '\r\n', 'text/csv;charset=utf-8');
+  setSave(`CSVを書き出しました（${list.length}人分）`, true);
+}
+function exportWork(){
+  saveNow();
+  download(`${APP.filePrefix}_作業_${safeName(R.cls)||'学級'}_${stamp()}.json`, JSON.stringify(serialize(), null, 1), 'application/json');
+  setSave(`作業ファイルを書き出しました（${R.students.length}人分）`, true);
+}
+function importWork(file){
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    let data = null;
+    try{ data = JSON.parse(reader.result); }catch(e){}
+    if(!data || !Array.isArray(data.students) || !data.students.length){
+      alert("作業ファイルの形式ではありません。\nこの画面で書き出した作業ファイル（.json）を選んでください。"); return;
+    }
+    if(data.app && data.app !== APP.appName){
+      alert(`このファイルは「${data.app}」の作業ファイルです。\nこのアプリでは読み込めません。`); return;
+    }
+    if(!confirm(`いまの学級（${R.students.length}人）を、読み込むファイルの内容（${data.students.length}人）で置き換えます。\nいまの内容は消えます。よろしいですか。`)) return;
+    if(loadData(data)){ saveNow(); setSave(`読み込みました（${R.students.length}人分）`, true); SH.flow = SH.savedFlow || SH.flow; show('scrList'); }
+  };
+  reader.readAsText(file);
+}
+function wipeAll(){
+  if(!confirm(`この学級の入力をすべて消します（${R.students.length}人分）。\n元に戻せません。よろしいですか。`)) return;
+  if(!confirm("本当に消してよろしいですか。\n必要なら先に「作業ファイルを書き出す」で控えを取ってください。")) return;
+  try{ localStorage.removeItem(APP.storeKey); if(APP.oldKey) localStorage.removeItem(APP.oldKey); }catch(e){}
+  R.cls = ""; $('clsInput').value = '';
+  R.students = [blankRec()]; R.students[0].no = "1"; R.curId = R.students[0].id;
+  SH.sec = secsOf(curRec())[0] || ''; APP.apply(curRec(), SH.sec);
+  SH.flow = ''; SH.savedFlow = '';
+  saveNow(); setSave("消去しました", true);
+  show('scrStart');
+}
+
+/* ---------- 画面の切り替え ---------- */
+function show(id, opt){
+  opt = opt || {};
+  if(id === 'scrRosterOk' && !RS.list) id = 'scrRoster';
+  const a = document.activeElement;
+  if(a && a.blur && a !== document.body && $(id) && !$(id).contains(a)) a.blur();
+  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on', s.id === id));
+  SH.scr = id;
+  if(id !== 'scrList') SH.banner = '';
+  const fn = RENDER[id] || (APP.render && APP.render[id]);
+  if(fn) fn();
+  renderStepbar();
+  if(opt.push !== false && SH.ready){ try{ history.pushState(snap(), ''); }catch(e){} }
+  window.scrollTo(0,0);
+}
+function snap(){ return { scr:SH.scr, flow:SH.flow, mode:SH.mode, sec:SH.sec, page:SH.page, from:SH.from, ret:SH.ret, id:R.curId }; }
+window.addEventListener('popstate', e=>{
+  const s = e.state; if(!s || !s.scr) return;
+  Object.assign(SH, { flow:s.flow, mode:s.mode, page:s.page||0, from:s.from||'', ret:s.ret||'' });
+  if(s.id && s.id !== R.curId && R.students.some(x=>x.id===s.id)) switchStudent(s.id);
+  if(s.sec && s.sec !== SH.sec && secsOf(curRec()).includes(s.sec)) setSec(s.sec);
+  show(s.scr, {push:false});
+});
+function renderStepbar(){
+  const bar = $('stepbar');
+  const steps = APP.steps[SH.flow];
+  const idx = steps ? APP.stepOf(SH.scr, SH.flow) : null;
+  if(!steps || idx == null || SH.mode === 'one' || SH.mode === 'add' || SH.scr === 'scrStart'){ bar.style.display = 'none'; return; }
+  bar.innerHTML = steps.map((t,i)=>`<li class="${i<idx?'done':i===idx?'cur':''}">${t}</li>`).join('');
+  bar.style.display = '';
+}
+const RENDER = {};
+
+/* ---------- スタート ---------- */
+RENDER.scrStart = ()=>{
+  const showIt = hasContent();
+  const n = R.students.length, ok = R.students.filter(s=>recStatus(s)==='ok').length;
+  $('goResume').style.display = showIt ? '' : 'none';
+  $('goResume').textContent = `続きから（${(R.cls||'').trim() || '学級'}・確認済み ${ok}/${n}人）`;
+  $('goListFromStart').style.display = showIt ? '' : 'none';
+};
+
+/* ---------- 名簿の読み込み ---------- */
+const RS = { list:null, sheets:[], file:"", idx:0 };
+function rosterErr(html){
+  const el = $('rosterErr'); el.innerHTML = html; el.style.display = html ? 'block' : 'none';
+  if(html && SH.scr !== 'scrRoster') show('scrRoster');
+}
+const ROSTER_HOW = "C4thから出した学級名簿（出席番号と氏名が入ったもの）を、Excel（.xlsx／.xls）かCSVのまま選んでください。";
+async function readRoster(file){
+  rosterErr('');
+  let sheets;
+  try{ sheets = await readSheets(file); }
+  catch(e){ rosterErr("<b>このファイルは読み込めませんでした。</b><br>" + ROSTER_HOW); return; }
+  const ok = [];
+  sheets.forEach(sh=>{ const a = rosterAnalyze(sh.rows || []); if(a) ok.push({ name: sh.name, ana: a }); });
+  if(!ok.length){
+    rosterErr("<b>このファイルからは名簿を読み取れませんでした。</b><br>「出席番号」「氏名」の見出しがある一覧が必要です。<br>" + ROSTER_HOW);
+    return;
+  }
+  RS.sheets = ok; RS.file = file.name; RS.idx = 0; RS.list = ok[0].ana;
+  $('rosMode').value = isBlankClass() ? 'replace' : 'replace';
+  show('scrRosterOk');
+}
+function isBlankClass(){ return R.students.every(isBlank); }
+RENDER.scrRosterOk = ()=>{
+  const a = RS.list; if(!a) return;
+  const use = $('rosUse').value, suf = $('rosSuffix').value;
+  const sel = $('rosSheet');
+  if(RS.sheets.length > 1){
+    sel.innerHTML = RS.sheets.map((x,i)=>`<option value="${i}">${esc(x.name || 'シート'+(i+1))}（${x.ana.students.length}人）</option>`).join('');
+    sel.value = String(RS.idx); $('rosSheetWrap').style.display = '';
+  }else $('rosSheetWrap').style.display = 'none';
+  const f = a.students[0] || {};
+  const cls = f.year ? `${f.year}年${f.kumi ? f.kumi + '組' : ''}　` : '';
+  $('rosSummary').textContent = `${cls}${a.students.length}人を読み取りました`;
+  $('rosInfo').textContent = RS.file + (RS.sheets.length > 1 ? `（シート「${RS.sheets[RS.idx].name}」）` : '');
+  $('rosModeWrap').style.display = isBlankClass() ? 'none' : '';
+  document.querySelectorAll('#rosModeSeg button').forEach(b=>b.classList.toggle('on', b.dataset.mode === $('rosMode').value));
+  $('rosModeHint').textContent = $('rosMode').value === 'replace'
+    ? `いまの学級（${R.students.length}人）は消え、この名簿で作り直します。`
+    : `いまの学級（${R.students.length}人）の後ろに、この名簿の児童を足します。`;
+  let html = '<table><thead><tr><th>番号</th><th>名簿の氏名</th><th>表示する名前</th></tr></thead><tbody>';
+  a.students.forEach(s=>{ html += `<tr><td class="num">${esc(s.no)}</td><td class="raw">${esc(s.name)}</td><td>${esc(yobiOf(s.name, use, suf))}</td></tr>`; });
+  $('rosPrev').innerHTML = html + '</tbody></table>';
+  const g = a.students.filter(s=>/[-]/.test(s.name)).length;
+  $('rosWarn').innerHTML = (a.header ? '' : '見出しの行が見つからなかったため、中身の形から番号と氏名の列を推測しました。「名前の一覧を見る」で確かめてください。<br>')
+    + (g ? `外字を含む氏名が ${g}人 います。名前が正しく表示されないことがあります。` : '');
+};
+function rosterApply(){
+  const a = RS.list; if(!a) return;
+  const use = $('rosUse').value, suf = $('rosSuffix').value;
+  const mode = isBlankClass() ? 'replace' : $('rosMode').value;
+  if(mode === 'replace' && !isBlankClass()){
+    const done = R.students.filter(s=>recStatus(s)!=='none').length;
+    if(!confirm(`${a.students.length}人の名簿で学級をつくり直します。\nいまの${R.students.length}人分は消えます。`
+      + (done ? `\n\n所見文ができている児童が ${done}人 います。本当によろしいですか。` : '\nよろしいですか。'))) return;
+  }
+  capture();
+  const make = s=>{ const r = blankRec(); r.no = s.no; r.name = yobiOf(s.name, use, suf); if(APP.onNewRec) APP.onNewRec(r, null); return r; };
+  if(mode === 'replace'){
+    R.students = a.students.map(make);
+  }else{
+    const nums = R.students.map(s=>parseInt(s.no,10)).filter(n=>!isNaN(n));
+    let next = nums.length ? Math.max(...nums)+1 : 1;
+    a.students.forEach(s=>{ const r = make(s); if(R.students.some(x=>x.no===r.no)) r.no = String(next++); R.students.push(r); });
+  }
+  const f = a.students[0];
+  if(!$('clsInput').value.trim() && f && f.year) $('clsInput').value = `${f.year}年${f.kumi ? f.kumi + '組' : ''}`;
+  R.cls = $('clsInput').value;
+  R.curId = sorted()[0].id;
+  SH.sec = secsOf(curRec())[0] || '';
+  APP.apply(curRec(), SH.sec);
+  RS.list = null;
+  saveNow();
+  setSave(`名簿から${a.students.length}人を取り込みました`, true);
+  SH.flow = 'roster'; SH.mode = 'seq';
+  const nx = APP.afterRoster ? APP.afterRoster() : (APP.lenStep ? 'scrLen' : null);
+  if(nx) show(nx); else startSeq();
+}
+
+/* ---------- 文字数（外国語活動版） ---------- */
+RENDER.scrLen = ()=>{
+  $('lenLead').textContent = SH.flow === 'roster' ? '学級全員に同じ文字数を使います。押すと次へ進みます。' : '押すと次へ進みます。';
+  const L = APP.curLen();
+  document.querySelectorAll('#lenPick button').forEach(b=>b.classList.toggle('on', +b.dataset.len === L));
+  $('lenFree').value = L;
+};
+function applyLen(L){
+  L = Math.min(400, Math.max(30, parseInt(L,10) || APP.defLen));
+  capture();
+  if(SH.flow === 'roster'){
+    R.students.forEach(s=>APP.setLen(s, L));
+    APP.apply(curRec(), SH.sec); saveNow();
+    startSeq();
+  }else{
+    APP.setLen(curRec(), L); APP.apply(curRec(), SH.sec); saveNow();
+    SH.withLen = false;
+    childStart();
+  }
+}
+
+/* ---------- 名前 ---------- */
+function startNewChild(mode, withLen){
+  capture();
+  const prev = sorted().filter(s=>!isBlank(s)).pop() || null;
+  let rec;
+  if(R.students.length === 1 && isBlank(R.students[0])) rec = R.students[0];
+  else{
+    rec = blankRec();
+    const nums = R.students.map(s=>parseInt(s.no,10)).filter(n=>!isNaN(n));
+    rec.no = String(nums.length ? Math.max(...nums)+1 : 1);
+    R.students.push(rec);
+  }
+  if(APP.onNewRec) APP.onNewRec(rec, prev);
+  R.curId = rec.id; SH.undo = null;
+  SH.sec = secsOf(rec)[0] || '';
+  APP.apply(rec, SH.sec);
+  saveNow();
+  SH.mode = mode; SH.withLen = !!withLen; SH.from = ''; SH.ret = '';
+  show('scrName');
+  setTimeout(()=>{ try{ $('nameIn').focus(); }catch(e){} }, 0);
+}
+RENDER.scrName = ()=>{ const r = curRec(); $('nameIn').value = r.name; $('noIn').value = r.no; };
+function nameNext(){
+  const r = curRec();
+  r.name = $('nameIn').value.trim(); r.no = String($('noIn').value||'').trim();
+  saveNow();
+  if(SH.withLen && APP.lenStep){ show('scrLen'); return; }
+  SH.withLen = false;
+  childStart();
+}
+
+/* ---------- 1人分の流れ ----------
+   児童の最初の画面（特別支援学級版は使う欄・支援の手立て）→ 欄ごとに 項目→文章 → まとめ。 */
+function childStart(){
+  const pre = APP.childPre ? APP.childPre(SH.flow, SH.mode) : null;
+  if(pre){ show(pre); return; }
+  firstSec();
+}
+function firstSec(){
+  const ks = secsOf(curRec());
+  if(!ks.length){ show(APP.multi ? 'scrChild' : 'scrList'); return; }
+  setSec(ks[0]);
+  openItems(0, '');
+}
+function startSeq(){
+  const list = sorted();
+  const next = list.find(s=>recStatus(s)!=='ok') || list[0];
+  SH.flow = 'roster'; SH.mode = 'seq';
+  switchStudent(next.id);
+  childStart();
+}
+function nextChild(){
+  if(SH.mode === 'seq'){
+    const list = sorted(), i = list.indexOf(curRec());
+    if(i < list.length-1){ switchStudent(list[i+1].id); SH.ret = ''; childStart(); return; }
+    const left = R.students.filter(s=>recStatus(s)!=='ok').length;
+    SH.banner = left ? `最後の児童まで進みました。まだ確認していない児童が ${left}人 います（「状態」の列を見てください）。`
+                     : '全員の確認が終わりました。「全員分コピー」か「CSVで保存」で書き出せます。';
+    show('scrList'); SH.banner = '';
+  }else if(SH.mode === 'new'){
+    startNewChild('new', false);
+  }else show('scrList');
+}
+function prevChild(){
+  const list = sorted(), i = list.indexOf(curRec());
+  if(i > 0){
+    switchStudent(list[i-1].id);
+    if(APP.multi) show('scrChild');
+    else{ const k = secsOf(curRec())[0]; setSec(k); show('scrDraft'); }
+  }
+}
+
+/* ---------- 項目 ---------- */
+function openItems(page, from){ SH.page = page; SH.from = from; show('scrItems'); }
+function pages(){ return APP.pages(SH.sec); }
+function pageCount(i){
+  const p = pages()[i]; let n = 0;
+  [...document.querySelectorAll('#cats > details')].forEach((d,j)=>{
+    if(!p.show(d, j)) return;
+    d.querySelectorAll('.item').forEach(r=>{ if(r.classList.contains('sel')) n++; });
+  });
+  return n;
+}
+function whoHtml(){
+  const r = curRec();
+  const nm = (r.name||'').trim() || '（名前なし）';
+  const secTxt = APP.multi && SH.sec && ['scrItems','scrDraft'].includes(SH.scr) ? `　<span class="secname">${esc(APP.secName(SH.sec))}</span>` : '';
+  let right = `<span class="badge ${recStatus(r)}">${ST_LABEL[recStatus(r)]}</span>`;
+  if(APP.multi && ['scrItems','scrDraft'].includes(SH.scr)){
+    const ks = secsOf(r), i = ks.indexOf(SH.sec);
+    right = `<span class="prog2">欄 ${i+1} / ${ks.length}</span>　` + `<span class="badge ${secStatus(r, SH.sec)}">${ST_LABEL[secStatus(r, SH.sec)]}</span>`;
+  }
+  if(SH.mode === 'seq'){
+    const list = sorted();
+    right = `<span class="prog">${list.indexOf(r)+1} / ${list.length}人</span>　` + right;
+  }
+  return `<span><b>${esc(nm)}</b>　${esc((r.no||'').trim() ? r.no + '番' : '')}${secTxt}</span><span>${right}</span>`;
+}
+function decorate(){
+  // 「選ばない」を各項目に足す（各版の項目の描き方はそのまま）
+  document.querySelectorAll('#cats .lvlpick').forEach(lp=>{
+    if(lp.querySelector('.clr')) return;
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'clr'; b.textContent = '選ばない'; b.title = 'この項目は使わない';
+    lp.appendChild(b);
+  });
+}
+RENDER.scrItems = ()=>{
+  if(APP.beforeItems) APP.beforeItems(SH.sec);
+  decorate();
+  $('itemsWho').innerHTML = whoHtml();
+  const P = pages();
+  $('pageChips').style.display = P.length > 1 ? '' : 'none';
+  $('pageChips').innerHTML = P.map((p,i)=>{ const n = pageCount(i);
+    return `<button type="button" data-page="${i}" class="${i===SH.page?'cur':''}">${esc(p.title)}${n?`<span class="n">${n}</span>`:''}</button>`; }).join('');
+  $('pageChips').querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>openItems(+b.dataset.page, SH.from)));
+  const p = P[SH.page] || P[0];
+  $('pageTitle').textContent = P.length > 1 ? `${p.title}（${SH.page+1}/${P.length}）` : p.title;
+  $('pageLead').textContent = p.lead || '';
+  [...document.querySelectorAll('#cats > details')].forEach((d,j)=>{ d.style.display = p.show(d, j) ? '' : 'none'; d.open = true; });
+  const last = SH.page === P.length-1;
+  $('pagePrev').textContent = SH.page === 0 ? (SH.from === 'draft' ? '← 文章に戻る' : '← 戻る') : '← 前へ';
+  $('pageNext').textContent = last ? '文章を見る →' : '次へ →';
+  itemsMeter(); syncUndo();
+};
+function itemsMeter(){
+  const n = document.querySelectorAll('#cats .item.sel').length;
+  const el = $('itemsMeter');
+  if(!n){ el.innerHTML = '<span>まだ項目が選ばれていません。</span>'; return; }
+  const o = $('out'), len = o.classList.contains('empty') ? 0 : [...o.textContent].length;
+  const L = APP.curLen(), j = lenJudge(len, L);
+  el.innerHTML = `<span>選んだ項目 <b>${n}件</b>　いまの文章 <b>${len}字</b>（めやす ${L}字）</span><span class="${j.cls}">${j.msg}</span>`
+    + `<button type="button" class="linkbtn strong" id="toDraft">文章を見る →</button>`;
+  $('toDraft').addEventListener('click', ()=>show('scrDraft'));
+}
+
+/* ---------- 文章 ---------- */
+function regen(){
+  APP.regen(curRec(), SH.sec);
+  meter();
+  capture(); save();
+}
+/* この児童の、項目を選んである欄をすべて作り直す（呼び方・支援の手立てを変えたとき） */
+function regenAll(){
+  const keep = SH.sec, r = curRec();
+  secsOf(r).forEach(k=>{ if((sec(r,k).sel||[]).length){ setSec(k); APP.regen(r, k); capture(); } });
+  if(keep) setSec(keep);
+  saveNow();
+}
+RENDER.scrDraft = ()=>{ regen(); draftHead(); syncUndo(); };
+function draftHead(){
+  const r = curRec();
+  $('draftWho').innerHTML = whoHtml();
+  const empty = $('out').classList.contains('empty');
+  const main = $('draftMain'), sub = $('draftSub');
+  main.disabled = false; sub.disabled = false;
+  const ks = secsOf(r), i = ks.indexOf(SH.sec), lastSec = i === ks.length-1;
+  let keys = '';
+  if(SH.ret === 'child'){
+    main.textContent = '確認してまとめに戻る'; sub.textContent = 'まとめに戻る（あとで確認）';
+    main.disabled = empty; keys = 'Enterキー：確認してまとめに戻る';
+  }else if(APP.multi && SH.mode !== 'one'){
+    main.textContent = empty ? (lastSec ? 'とばしてまとめへ →' : 'とばして次の欄へ →') : (lastSec ? 'OK・この児童のまとめへ →' : 'OK・次の欄へ →');
+    sub.textContent = '← 戻る';
+    keys = 'Enterキー：' + main.textContent.replace(' →','');
+  }else if(SH.mode === 'seq'){
+    const list = sorted(), k = list.indexOf(r), last = k === list.length-1;
+    main.textContent = empty ? (last ? 'とばして一覧へ →' : 'とばして次の児童へ →') : (last ? 'OK・一覧へ →' : 'OK・次の児童へ →');
+    sub.textContent = '← 前の児童'; sub.disabled = k <= 0;
+    keys = 'Enterキー：OK・次へ　／　← →キー：前後の児童へ（確認はしません）';
+  }else if(SH.mode === 'new'){
+    main.textContent = '保存して次の児童へ →'; sub.textContent = '一覧を見る'; main.disabled = empty;
+    keys = 'Enterキー：保存して次の児童へ';
+  }else{
+    main.textContent = APP.multi ? '確認してまとめに戻る' : '確認して一覧へ戻る';
+    sub.textContent = APP.multi ? 'まとめに戻る（あとで確認）' : '一覧へ戻る（あとで確認）';
+    main.disabled = empty; keys = 'Enterキー：' + main.textContent;
+  }
+  $('draftKeys').textContent = keys;
+}
+function confirmSec(){
+  capture();
+  const s = sec(curRec(), SH.sec);
+  if(s.out) s.okOut = s.out;
+  saveNow();
+}
+function draftMain(){
+  const empty = $('out').classList.contains('empty');
+  if(SH.ret === 'child' || (APP.multi && SH.mode === 'one')){ if(empty) return; confirmSec(); SH.ret = ''; show('scrChild'); return; }
+  if(APP.multi){
+    if(!empty) confirmSec();
+    const ks = secsOf(curRec()), i = ks.indexOf(SH.sec);
+    if(i < ks.length-1){ setSec(ks[i+1]); openItems(0, ''); }
+    else show('scrChild');
+    return;
+  }
+  if(SH.mode === 'seq'){ if(!empty) confirmSec(); nextChild(); return; }
+  if(empty) return;
+  confirmSec();
+  if(SH.mode === 'new') nextChild(); else show('scrList');
+}
+function draftSub(){
+  if(SH.ret === 'child' || (APP.multi && SH.mode === 'one')){ show('scrChild'); return; }
+  if(APP.multi){ history.back(); return; }
+  if(SH.mode === 'seq') prevChild(); else show('scrList');
+}
+
+/* ---------- 児童のまとめ（特別支援学級版：欄ごとの文章の一覧） ---------- */
+RENDER.scrChild = ()=>{
+  SH.ret = '';
+  capture();
+  const r = curRec();
+  $('childWho').innerHTML = whoHtml();
+  const ks = secsOf(r);
+  const okN = ks.filter(k=>secOk(r,k)).length;
+  $('childCount').textContent = `確認済み ${okN} / ${ks.length} 欄`;
+  let html = '';
+  ks.forEach(k=>{
+    const s = sec(r,k), st = secStatus(r,k);
+    html += `<div class="crow" data-sec="${esc(k)}"><div class="chead"><b>${esc(APP.secName(k))}</b>`
+      + `<span>${s.out ? [...s.out].length + '字　' : ''}<span class="badge ${st}">${ST_LABEL[st]}</span></span></div>`
+      + `<div class="ctext${s.out?'':' none'}">${esc(s.out || 'まだ作っていません。押すと作ります。')}</div></div>`;
+  });
+  $('childList').innerHTML = html;
+  $('childList').querySelectorAll('.crow').forEach(el=>el.addEventListener('click', ()=>{
+    setSec(el.dataset.sec); SH.ret = 'child';
+    if(sec(curRec(), el.dataset.sec).sel && sec(curRec(), el.dataset.sec).sel.length) show('scrDraft');
+    else openItems(0, '');
+  }));
+  const main = $('childMain'), sub = $('childSub');
+  if(SH.mode === 'seq'){
+    const list = sorted(), i = list.indexOf(r);
+    main.textContent = i === list.length-1 ? '一覧へ →' : '次の児童へ →';
+    sub.textContent = '← 前の児童'; sub.disabled = i <= 0;
+  }else if(SH.mode === 'new'){
+    main.textContent = '保存して次の児童へ →'; sub.textContent = '一覧を見る'; sub.disabled = false;
+  }else{
+    main.textContent = '一覧へ戻る'; sub.textContent = '一覧へ戻る'; sub.style.display = 'none';
+  }
+  if(SH.mode !== 'one') sub.style.display = '';
+  if(APP.renderChildExtra) APP.renderChildExtra(r);
+};
+
+/* ---------- 所見一覧 ---------- */
+RENDER.scrList = ()=>{
+  capture();
+  const list = sorted();
+  const c = { none:0, draft:0, ok:0 };
+  list.forEach(s=>c[recStatus(s)]++);
+  $('rosterCount').innerHTML = `<b>${list.length}人</b>　確認済み <b>${c.ok}</b>・下書き <b>${c.draft}</b>・未作成 <b>${c.none}</b>`;
+  $('listBanner').textContent = SH.banner; $('listBanner').style.display = SH.banner ? '' : 'none';
+  let html;
+  if(APP.multi){
+    html = '<table><thead><tr><th>番号</th><th>名前</th><th>欄</th><th>状態</th><th></th></tr></thead><tbody>';
+    list.forEach(s=>{
+      const ks = secsOf(s);
+      const chips = ks.map(k=>`<span class="sechip ${secStatus(s,k)}" title="${esc(APP.secName(k))}：${ST_LABEL[secStatus(s,k)]}">${esc(APP.secShort ? APP.secShort(k) : APP.secName(k))}</span>`).join('');
+      const st = recStatus(s);
+      html += `<tr class="lrow" data-id="${esc(s.id)}"><td class="no">${esc((s.no||'').trim()||'—')}</td><td class="nm">${esc((s.name||'').trim()||'（名前なし）')}</td>`
+        + `<td class="tx">${chips}</td><td><span class="badge ${st}">${ST_LABEL[st]}</span></td>`
+        + `<td class="ops">${st!=='none'?'<button type="button" class="cp">コピー</button>':''}<button type="button" class="del" title="この児童を削除">×</button></td></tr>`;
+    });
+  }else{
+    html = '<table><thead><tr><th>番号</th><th>名前</th><th>所見（書き出し）</th><th>字数</th><th>状態</th><th></th></tr></thead><tbody>';
+    list.forEach(s=>{
+      const k = secsOf(s)[0], o = sec(s,k).out || '', n = [...o].length;
+      const bad = o && lenJudge(n, sec(s,k).len || APP.defLen).cls !== 'meter-ok';
+      const st = recStatus(s);
+      html += `<tr class="lrow" data-id="${esc(s.id)}"><td class="no">${esc((s.no||'').trim()||'—')}</td><td class="nm">${esc((s.name||'').trim()||'（名前なし）')}</td>`
+        + `<td class="tx">${esc(o ? [...o].slice(0,36).join('') + (n>36?'…':'') : '')}</td>`
+        + `<td class="len${bad?' bad':''}">${n ? n+'字' : ''}</td><td><span class="badge ${st}">${ST_LABEL[st]}</span></td>`
+        + `<td class="ops">${o?'<button type="button" class="cp">コピー</button>':''}<button type="button" class="del" title="この児童を削除">×</button></td></tr>`;
+    });
+  }
+  $('listTable').innerHTML = html + '</tbody></table>';
+  $('listTable').querySelectorAll('tr.lrow').forEach(tr=>{
+    const id = tr.dataset.id;
+    tr.addEventListener('click', e=>{ if(e.target.closest('button')) return; openFromList(id); });
+    const cp = tr.querySelector('.cp');
+    if(cp) cp.addEventListener('click', ()=>copyText(recText(R.students.find(x=>x.id===id)), cp, 'コピー'));
+    tr.querySelector('.del').addEventListener('click', ()=>delStudent(id));
+  });
+};
+function recText(s){
+  if(!APP.multi){ return sec(s, secsOf(s)[0]).out || ''; }
+  return secsOf(s).filter(k=>sec(s,k).out).map(k=>`【${APP.secName(k)}】\n${sec(s,k).out}`).join('\n\n');
+}
+function openFromList(id){
+  switchStudent(id);
+  SH.mode = 'one'; SH.ret = '';
+  if(APP.multi){ show('scrChild'); return; }
+  const k = secsOf(curRec())[0]; setSec(k);
+  if(!(sec(curRec(),k).sel||[]).length) openItems(0, 'draft'); else show('scrDraft');
+}
+function delStudent(id){
+  const rec = R.students.find(s=>s.id===id); if(!rec) return;
+  if(!confirm(((rec.name||'').trim() || '（名前なし）') + " の入力をすべて削除します。よろしいですか。")) return;
+  const i = R.students.indexOf(rec);
+  R.students.splice(i,1);
+  if(!R.students.length){ const b = blankRec(); b.no = "1"; R.students.push(b); }
+  if(R.curId === id){ R.curId = R.students[Math.min(i, R.students.length-1)].id; SH.sec = secsOf(curRec())[0]||''; APP.apply(curRec(), SH.sec); }
+  saveNow(); show('scrList', {push:false});
+}
+function copyText(text, btn, label){
+  const done = ()=>{ if(btn){ btn.textContent = 'コピーしました'; setTimeout(()=>btn.textContent = label, 1400); } };
+  const fb = ()=>{ const ta = document.createElement('textarea'); ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); done(); }catch(e){} document.body.removeChild(ta); };
+  if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fb); else fb();
+}
+function allTsv(){
+  capture();
+  const t = v => String(v||'').replace(/[\t\r\n]+/g,' ');
+  if(!APP.multi) return sorted().map(s=>[s.no, s.name, sec(s, secsOf(s)[0]).out].map(t).join('\t')).join('\r\n');
+  const ks = usedSecs();
+  const rows = [['番号','名前', ...ks.map(k=>APP.secName(k))]];
+  sorted().forEach(s=>rows.push([s.no, s.name, ...ks.map(k=>secsOf(s).includes(k) ? sec(s,k).out : '')]));
+  return rows.map(r=>r.map(t).join('\t')).join('\r\n');
+}
+
+/* ---------- 文字数の判定（めやすの±15%を範囲内） ---------- */
+function lenJudge(n, target){
+  const lo = Math.round(target*0.85), hi = Math.round(target*1.15);
+  if(n >= lo && n <= hi) return { cls:'meter-ok', msg:'めやすの範囲内です' };
+  if(n < lo) return { cls:'meter-short', msg:`あと${target-n}字ほどでめやすです（項目を足すと近づきます）` };
+  return { cls:'meter-over', msg:`めやすより${n-target}字多いです（項目を減らすと近づきます）` };
+}
+function meter(){
+  const o = $('out'); if(o.classList.contains('empty')) return;
+  const n = [...o.textContent].length, L = APP.curLen(), j = lenJudge(n, L);
+  $('lenMeta').textContent = `${n}字（めやす ${L}字）`;
+  $('tip').textContent = j.msg; $('tip').className = j.cls;
+}
+
+/* ---------- 元に戻す（1回分） ---------- */
+function snapUndo(){
+  if(!SH.ready) return;
+  capture();
+  SH.undo = { id:R.curId, sec:SH.sec, rec: JSON.parse(JSON.stringify(curRec())) };
+  syncUndo();
+}
+function syncUndo(){
+  const can = !!(SH.undo && SH.undo.id === R.curId);
+  ['undoItems','undoDraft'].forEach(id=>{ const b = $(id); if(b) b.disabled = !can; });
+}
+function doUndo(){
+  const u = SH.undo; if(!u || u.id !== R.curId) return;
+  SH.undo = null;
+  const rec = curRec();
+  Object.keys(rec).forEach(k=>delete rec[k]);
+  Object.assign(rec, u.rec);
+  SH.sec = u.sec;
+  APP.apply(rec, SH.sec);
+  regen();
+  if(SH.scr === 'scrItems') RENDER.scrItems();
+  if(SH.scr === 'scrDraft'){ draftHead(); syncUndo(); }
+}
+
+/* ---------- 項目・設定を変えたら、その場で文章を作り直す ---------- */
+function afterEdit(){
+  if(!SH.ready || !['scrItems','scrDraft'].includes(SH.scr)) { capture(); save(); return; }
+  regen();
+  if(SH.scr === 'scrItems'){
+    itemsMeter();
+    pages().forEach((p,i)=>{ const b = $('pageChips').querySelector(`button[data-page="${i}"]`); if(b){ const n = pageCount(i); b.innerHTML = esc(p.title) + (n?`<span class="n">${n}</span>`:''); } });
+    $('itemsWho').innerHTML = whoHtml();
+  }
+  if(SH.scr === 'scrDraft') draftHead();
+  syncUndo();
+}
+const UNDO_CLICK = '#cats .star, #cats .clr, #regenBtn, #lenSeg button, #clearBtn, #applyAn';
+const EDIT_CLICK = '#cats .star, #lenSeg button, #closeSeg button, #joinSeg button, #varSeg button, #sceneChips button, #applyAn, #clearBtn, #regenBtn';
+document.addEventListener('click', e=>{ if(e.target.closest && e.target.closest(UNDO_CLICK)) snapUndo(); }, true);
+document.addEventListener('change', e=>{ if(e.target.closest && e.target.closest('#cats')) snapUndo(); }, true);
+document.addEventListener('change', e=>{ if(e.target.closest && e.target.closest('#cats')) afterEdit(); });
+document.addEventListener('click', e=>{ if(e.target.closest && e.target.closest(EDIT_CLICK)) afterEdit(); });
+['lenInput','sceneInput','nameInput'].forEach(id=>{ const el = $(id); if(el) el.addEventListener('input', afterEdit); });
+document.addEventListener('click', e=>{
+  const b = e.target.closest && e.target.closest('#cats .clr'); if(!b) return;
+  const inp = b.closest('.item').querySelector('.lvlpick input:checked'); if(!inp) return;
+  inp.checked = false; inp.dispatchEvent(new Event('change', {bubbles:true}));
+});
+
+/* ---------- キーボード ---------- */
+document.addEventListener('keydown', e=>{
+  if([...document.querySelectorAll('.modal')].some(m=>m.style.display !== 'none')) return;
+  const a = document.activeElement, tag = a ? a.tagName : '';
+  if(e.key === 'Enter'){
+    if(a && a.id === 'nameIn'){ e.preventDefault(); nameNext(); return; }
+    if(['INPUT','TEXTAREA','SELECT','BUTTON','SUMMARY','A'].includes(tag)) return;
+    const p = document.querySelector('.screen.on [data-primary]');
+    if(p && !p.disabled){ e.preventDefault(); p.click(); }
+    return;
+  }
+  if(e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+  if(['INPUT','TEXTAREA','SELECT'].includes(tag)) return;
+  const d = e.key === 'ArrowRight' ? 1 : -1;
+  if(SH.scr === 'scrDraft' && SH.mode === 'seq' && !APP.multi){
+    e.preventDefault();
+    const list = sorted(), i = list.indexOf(curRec()), j = i + d;
+    if(j >= 0 && j < list.length){ switchStudent(list[j].id); setSec(secsOf(curRec())[0]); show('scrDraft'); }
+  }else if(SH.scr === 'scrItems'){
+    const p = SH.page + d;
+    if(p >= 0 && p < pages().length){ e.preventDefault(); openItems(p, SH.from); }
+  }
+});
+
+/* ---------- 初回の案内 ---------- */
+const TOUR_KEY = APP.storeKey + "_tour";
+let tourAt = 0;
+function renderTour(){
+  const [t, h] = APP.tour[tourAt];
+  $('tourPage').innerHTML = `<h3>${t}</h3>${h}`;
+  $('tourDots').innerHTML = APP.tour.map((_,i)=>`<span class="${i===tourAt?'on':''}"></span>`).join('');
+  $('tourNext').textContent = tourAt === APP.tour.length-1 ? 'はじめる' : '次へ';
+}
+function showTour(){ tourAt = 0; renderTour(); $('tourModal').style.display = 'flex'; }
+function closeTour(){ $('tourModal').style.display = 'none'; try{ localStorage.setItem(TOUR_KEY,'1'); }catch(e){} }
+
+/* ---------- つなぎこみ ---------- */
+$('goRoster').addEventListener('click', ()=>{ SH.flow = 'roster'; SH.mode = 'seq'; rosterErr(''); show('scrRoster'); });
+$('goSingle').addEventListener('click', ()=>{ SH.flow = 'single'; startNewChild('new', true); });
+$('goResume').addEventListener('click', ()=>{
+  SH.flow = SH.savedFlow || SH.flow || 'single';
+  if(SH.flow === 'roster' && R.students.some(s=>recStatus(s)!=='ok')){ startSeq(); return; }
+  show('scrList');
+});
+$('goListFromStart').addEventListener('click', ()=>show('scrList'));
+$('goTour').addEventListener('click', showTour);
+$('navHome').addEventListener('click', ()=>show('scrStart'));
+$('navList').addEventListener('click', ()=>show('scrList'));
+document.querySelectorAll('[data-back]').forEach(b=>b.addEventListener('click', ()=>history.back()));
+$('rosterBtn').addEventListener('click', ()=>$('rosterFile').click());
+$('rosterFile').addEventListener('change', e=>{ const f = e.target.files[0]; e.target.value = ''; if(f) readRoster(f); });
+(function(){
+  const dz = $('dropZone');
+  ['dragenter','dragover'].forEach(t=>dz.addEventListener(t, e=>{ e.preventDefault(); dz.classList.add('over'); }));
+  ['dragleave','drop'].forEach(t=>dz.addEventListener(t, ()=>dz.classList.remove('over')));
+  dz.addEventListener('drop', e=>{ e.preventDefault(); const f = e.dataTransfer && e.dataTransfer.files[0]; if(f) readRoster(f); });
+})();
+$('rosSheet').addEventListener('change', e=>{ RS.idx = +e.target.value; RS.list = RS.sheets[RS.idx].ana; RENDER.scrRosterOk(); });
+['rosUse','rosSuffix'].forEach(id=>$(id).addEventListener('change', RENDER.scrRosterOk));
+document.querySelectorAll('#rosModeSeg button').forEach(b=>b.addEventListener('click', ()=>{ $('rosMode').value = b.dataset.mode; RENDER.scrRosterOk(); }));
+$('rosApply').addEventListener('click', rosterApply);
+$('rosCancel').addEventListener('click', ()=>{ RS.list = null; show('scrRoster'); });
+if($('lenPick')){
+  document.querySelectorAll('#lenPick button').forEach(b=>b.addEventListener('click', ()=>applyLen(b.dataset.len)));
+  $('lenFreeGo').addEventListener('click', ()=>applyLen($('lenFree').value));
+}
+$('nameNext').addEventListener('click', nameNext);
+$('pagePrev').addEventListener('click', ()=>{
+  if(SH.page > 0){ openItems(SH.page-1, SH.from); return; }
+  if(SH.from === 'draft') show('scrDraft'); else history.back();
+});
+$('pageNext').addEventListener('click', ()=>{
+  if(SH.page < pages().length-1) openItems(SH.page+1, SH.from); else show('scrDraft');
+});
+$('editItems').addEventListener('click', ()=>{
+  let p = 0; for(let i=0;i<pages().length;i++){ if(pageCount(i)){ p = i; break; } }
+  openItems(p, 'draft');
+});
+$('draftMain').addEventListener('click', draftMain);
+$('draftSub').addEventListener('click', draftSub);
+$('undoItems').addEventListener('click', doUndo);
+$('undoDraft').addEventListener('click', doUndo);
+if($('childMain')){
+  $('childMain').addEventListener('click', ()=>{ capture(); saveNow(); nextChild(); });
+  $('childSub').addEventListener('click', ()=>{ if(SH.mode === 'seq') prevChild(); else show('scrList'); });
+}
+$('copyAllBtn').addEventListener('click', ()=>{
+  const blank = R.students.filter(s=>recStatus(s)==='none').length;
+  if(blank && !confirm(`所見文がまだできていない児童が ${blank}人 います。\nその分は空欄のままコピーしますか。`)) return;
+  copyText(allTsv(), $('copyAllBtn'), '全員分コピー');
+});
+$('expCsvBtn').addEventListener('click', exportCsv);
+$('addStuBtn').addEventListener('click', ()=>{ if(!SH.flow) SH.flow = 'single'; startNewChild('add', false); });
+$('expWorkBtn').addEventListener('click', exportWork);
+$('impWorkBtn').addEventListener('click', ()=>$('importFile').click());
+$('importFile').addEventListener('change', e=>{ const f = e.target.files[0]; e.target.value = ''; if(f) importWork(f); });
+$('wipeBtn2').addEventListener('click', wipeAll);
+$('clsInput').addEventListener('input', save);
+$('tourNext').addEventListener('click', ()=>{ if(tourAt < APP.tour.length-1){ tourAt++; renderTour(); } else closeTour(); });
+$('tourSkip').addEventListener('click', closeTour);
+
+/* ---------- 起動 ---------- */
+window.SHELL = { R, SH, save, saveNow, capture, curRec, sorted, show, secsOf, sec, recStatus, secStatus,
+                 lenJudge, meter, afterEdit, setSec, switchStudent, startNewChild, openItems, readRoster,
+                 rosterAnalyze, allTsv, recText, EMPTY, setSave, firstSec, startSeq, childStart, regenAll, nextChild };
+(function boot(){
+  let data = null;
+  try{ data = JSON.parse(localStorage.getItem(APP.storeKey) || "null"); }catch(e){}
+  if(!data && APP.migrate){ try{ data = APP.migrate(); }catch(e){ data = null; } }
+  const ok = loadData(data);
+  if(!ok){
+    const b = blankRec(); b.no = "1"; R.students = [b]; R.curId = b.id;
+    SH.sec = secsOf(b)[0] || ''; APP.apply(b, SH.sec);
+  }
+  SH.ready = true;
+  setSave(ok ? `前回の続きを読み込みました（${R.students.length}人分）` : "オン（入力すると自動で保存します）", true);
+  show('scrStart', {push:false});
+  try{ history.replaceState(snap(), ''); }catch(e){}
+  let seen = false; try{ seen = !!localStorage.getItem(TOUR_KEY); }catch(e){ seen = true; }
+  if(!seen) showTour();
+})();
+})();
+
 </script>
 </body>
 </html>
