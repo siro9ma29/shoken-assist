@@ -251,6 +251,8 @@
 .btn.wide{flex:none; min-width:220px;}
 .btn:disabled{opacity:.45; cursor:not-allowed;}
 .navrow{display:flex; gap:10px; justify-content:space-between; align-items:center; margin-top:22px; flex-wrap:wrap;}
+.navgrp{display:flex; gap:10px; flex-wrap:wrap; margin-left:auto;}
+.clsstart{padding-bottom:16px; margin-bottom:18px; border-bottom:1px dashed var(--line);}
 .navrow .btn{flex:none; min-width:130px; padding:13px 18px;}
 .navrow .btn.primary{min-width:200px; font-size:16px;}
 .dropzone{border:2px dashed #a9c7b6; border-radius:14px; padding:30px 16px; text-align:center; background:#fafcfa;}
@@ -360,6 +362,11 @@ details.cat>summary{font-size:15px;}
 
 <!-- ===== スタート ===== -->
 <section class="screen" id="scrStart" data-title="はじめの画面">
+  <div class="field clsstart">
+    <label for="clsStart">学級名</label>
+    <input type="text" id="clsStart" class="bigin" placeholder="例）3年2組" autocomplete="off" style="width:220px;">
+    <p class="hint">所見一覧・CSVのファイル名・作業ファイルに使います。あとから「所見一覧」でも変えられます。</p>
+  </div>
   <p class="lead">どちらの方法で所見文を作りますか。</p>
   <div class="bigchoice">
     <button type="button" class="choice" id="goImport" data-primary>
@@ -592,7 +599,10 @@ details.cat>summary{font-size:15px;}
   </div>
   <div class="navrow">
     <button type="button" class="btn ghost" id="draftSub"></button>
-    <button type="button" class="btn primary" id="draftMain" data-primary></button>
+    <span class="navgrp">
+      <button type="button" class="btn ghost" id="draftBack" style="display:none;"></button>
+      <button type="button" class="btn primary" id="draftMain" data-primary></button>
+    </span>
   </div>
   <p class="hint center" id="draftKeys"></p>
   <details class="fold" id="draftFold">
@@ -738,9 +748,10 @@ details.cat>summary{font-size:15px;}
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "v1.35";
+const APP_VERSION = "v1.36";
 const APP_DATE    = "2026-11-04";
 const APP_HISTORY = [
+  {v:"v1.36", d:"2026-11-04", note:"(1) 所見一覧から一人の文章を開いたときにも「OK・次の児童へ →」を出すようにした（v1.33〜v1.35では「確認して一覧へ戻る」「一覧へ戻る」しかなく、一覧に戻ると次の児童へ進めなかった）。押すとその児童を確認済みにして（文章が空ならとばして）出席番号順で次の児童の文章を開き、以後は成績一覧から作るときと同じ「← 前の児童」「OK・次の児童へ」の確認の流れになる。最後の児童では「OK・一覧へ →」。「確認して一覧へ戻る」「← 一覧へ戻る（あとで確認）」も残した。(2) はじめの画面に「学級名」の欄を置いた。入力すると所見一覧の学級名・続きからの表示・CSVと作業ファイルのファイル名に反映し、自動保存する。所見一覧の学級名や、成績一覧の取り込みで補った学級名も、はじめの画面に戻ると欄に出る。生成の処理は v1.35 のまま。"},
   {v:"v1.35", d:"2026-11-04", note:"1文に3つの内容を並べる文（「〜し、〜し、〜ました」）をなくした。どれが中心か分かりにくく、保護者に伝わりにくいため。(1) 同じ教科で3観点とも同じ評価のときの専用の文（25教科×できる・伸長中）を2文にした。1文目は「態度」を理由に「思考・判断・表現」を中心に置き（例：「読書や音読に進んで取り組んできたことで、物語を読んで思ったことを自分の言葉で表せるようになってきました。」）、2文目で「知識・技能」を「も」で添える（例：「言葉の決まりを守って、正しく読み書きすることもできています。」）。(2) 「態度」の「できる」→同じ教科の「伸長中」の因果文で、「関心をもち、進んで調べることで、〜」のように前半が2つに分かれていた7件（中学年社会・外国語活動・総合、高学年社会・理科・家庭・総合）は、前半を1つの内容にまとめた。"},
   {v:"v1.34", d:"2026-11-04", note:"同じ教科の観点が別々の文に分かれないようにした。(1) 同じ教科で評価も同じ観点2件（例：国語の「知識・技能」と「思考・判断・表現」がどちらも「できる」）は、「文のまとめ方」が「1観点＝1文」でも、教科ごとの専用の文で1文にまとめる。(2) ★は文章の先頭に並ぶため、★の付いた観点と付いていない同じ教科の観点のあいだに別の教科が入ることがあった。同じ教科の観点は隣り合わせに並べる。(3) 同じ教科で3観点とも同じ評価のときは、教科ごとの専用の文（TRIPLE_TEXT、25教科×できる・伸長中）で1文にする。2観点が同じ評価で3つ目が違う評価のときは、3つ目を直後の文にし「また、」でつなぐ（1つの所見の中のつなぎの言葉は「また、」「さらに、」の2回まで）。(4) 同じ教科の「できる」と「伸長中」が続く2文で同じ語句が繰り返されないよう、伸長中の文例15件を言い換え、対応する2観点まとめの文（PAIR_GROW）もそろえた（理科・音楽・図画工作・社会・外国語活動・体育など）。教科以外の観点の並びと文は変えていない。"},
   {v:"v1.33", d:"2026-11-03", note:"操作に慣れていない人でも使えるよう、画面を1ステップずつ切り替える構成に作り直した（生成の処理は v1.32 のまま）。(1) 起動すると「成績一覧から作る」「一人ずつ作る」の2択を出す。成績一覧からは 読み込み→確認→文字数→一人ずつ確認→仕上げ、一人ずつは 名前と学年→文字数→項目を選ぶ→文章の確認 の順に1画面ずつ進む。画面上部に進み具合の帯を出し、ブラウザの戻るボタンでも1つ前に戻れる。(2) 項目は学習面・生活・行動面・健康・体力面・特別活動・係活動・人とのかかわり・各教科・特別活動・学校行事の7ページに分け、各項目に「選ばない」を追加。★は選んだ項目にだけ出す。(3) 成績一覧から作るときは、1画面に1人ずつ文章を出し「OK・次の児童へ」で順に確認する。(4) 所見一覧の画面を追加（番号・名前・書き出し・字数・状態）。状態は 未作成／下書き／確認済み で、確認済みは担任が確認ボタンを押した文章だけ（その後に文章が変わると下書きに戻る）。全員分コピー（タブ区切り）・1人分コピー・CSV保存、＋児童を追加（成績一覧から作った学級にも手で1人足せる）。(5) 文を足す・外す、文のまとめ方、文字数の自由入力、学年帯、作業ファイル、学級の消去は「くわしい設定」にたたんだ。(6) 文字数メーター（めやすの±15%を範囲内とし、足りない／多い字数を出す）、元に戻す（1回分）、Enter・←→キーでの操作、初回の3枚の案内、読み込みエラーを画面に出す（C4thでの出し方つき）、続きから（自動保存から再開）を追加。(7) 評価一覧に学年のシートが複数あるときは確認画面で選べるようにした。(8) 児童のレコードに seed（言い回し）・okOut（確認した文章）・year（学年）を保存するようにした。"},
@@ -4493,6 +4504,8 @@ function renderStepbar(){
 
 /* ---- スタート ---- */
 function renderStart(){
+  // v1.36：学級名は所見一覧の欄（clsInput）が保存の元。はじめの画面の欄はそれを映す
+  if(document.activeElement !== $('clsStart')) $('clsStart').value = $('clsInput').value;
   const show = hasContent();
   const n = roster.students.length, ok = roster.students.filter(isConfirmed).length;
   const r = $('goResume');
@@ -4519,6 +4532,18 @@ $('goResume').addEventListener('click', ()=>{
   showScreen('scrList');
 });
 $('goListFromStart').addEventListener('click', ()=>showScreen('scrList'));
+// v1.36：はじめの画面の学級名を、所見一覧の学級名に反映して保存する
+$('clsStart').addEventListener('input', ()=>{
+  $('clsInput').value = $('clsStart').value;
+  roster.cls = $('clsStart').value;
+  save();
+  const show = hasContent();
+  if(show){
+    const n = roster.students.length, ok = roster.students.filter(isConfirmed).length;
+    $('goResume').textContent = `続きから（${(roster.cls||'').trim() || '学級'}・確認済み ${ok}/${n}人）`;
+  }
+});
+$('clsStart').addEventListener('keydown', e=>{ if(e.key === 'Enter'){ e.preventDefault(); $('clsStart').blur(); } });
 $('navHome').addEventListener('click', ()=>showScreen('scrStart'));
 $('navList').addEventListener('click', ()=>showScreen('scrList'));
 document.querySelectorAll('[data-back]').forEach(b=>b.addEventListener('click', ()=>history.back()));
@@ -4761,8 +4786,9 @@ function renderDraftHead(){
   const w = whoLabel(rec);
   $('draftWho').innerHTML = `<span><b>${esc(w.nm)}</b>　${esc(w.sub)}</span>` + progText(rec);
   const empty = $('out').classList.contains('empty');
-  const main = $('draftMain'), sub = $('draftSub');
+  const main = $('draftMain'), sub = $('draftSub'), back = $('draftBack');
   main.disabled = false; sub.disabled = false;
+  back.style.display = 'none';
   if(nav.mode === 'seq'){
     const list = sortedStudents(), i = list.indexOf(rec);
     const last = i === list.length - 1;
@@ -4777,10 +4803,16 @@ function renderDraftHead(){
     main.disabled = empty;
     $('draftKeys').textContent = 'Enterキー：保存して次の児童へ';
   }else{
-    main.textContent = '確認して一覧へ戻る';
-    sub.textContent = '一覧へ戻る（あとで確認）';
-    main.disabled = empty;
-    $('draftKeys').textContent = 'Enterキー：確認して一覧へ戻る';
+    // v1.36：一覧から開いた児童にも「次の児童へ」を出す。押すと順に確認する流れ（seq）に入る
+    const list = sortedStudents(), i = list.indexOf(rec);
+    const last = i === list.length - 1;
+    main.textContent = last ? (empty ? 'とばして一覧へ →' : 'OK・一覧へ →')
+                            : (empty ? 'とばして次の児童へ →' : 'OK・次の児童へ →');
+    back.textContent = '確認して一覧へ戻る';
+    back.style.display = '';
+    back.disabled = empty;
+    sub.textContent = '← 一覧へ戻る（あとで確認）';
+    $('draftKeys').textContent = last ? 'Enterキー：OK・一覧へ' : 'Enterキー：OK・次の児童へ';
   }
 }
 function confirmCur(){
@@ -4811,10 +4843,17 @@ $('draftMain').addEventListener('click', ()=>{
     confirmCur();
     startNewChild('new', false);
   }else{
-    if(empty) return;
-    confirmCur();
+    // v1.36：一覧から開いた児童。確認して（空ならとばして）次の児童へ進む
+    if(!empty) confirmCur();
+    const list = sortedStudents(), i = list.indexOf(curRec());
+    if(i >= 0 && i < list.length - 1){ openDraft(list[i+1].id, 'seq'); return; }
     showScreen('scrList');
   }
+});
+$('draftBack').addEventListener('click', ()=>{
+  if($('out').classList.contains('empty')) return;
+  confirmCur();
+  showScreen('scrList');
 });
 $('draftSub').addEventListener('click', ()=>{
   if(nav.mode === 'seq') seqMove(-1);
