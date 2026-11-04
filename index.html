@@ -217,9 +217,24 @@
 .c4th{font-size:12px; color:var(--ink); background:var(--accent-soft); border:1px solid #c9dccf;
   border-radius:8px; padding:8px 12px; margin:8px 0 0; line-height:1.6;}
 .c4th ol{margin:4px 0 0; padding-left:1.4em;}
-.c4thsteps{font-size:13px; margin:10px 0 4px;}
-.c4thsteps ol{list-style:none; padding-left:0.2em;}
-.c4thsteps li{margin:3px 0;}
+/* v1.41：C4thに所見を取り込む手順（大きな案内） */
+.c4thbox{width:min(760px,100%); padding:28px 30px;}
+.c4thtitle{margin:0 0 16px; font-size:22px; color:var(--accent, #3f6f5a);}
+.c4thflow{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:12px;}
+.c4thflow li{display:flex; gap:16px; padding:16px 18px; border:2px solid var(--line); border-radius:12px; background:var(--bg); opacity:.55;}
+.c4thflow li.cur{opacity:1; border-color:var(--accent, #3f6f5a); background:var(--panel); box-shadow:0 4px 18px rgba(0,0,0,.08);}
+.c4thflow li.done{opacity:.8;}
+.c4thflow li.done .c4num::after{content:"✓"; font-size:16px; margin-left:2px;}
+.c4num{font-size:30px; font-weight:700; line-height:1; color:var(--accent, #3f6f5a); flex:none; min-width:40px;}
+.c4body{flex:1;}
+.c4head{font-size:18px; font-weight:700; margin-bottom:6px;}
+.c4desc{font-size:15px; line-height:1.8;}
+.c4act{display:none; gap:10px; margin-top:12px; flex-wrap:wrap; justify-content:flex-end;}
+.c4thflow li.cur .c4act{display:flex;}
+.c4act .btn{flex:none; padding:12px 20px; font-size:15px;}
+.c4msg{font-size:13.5px; margin-top:8px; color:var(--grow);}
+.c4msg:empty{display:none;}
+.c4file{display:inline-block; margin:4px 0; padding:4px 10px; background:var(--accent-soft); border-radius:6px; font-weight:700; word-break:break-all;}
 
 /* ==== v1.33：1画面1ステップの画面構成 ==== */
 .apphead{padding:12px 22px 10px;}
@@ -668,14 +683,7 @@ details.cat>summary{font-size:15px;}
     <button type="button" class="btn primary" id="addStuBtn">＋ 児童を追加</button>
   </div>
   <p class="hint">「全員分コピー」は、番号・名前・所見をタブで区切ってコピーします。Excelに貼り付けると表になります。行を押すと、その児童の文章を開きます。</p>
-  <div class="c4th c4thsteps">
-    <b>C4thに所見を取り込む手順</b>
-    <ol>
-      <li>① C4thの「通知表入力」→「エクセル出力」で、通知表入力用のExcelシートを出力する</li>
-      <li>② この画面の「C4th用Excelに書き込む」を押し、①で出したExcelを選ぶ（番号で照合して「所見」の列に文章を入れた新しいファイル「元の名前_所見入り_日時.xlsx」が保存されます）</li>
-      <li>③ ②で保存されたファイルを、C4thで読み取らせる</li>
-    </ol>
-  </div>
+  <p class="hint">「C4th用Excelに書き込む」を押すと、C4thに所見を取り込む手順を1つずつ案内します。</p>
   <div class="listtable" id="listTable"></div>
   <details class="fold">
     <summary>くわしい設定（作業ファイル・学級の消去）</summary>
@@ -707,6 +715,49 @@ details.cat>summary{font-size:15px;}
 </div>
 
 <!-- 初回の案内（v1.33） -->
+<!-- C4thに所見を取り込む手順（v1.41） -->
+<div class="modal" id="c4thModal" style="display:none;" role="dialog" aria-labelledby="c4thTitle">
+  <div class="modalbox c4thbox">
+    <h2 class="c4thtitle" id="c4thTitle">C4thに所見を取り込む</h2>
+    <ol class="c4thflow">
+      <li data-step="0">
+        <div class="c4num">①</div>
+        <div class="c4body">
+          <div class="c4head">C4thで、通知表入力用のExcelを出す</div>
+          <div class="c4desc">C4thの<b>「通知表入力」→「エクセル出力」</b>で、通知表入力用のExcelシートを出力します。</div>
+          <div class="c4act"><button type="button" class="btn primary" id="c4Next0">出力できた → 次へ</button></div>
+        </div>
+      </li>
+      <li data-step="1">
+        <div class="c4num">②</div>
+        <div class="c4body">
+          <div class="c4head">そのExcelに所見を書き込む</div>
+          <div class="c4desc">「Excelを選ぶ」を押して、①で出したファイルを選びます。番号で児童を照合し、「所見」の列に文章を入れた新しいファイルが保存されます。</div>
+          <div class="c4act">
+            <button type="button" class="btn ghost" id="c4Back1">← ①へ戻る</button>
+            <button type="button" class="btn primary" id="c4Pick">Excelを選ぶ</button>
+          </div>
+          <div class="c4msg" id="c4Msg1"></div>
+        </div>
+      </li>
+      <li data-step="2">
+        <div class="c4num">③</div>
+        <div class="c4body">
+          <div class="c4head">書き込んだファイルを、C4thで読み取らせる</div>
+          <div class="c4desc" id="c4Desc2">②で保存されたファイルを、C4thで読み取らせます。</div>
+          <div class="c4act">
+            <button type="button" class="btn ghost" id="c4Back2">← もう一度書き込む</button>
+            <button type="button" class="btn primary" id="c4Done">読み取らせた（終わる）</button>
+          </div>
+        </div>
+      </li>
+    </ol>
+    <div class="navrow" style="margin-top:6px;">
+      <button type="button" class="btn ghost" id="c4Close">閉じる</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal" id="tourModal" style="display:none;">
   <div class="modalbox tourbox">
     <div class="tourpage" id="tourPage"></div>
@@ -765,9 +816,10 @@ details.cat>summary{font-size:15px;}
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "v1.40";
+const APP_VERSION = "v1.41";
 const APP_DATE    = "2026-11-04";
 const APP_HISTORY = [
+  {v:"v1.41", d:"2026-11-04", note:"「C4th用Excelに書き込む」を押すと、C4thに所見を取り込む手順を大きな案内で出し、1つずつ確かめながら進められるようにした。①C4thの「通知表入力」→「エクセル出力」で通知表入力用のExcelを出す（「出力できた → 次へ」）、②「Excelを選ぶ」で①のファイルを選んで書き込む、③保存したファイル名を示し、C4thで読み取らせる（「読み取らせた（終わる）」）。いまの手順を枠で強調し、終わった手順には✓を付ける。書き込みをやめたときや読み込めなかったときは②にとどまる。所見一覧の画面に常に出していた手順の枠（v1.39）は、1行の案内にした。"},
   {v:"v1.40", d:"2026-11-04", note:"項目の追加が必要な児童では、文章の確認画面の「項目を選び直す」ボタンを点滅させるようにした。追加が必要とみなすのは、(1) 項目がまだ1つも選ばれていないとき、(2) 字数がめやすに足りず（めやすの85%未満）、選んだ項目がすべて文章に入っているとき（入っていない観点を「入れる」では足せないとき）。(2) のときは字数の案内も「「項目を選び直す」で項目を足してください」にする。担任が文を外して短くしている場合は点滅させない。動きを減らす設定のパソコンでは点滅させず色だけ変える。"},
   {v:"v1.39", d:"2026-11-04", note:"仕上げ（所見一覧）の画面で、「C4th用Excelに書き込む」ボタンをいちばん左に置いた。その下に、C4thに所見を取り込む手順（①C4thの「通知表入力」→「エクセル出力」で通知表入力用のExcelシートを出力する ②「C4th用Excelに書き込む」で①のExcelを選ぶ ③保存されたファイルをC4thで読み取らせる）を常に見える形で書いた。"},
   {v:"v1.38", d:"2026-11-04", note:"所見一覧に「C4th用Excelに書き込む」を追加した。C4thから出した所見の取り込み用Excel（.xlsx。列：生徒管理コード・学年・組・番号・氏名・入力年度・入力学期・所見）を選ぶと、番号で児童を照合して「所見」の列に所見文を書き込み、同じ形式の新しいファイル（元の名前_所見入り_日時.xlsx）として保存する。生徒管理コード・年度・学期などはC4thが出した値をそのまま残す。書き出す前に、下書き（未確認）の所見・所見のない児童・アプリにいない番号・氏名が一致しない児童を知らせる。.xlsx の展開はブラウザ標準の機能で行い、外部ライブラリやネット接続は使わない。"},
@@ -3550,9 +3602,9 @@ async function exportC4th(file){
   let p;
   try{ p = await c4thParse(await file.arrayBuffer()); }
   catch(e){
-    alert("このファイルは読み込めませんでした。\nC4thから出した所見の取り込み用Excel（.xlsx。見出しに「番号」「氏名」「所見」がある一覧）を選んでください。"
+    alert("このファイルは読み込めませんでした。\nC4thの「通知表入力」→「エクセル出力」で出したExcel（.xlsx。見出しに「番号」「氏名」「所見」がある一覧）を選んでください。"
       + (/\.xls$/i.test(file.name) ? "\n\n.xls 形式のときは、Excelで開いて「Excel ブック（.xlsx）」で保存し直してください。" : ""));
-    return;
+    return null;
   }
   if(!p.sst){   // 共有文字列が無いファイルには作って足す
     p.sst = new DOMParser().parseFromString(`<?xml version="1.0" encoding="UTF-8"?><sst xmlns="${SS_NS}" count="0" uniqueCount="0"></sst>`, 'application/xml');
@@ -3571,7 +3623,7 @@ async function exportC4th(file){
   });
   const used = new Set(p.list.map(x=>x.no));
   const extra = sortedStudents().filter(s=>s.out && !used.has(parseInt(s.no,10)));
-  if(!filled){ alert("書き込める所見がありません。\nファイルの「番号」と、所見一覧の番号が合っているか確かめてください。"); return; }
+  if(!filled){ alert("書き込める所見がありません。\nファイルの「番号」と、所見一覧の番号が合っているか確かめてください。"); return null; }
   const msg = [`C4thの一覧（${p.list.length}人）に、${filled}人分の所見を書き込みます。`];
   if(draft) msg.push(`・まだ「確認済み」になっていない（下書きの）所見が ${draft}人分 あります。`);
   if(empty.length) msg.push(`・所見ができていない児童（${empty.join('・')}番）は空欄のままにします。`);
@@ -3579,7 +3631,7 @@ async function exportC4th(file){
   if(extra.length) msg.push(`・一覧にない番号の児童（${extra.map(s=>s.no).join('・')}番）の所見は書き込まれません。`);
   if(diff.length) msg.push(`・氏名が一致しない児童がいます。番号がずれていないか確かめてください。\n  ` + diff.slice(0,8).join('\n  ') + (diff.length>8 ? `\n  ほか${diff.length-8}人` : ''));
   msg.push('', '書き出しますか。');
-  if(!confirm(msg.join('\n'))) return;
+  if(!confirm(msg.join('\n'))) return null;
 
   p.list.forEach(x=>{ const s = byNo.get(x.no); if(s && s.out) c4thSetCell(p, x.row, s.out, x.style); });
   const root = p.sst.documentElement, n = root.getElementsByTagNameNS(SS_NS, 'si').length;
@@ -3605,15 +3657,50 @@ async function exportC4th(file){
   const blob = zipWrite(files);
   const base = file.name.replace(/\.xlsx$/i, '');
   const url = URL.createObjectURL(blob), a = document.createElement('a');
-  a.href = url; a.download = `${base}_所見入り_${stamp()}.xlsx`;
+  const outName = `${base}_所見入り_${stamp()}.xlsx`;
+  a.href = url; a.download = outName;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   setTimeout(()=>URL.revokeObjectURL(url), 1000);
   setSaveState(`C4th用のExcelに ${filled}人分の所見を書き込みました`, true);
+  return { name: outName, filled };
 }
-document.getElementById('expC4thBtn').addEventListener('click', ()=>document.getElementById('c4thFile').click());
-document.getElementById('c4thFile').addEventListener('change', e=>{
+/* ---- 手順の案内（v1.41） ----
+   ボタンを押すと大きな案内を出し、①出力 → ②書き込み → ③読み取り を1つずつ進める。 */
+let c4Step = 0;
+function c4Show(step){
+  c4Step = step;
+  document.querySelectorAll('#c4thModal .c4thflow li').forEach(li=>{
+    const k = +li.dataset.step;
+    li.classList.toggle('cur', k === step);
+    li.classList.toggle('done', k < step);
+  });
+  const btn = document.querySelector(`#c4thModal li[data-step="${step}"] .btn.primary`);
+  if(btn) setTimeout(()=>btn.focus(), 0);
+}
+function c4Open(){
+  document.getElementById('c4Msg1').textContent = '';
+  document.getElementById('c4thModal').style.display = 'flex';
+  c4Show(0);
+}
+function c4CloseModal(){ document.getElementById('c4thModal').style.display = 'none'; }
+document.getElementById('expC4thBtn').addEventListener('click', c4Open);
+document.getElementById('c4Next0').addEventListener('click', ()=>c4Show(1));
+document.getElementById('c4Back1').addEventListener('click', ()=>c4Show(0));
+document.getElementById('c4Back2').addEventListener('click', ()=>{ document.getElementById('c4Msg1').textContent=''; c4Show(1); });
+document.getElementById('c4Pick').addEventListener('click', ()=>document.getElementById('c4thFile').click());
+document.getElementById('c4Done').addEventListener('click', c4CloseModal);
+document.getElementById('c4Close').addEventListener('click', c4CloseModal);
+document.getElementById('c4thModal').addEventListener('keydown', e=>{ if(e.key === 'Escape') c4CloseModal(); });
+document.getElementById('c4thFile').addEventListener('change', async e=>{
   const f = e.target.files[0]; e.target.value = '';
-  if(f) exportC4th(f);
+  if(!f) return;
+  const r = await exportC4th(f);
+  if(!r){ document.getElementById('c4Msg1').textContent = '書き込みは行っていません。もう一度「Excelを選ぶ」から選んでください。'; return; }
+  document.getElementById('c4Msg1').textContent = '';
+  document.getElementById('c4Desc2').innerHTML =
+    `${r.filled}人分の所見を書き込み、次の名前で保存しました（ふつうはブラウザの「ダウンロード」フォルダに入ります）。<br>`
+    + `<span class="c4file">${esc(r.name)}</span><br>このファイルを、C4thで読み取らせてください。`;
+  c4Show(2);
 });
 
 document.getElementById('wipeBtn').addEventListener('click', wipeAll);
