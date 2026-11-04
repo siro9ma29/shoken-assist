@@ -299,6 +299,10 @@ details.fold.mini>summary{font-size:13px; font-weight:600;}
   margin-top:12px; padding:10px 14px; border-radius:8px; background:#faf9f5; font-size:14px;}
 .meter-ok{color:#1b6b34; font-weight:700;}
 .meter-short{color:var(--grow); font-weight:700;}
+/* v1.40：項目の追加が必要なとき「項目を選び直す」を点滅させる */
+#editItems.needadd{border-color:var(--grow); color:var(--grow); font-weight:700; animation:needadd 1.1s ease-in-out infinite;}
+@keyframes needadd{0%,100%{background:var(--panel); box-shadow:0 0 0 0 rgba(0,0,0,0);} 50%{background:#fbe9d4; box-shadow:0 0 0 4px rgba(214,140,60,.35);}}
+@media (prefers-reduced-motion: reduce){ #editItems.needadd{animation:none; background:#fbe9d4;} }
 .meter-over{color:var(--warn); font-weight:700;}
 #scrDraft .out{font-size:17px; line-height:2; min-height:170px; padding:18px 20px;}
 #scrDraft .tools{flex-wrap:wrap;}
@@ -761,9 +765,10 @@ details.cat>summary{font-size:15px;}
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "v1.39";
+const APP_VERSION = "v1.40";
 const APP_DATE    = "2026-11-04";
 const APP_HISTORY = [
+  {v:"v1.40", d:"2026-11-04", note:"項目の追加が必要な児童では、文章の確認画面の「項目を選び直す」ボタンを点滅させるようにした。追加が必要とみなすのは、(1) 項目がまだ1つも選ばれていないとき、(2) 字数がめやすに足りず（めやすの85%未満）、選んだ項目がすべて文章に入っているとき（入っていない観点を「入れる」では足せないとき）。(2) のときは字数の案内も「「項目を選び直す」で項目を足してください」にする。担任が文を外して短くしている場合は点滅させない。動きを減らす設定のパソコンでは点滅させず色だけ変える。"},
   {v:"v1.39", d:"2026-11-04", note:"仕上げ（所見一覧）の画面で、「C4th用Excelに書き込む」ボタンをいちばん左に置いた。その下に、C4thに所見を取り込む手順（①C4thの「通知表入力」→「エクセル出力」で通知表入力用のExcelシートを出力する ②「C4th用Excelに書き込む」で①のExcelを選ぶ ③保存されたファイルをC4thで読み取らせる）を常に見える形で書いた。"},
   {v:"v1.38", d:"2026-11-04", note:"所見一覧に「C4th用Excelに書き込む」を追加した。C4thから出した所見の取り込み用Excel（.xlsx。列：生徒管理コード・学年・組・番号・氏名・入力年度・入力学期・所見）を選ぶと、番号で児童を照合して「所見」の列に所見文を書き込み、同じ形式の新しいファイル（元の名前_所見入り_日時.xlsx）として保存する。生徒管理コード・年度・学期などはC4thが出した値をそのまま残す。書き出す前に、下書き（未確認）の所見・所見のない児童・アプリにいない番号・氏名が一致しない児童を知らせる。.xlsx の展開はブラウザ標準の機能で行い、外部ライブラリやネット接続は使わない。"},
   {v:"v1.37", d:"2026-11-04", note:"評価一覧から付けるおすすめの★を「学習面3・生活面2」から「学習面2・生活面2」にした。v1.30〜v1.36は、同じ教科で1文にまとめる2件に加えて別の教科から3件目を★にしていたが、その1件が単独の文になり、字数の自動判定で入る別の教科の文とも並んで、教科ごとの事実の羅列になっていた（例：きほ 音楽→体育→図画工作→健康→協力）。(1) 学習面の★は同じ教科の中で1文にまとめられる2件だけにし、残りの字数は自動判定に任せる。(2) 同じ教科で「できる」が2つそろわない児童は、学習面の★を1件だけにする（別々の教科を2件★にしない）。(3) 取り込み画面の説明と「おすすめの★」の選択肢の表記を合わせた。手で付ける★の上限（5件）と、生成の処理は変えていない。"},
@@ -2980,6 +2985,29 @@ function setOut(t, empty){
     // ここで一覧は片づけない。観点を全部外して下書きが空になった状態でも、
     // 一覧が残っていないと戻せなくなるため。片づけが要る経路では clearPicker() を明示的に呼ぶ。
   }
+  syncEditBlink();
+}
+
+/* v1.40：項目の追加が必要な児童では「項目を選び直す」を点滅させる。
+   追加が必要とみなすのは次のどちらか。
+   (1) 項目がまだ1つも選ばれていない（下書きが空で、入っていない観点もない）
+   (2) 字数がめやすに足りず（lenJudge の meter-short）、選んだ項目はすべて下書きに入っている
+       （= 入っていない観点を「入れる」では足せず、項目を選び足すしかない）
+   担任が「くわしい設定」で文を外して空にした場合や、外した観点が残っている場合は点滅させない。 */
+function needMoreItems(){
+  const o = document.getElementById('out');
+  if(!o) return false;
+  const unused = (state.unused || []).length;
+  if(o.classList.contains('empty')) return !(state.adopted || []).length && !unused;
+  if(unused) return false;
+  return lenJudge([...o.textContent].length, state.len).cls === 'meter-short';
+}
+function syncEditBlink(){
+  const b = document.getElementById('editItems');
+  if(!b) return;
+  const on = needMoreItems();
+  b.classList.toggle('needadd', on);
+  b.title = on ? '字数が足りません。項目を選び足してください。' : '';
 }
 function updateMeta(text, target){
   const n=[...text].length;
@@ -2989,6 +3017,9 @@ function updateMeta(text, target){
   const tip=document.getElementById('tip');
   const j = lenJudge(n, target);
   tip.textContent = j.msg; tip.className = j.cls;
+  syncEditBlink();
+  if(j.cls === 'meter-short' && needMoreItems())
+    tip.textContent = `あと${target - n}字ほどでめやすです（「項目を選び直す」で項目を足してください）`;
 }
 
 document.getElementById('genBtn').addEventListener('click', generate);
