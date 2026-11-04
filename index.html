@@ -352,6 +352,9 @@ details.cat>summary{font-size:15px;}
 .listtable td.len{white-space:nowrap; text-align:right; font-variant-numeric:tabular-nums;}
 .listtable td.len.bad{color:var(--warn); font-weight:700; background:var(--warn-soft);}
 .listtable td.ops{white-space:nowrap; text-align:right;}
+/* v1.48：同じ文の印 */
+.dupmark{display:inline-block; margin-left:6px; padding:1px 7px; border-radius:10px; font-size:11.5px; font-weight:700; color:var(--warn); background:var(--warn-soft); white-space:nowrap; cursor:help;}
+.dupsum, .dupnote{margin:8px 0; padding:8px 12px; border-radius:8px; background:var(--warn-soft); color:var(--ink, #333); font-size:13.5px; line-height:1.6;}
 .listtable td.ops button{border:1px solid var(--line); background:var(--panel); border-radius:6px; padding:4px 9px; font-size:12px; font-family:inherit; cursor:pointer;}
 .listtable td.ops button.del{color:#b4ae9f; border:none;}
 .listtable td.ops button.del:hover{color:var(--warn);}
@@ -613,6 +616,7 @@ details.cat>summary{font-size:15px;}
     <span id="tip"></span>
   </div>
   <div class="onlyissue" id="onlyIssue" style="display:none;"></div>
+  <div class="dupnote" id="dupNote" style="display:none;"></div>
   <div class="tools">
     <button id="copyBtn">コピー</button>
     <button id="regenBtn">別の言い方にする</button>
@@ -684,6 +688,7 @@ details.cat>summary{font-size:15px;}
   </div>
   <p class="hint">「全員分コピー」は、番号・名前・所見をタブで区切ってコピーします。Excelに貼り付けると表になります。行を押すと、その児童の文章を開きます。</p>
   <p class="hint">「C4th用Excelに書き込む」を押すと、C4thに所見を取り込む手順を1つずつ案内します。</p>
+  <p class="dupsum" id="dupSum" style="display:none;"></p>
   <div class="listtable" id="listTable"></div>
   <details class="fold">
     <summary>くわしい設定（作業ファイル・学級の消去）</summary>
@@ -816,9 +821,10 @@ details.cat>summary{font-size:15px;}
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "v1.47";
+const APP_VERSION = "v1.48";
 const APP_DATE    = "2026-11-05";
 const APP_HISTORY = [
+  {v:"v1.48", d:"2026-11-05", note:"学級の中で同じ文が並ばないようにした（サンプル精読の課題3）。(1) 学年共通の項目（学習面・生活・行動面・健康・体力面・特別活動・係活動・人とのかかわりの全46項目）に言い回しの候補を足した（ALT）。どの項目も3通り、成績一覧の行動の記録から自動で選ばれる13項目（s1・s3・s7・s9・s10・h1・t1・t2・t3・t8・t9・r1・r2）は5通り。特別活動・係活動は文頭の場面も候補ごとに変える（例「学級での準備や片付けでは、」）。どの候補を使うかは出席番号と項目で決まり（altOf）、番号が続く児童では違う言い回しになる。「別の言い回し」を押すと候補も順に変わる。文末（〜ことができました等）も出席番号でずらす。(2) 違う項目でも、直前の文と同じ場面（「係活動では、」と「係の活動では、」など）は続けて付けない。(3) 所見一覧に、4人以上の所見に入っている同じ文（文末の言い回しを除いた中身で比べる）の数を表示し、該当する児童の行に「同じ文 n」の印を付けた（印にマウスを乗せると文が出る）。文章の確認画面でも、ほかの児童と同じ文があれば知らせる。30人の学級で生活面の選び方が似ている場合の試算では、最も多い同じ文が25人→5人に、4人以上に入っている文が18種類→11種類に減った。教科の文・課題の文は今回は1通りのまま。"},
   {v:"v1.47", d:"2026-11-05", note:"サンプル所見（1年・6年 各10人）の精読で見つかった、読み手（保護者）に伝わりにくい表現を直した。(1) 健康・体力面 h1 を「体育の学習や運動行事に〜」から「体を動かす活動に、いつも楽しみながら全力で取り組む」に変え、体育の教科の文と重ならないようにした（まとめた文 h1+h2／h3／h8／h9、課題の文も同様）。自動判定では、体育の教科の文が入るときは h1 を入れない（★を付けた場合や手で入れた場合は入る）。おすすめ★でも、学習面の★が体育なら h1 を生活面の★にしない。(2) 項目ごとの学年帯（bands）を追加。h7「衣服を調節」は低・中学年だけで表示・生成する。係活動の場面「係や委員会の活動では、」は、低・中学年では「係の活動では、」にする（委員会活動は高学年のため）。t2 の課題の文も「係の仕事では、」にした。(3) 課題の文を保護者に伝わる言い方にした。s1「朝のあいさつや名前を呼ばれたときの返事では〜」「こちらから先に声をかけ、自分からあいさつできたときにはその場でほめていきます」、t1「一人で進めると途中で手が止まってしまう」「最後までできたときにはその場でほめていきます」、s9「予定が変わるときには前もって伝え、黒板に書いて確かめられるようにしていきます」。「認めていきます」「認めながら」は「ほめ〜」に。(4) 教科の「主体的に学習に取り組む態度」などの文例を「〜しようとする」「主体的に」から「進んで取り組む」などの言い切りに変えた（「取り組もうとしていました」は、取り組めていないように読めるため）。項目の表示名（評価の観点の言葉）はそのまま。(5) 同じ言葉のくり返しを直した（「日直や当番の仕事では、任された仕事を」→「日直や当番では、」、「社会の学習では、社会の出来事に」→「ニュースなどの出来事に」、「読み書きの学習」→「読書や作文」、「図形の性質を根拠に」→「もとに」、「たし算・ひき算を正確に計算し、計算問題」、「表したいことを表す」→「思いを形にする」、「合唱・合奏の演奏」、外国語の「聞き取ったり読み取ったり」、隣り合う文の「活用」「行動」「体を動かして」など）。g2 の伸長中は「一つの学習に集中して取り組める時間が少しずつ長くなってきました」にした。"},
   {v:"v1.46", d:"2026-11-04", note:"生活・行動面の「その日の予定を把握し、計画的に動く」（s9）が、教科の文のあとに続くと「算数の学習では、〜。その日の予定を把握し、〜」のように教科の学習の続きに読めてしまうため、場面が分かる文にした。文頭に「日々の学校生活では、」を付け（ITEM_HEAD／JOIN_HEAD、SCENE_CATS に生活・行動面を追加）、本文を「時間割を見てその日の予定を確かめ、次の活動の準備を自分で考えて進める」にした。s2+s9・s4+s9 のまとめた文も同様。"},
   {v:"v1.45", d:"2026-11-04", note:"特別活動・係活動の項目の文の文頭に、具体的な場面を付けるようにした（例「準備や後片付けをする場面では、周囲と協力して進めることができました。」「グループで活動する場面では、まとめる役割を担い、また協力して支えることができました。」）。場面は項目ごと（ITEM_HEAD の t1〜t9）とまとめた文ごと（JOIN_HEAD）に指定し、v1.44 の addHeads で付ける。文例の本文からは場面にあたる語（「日直や掃除当番の仕事を」「学級会で」「運動会や発表会に向けて」など）を外した。t7 の文例はしろさんの文に合わせて「まとめる役割を担い、また協力して支える」にした。課題の文はもともと場面から始まるので付けない。"},
@@ -2170,9 +2176,10 @@ document.getElementById('lenInput').addEventListener('input',e=>{
    採用判定は必ず seed=0 で行い、表示だけ state.seed を使う。
    こうしないと文末の長さの違いで採用・不採用が入れ替わる。 */
 function getFragment(it, lvl, idx, seed){
-  const variant = idx + seed;
+  const variant = idx + seed + altBase();   // v1.48：文末も児童ごとにずらす
   const past = EVENT_IDS.has(it.id);
-  return lvl==='can' ? endCan(it.can, variant, past) : endGrow(it.grow, variant, past);
+  const a = altOf(it, seed);                 // v1.48：言い回しの候補から選ぶ
+  return lvl==='can' ? endCan(a.can, variant, past) : endGrow(a.grow, variant, past);
 }
 
 /* ============ 2観点を1文にまとめる（v1.26） ============
@@ -2570,6 +2577,139 @@ const JOIN_TEXT = {
 };
 const ITEM_ORDER = new Map();
 DB.forEach(g=>g.items.forEach(i=>ITEM_ORDER.set(i.id, ITEM_ORDER.size)));
+/* v1.48：学年共通の項目の言い回しを増やす（学級の中で同じ文が並ばないように）。
+   DB の文例を1番目とし、ここに2番目以降を置く（全46項目で3通り。成績一覧の行動の記録から
+   自動で選ばれる13項目は5通り）。どれを使うかは出席番号と項目で決まり、
+   「別の言い回し」を押すと順に変わる（altOf）。head は文頭の場面（ITEM_HEAD の代わり）。 */
+const ALT = {
+ g1:[{can:"話し合いの場面で、自分の考えを進んで発表する", grow:"自分の考えを発表する回数が少しずつ増えてきました"},
+     {can:"授業中、分かったことや考えたことを進んで発言する", grow:"授業中に手を挙げて発言する場面が見られるようになってきました"}],
+ g2:[{can:"学習に集中して取り組み、最後まで丁寧に仕上げる", grow:"最後まで丁寧に仕上げようとする場面が増えてきました"},
+     {can:"どの学習にも落ち着いて向き合い、丁寧に最後まで取り組む", grow:"学習の途中で気持ちを切り替え、最後まで取り組めることが増えてきました"}],
+ g3:[{can:"理由を挙げながら、自分の考えを分かりやすく伝える", grow:"理由を添えて自分の考えを話せるようになってきました"},
+     {can:"考えたことを順序立てて、ノートや発表で表す", grow:"考えたことを順序よく書き表せるようになってきました"}],
+ g4:[{can:"学習したことを確実に身につけ、次の学習に生かす", grow:"前に学習したことを思い出して使える場面が増えてきました"},
+     {can:"基礎的な内容を確かに理解し、問題を解くときに使いこなす", grow:"基礎的な内容が少しずつ定着してきました"}],
+ g5:[{can:"大事なことを整理して、見やすいノートにまとめる", grow:"ノートの書き方を工夫できるようになってきました"},
+     {can:"黒板の内容や自分の考えを、丁寧で分かりやすいノートにまとめる", grow:"丁寧な字でノートを書こうとする姿が増えてきました"}],
+ g6:[{can:"家庭学習を欠かさず提出し、自分で決めた学習にも取り組む", grow:"家庭学習を期限までに提出できる日が増えてきました"},
+     {can:"毎日の家庭学習に計画的に取り組み、きちんと提出する", grow:"家庭学習に自分から取りかかれるようになってきました"}],
+ g7:[{can:"難しい問題にもあきらめずに取り組み、自分の力で解き進める", grow:"分からないところがあっても、あきらめずに考え続けられるようになってきました"},
+     {can:"苦手なことにも投げ出さずに向き合い、こつこつと努力を重ねる", grow:"苦手な学習にも少しずつ挑戦できるようになってきました"}],
+ g8:[{can:"友達の考えと自分の考えを比べながら話し合い、考えを広げる", grow:"友達の考えを聞いて、自分の考えと比べられるようになってきました"},
+     {can:"ペアやグループでの話し合いで、友達と考えを出し合って学びを深める", grow:"ペアでの話し合いで、自分の考えを伝えられるようになってきました"}],
+ g9:[{can:"本やタブレット端末を使って、必要な情報を集める", grow:"タブレット端末で調べたいことを探せるようになってきました"},
+     {can:"調べ学習で、図書資料やタブレット端末から必要な情報を選んでまとめる", grow:"調べたことの中から必要な情報を選べるようになってきました"}],
+ s1:[{can:"朝や帰りに、相手の目を見て明るくあいさつする", grow:"朝のあいさつを自分からできる日が増えてきました"},
+     {can:"名前を呼ばれるとはっきりと返事をし、誰にでも明るくあいさつする", grow:"はっきりとした声で返事ができるようになってきました"},
+     {can:"毎朝、自分から元気よくあいさつする", grow:"自分から先にあいさつできる場面が増えてきました"},
+     {can:"先生や友達、地域の方にも、気持ちのよいあいさつをする", grow:"相手に聞こえる声であいさつできるようになってきました"}],
+ s2:[{can:"時間を守って行動し、学校のきまりを大切にして過ごす", grow:"チャイムが鳴ったら席に着けることが増えてきました"},
+     {can:"チャイムの合図で気持ちを切り替え、きまりを守って生活する", grow:"学校のきまりを自分から守ろうとする場面が増えてきました"}],
+ s3:[{can:"身の回りの整理整頓を心がけ、使った物をすぐに片付ける", grow:"使った物を自分で片付けられることが増えてきました"},
+     {can:"道具箱やロッカーをいつもきれいに整え、物を大切に使う", grow:"道具箱やロッカーを整える習慣が少しずつ身についてきました"},
+     {can:"学習用具をいつもそろえて、丁寧に扱う", grow:"学習用具をそろえて使う習慣が身についてきました"},
+     {can:"自分の持ち物を決まった場所に整理し、きちんと管理する", grow:"持ち物を決まった場所に片付けられるようになってきました"}],
+ s4:[{can:"休み時間のうちに次の学習の準備を済ませ、落ち着いて授業を迎える", grow:"休み時間のうちに次の学習の準備ができる日が増えてきました"},
+     {can:"持ち物を自分で確かめ、忘れ物をしないように気をつけて生活する", grow:"持ち物を自分で確かめる習慣が身についてきました"}],
+ s5:[{can:"相手や場面に合わせて、丁寧な言葉で話す", grow:"先生や友達に丁寧な言葉で話せる場面が増えてきました"},
+     {can:"誰に対しても丁寧な言葉遣いを心がけ、落ち着いて行動する", grow:"丁寧な言葉で話そうとする姿が見られるようになりました"}],
+ s6:[{can:"よいと思ったことを、周りに流されずに行う", grow:"自分で考えて行動しようとする姿が増えてきました"},
+     {can:"自分の言動を振り返り、正しい行いを心がけて生活する", grow:"自分の行動を振り返り、次に生かそうとする姿が見られるようになりました"}],
+ s7:[{can:"廊下や階段を落ち着いて歩き、公共の場でのマナーを守る", grow:"廊下を落ち着いて歩ける場面が増えてきました"},
+     {can:"校内でも校外でも、周りの人のことを考えて約束を守る", grow:"周りの人のことを考えて行動しようとする姿が見られるようになりました"},
+     {can:"教室移動では、列を整えて静かに移動する", grow:"教室を移動するときに静かに歩けるようになってきました"},
+     {can:"校外学習でも約束をしっかり守り、周りに迷惑をかけないように行動する", grow:"校外学習で約束を意識して行動できるようになってきました"}],
+ s8:[{can:"周りの様子に気を配り、安全に気をつけて遊ぶ", grow:"遊ぶときに周りの安全を考えられるようになってきました"},
+     {can:"危ないことに気づくと、自分から避けたり友達に声をかけたりする", grow:"危ないことに気づいて立ち止まれる場面が増えてきました"}],
+ s9:[{can:"一日の流れを自分で確かめ、見通しをもって行動する", grow:"その日の予定を確かめてから動けるようになってきました"},
+     {can:"次に何をするかを自分で考え、早めに準備を整える", grow:"次の活動を考えて準備できる場面が増えてきました"},
+     {can:"時計を見ながら、次の行動を自分で判断して動く", grow:"時計を見て次の行動に移れる場面が増えてきました"},
+     {can:"予定に合わせて自分で準備を進め、落ち着いて活動に移る", grow:"予定を意識して動けるようになってきました"}],
+ s10:[{can:"生き物や植物の世話を進んで行い、成長を楽しみにする", grow:"生き物や植物の様子に関心をもつようになってきました"},
+     {can:"命あるものを大切にする気持ちをもち、生き物や草花に優しく接する", grow:"生き物や植物に優しく接する場面が増えてきました"},
+     {can:"生き物や草花の変化に気づき、大切に育てる", grow:"生き物や草花の変化に気づける場面が増えてきました"},
+     {can:"植物の水やりや生き物の世話を、責任をもって続ける", grow:"生き物や植物の世話を続けられるようになってきました"}],
+ h1:[{can:"運動する場面では、いつも元気いっぱいに取り組む", grow:"運動する場面で、進んで体を動かす姿が増えてきました"},
+     {can:"体を動かすことを楽しみ、どの運動にも意欲的に取り組む", grow:"いろいろな運動に挑戦しようとする姿が見られるようになりました"},
+     {can:"運動遊びに夢中になって取り組み、元気に体を動かす", grow:"体を動かすことの楽しさを感じられるようになってきました"},
+     {can:"新しい運動にも進んで挑戦し、最後まで全力で取り組む", grow:"新しい運動にも挑戦しようとする姿が増えてきました"}],
+ h2:[{can:"休み時間には友達と外遊びを楽しむ", grow:"休み時間に外で過ごす日が増えてきました"},
+     {can:"休み時間には校庭で元気に走り回って過ごす", grow:"休み時間に外へ出て遊ぶことが増えてきました"}],
+ h3:[{can:"体力づくりの運動に根気強く取り組み、体力を伸ばす", grow:"体力づくりの運動に続けて取り組めるようになってきました"},
+     {can:"持久走や柔軟運動に粘り強く取り組み、記録を伸ばす", grow:"持久走などで、自分の記録を意識して走れるようになってきました"}],
+ h4:[{can:"外から戻ったときや給食の前に、手洗いを欠かさず行う", grow:"給食の前の手洗いを自分で思い出せるようになってきました"},
+     {can:"ハンカチを持ち、手洗いやうがいを丁寧に行う", grow:"ハンカチを持ってくる日が増えてきました"}],
+ h5:[{can:"給食を残さず食べ、正しい姿勢やはしの使い方に気をつけて食事する", grow:"苦手な食べ物も少しずつ食べられるようになってきました"},
+     {can:"給食の時間を楽しみ、マナーを守って感謝しながら食べる", grow:"食事のマナーを意識して食べられるようになってきました"}],
+ h6:[{can:"給食当番では、身支度を整えて丁寧に配膳する", grow:"給食当番の身支度を自分で整えられるようになってきました"},
+     {can:"給食当番の仕事に責任をもち、友達と協力して手際よく配膳する", grow:"配膳の仕事を友達と協力して進められるようになってきました"}],
+ h7:[{can:"暑さや寒さに合わせて、上着を着たり脱いだりして体調を整える", grow:"暑さや寒さに合わせて上着を調節できる日が増えてきました"},
+     {can:"その日の気温を考えて、自分で服装を整える", grow:"気温に合わせて服装を考えられるようになってきました"}],
+ h8:[{can:"運動の前には準備運動を丁寧に行い、けがのないように気をつける", grow:"準備運動を丁寧に行えるようになってきました"},
+     {can:"周りの安全を確かめながら、けがのないように運動する", grow:"安全に気をつけて運動する場面が増えてきました"}],
+ h9:[{can:"長い時間の活動でも、疲れに負けず最後まで頑張り抜く", grow:"疲れても最後まで頑張ろうとする姿が見られるようになりました"},
+     {can:"苦しい場面でもあきらめずに、最後まで力を出し尽くす", grow:"最後まで力を出し尽くそうとする姿が増えてきました"}],
+ t1:[{head:"日直の仕事では、", can:"朝の会や帰りの会の司会を責任をもって務める", grow:"日直の仕事を自分から進められるようになってきました"},
+     {head:"当番活動では、", can:"自分の分担をしっかりと覚え、毎日欠かさず取り組む", grow:"自分の当番の仕事を忘れずに行えるようになってきました"},
+     {head:"日直や当番では、", can:"自分の役割を忘れずに果たし、学級の生活を支える", grow:"自分の役割を最後まで果たせることが増えてきました"},
+     {head:"毎日の当番では、", can:"決められた仕事を丁寧に行い、最後まできちんと終える", grow:"決められた仕事を丁寧に終えられるようになってきました"}],
+ t2:[{head:"係活動では、", can:"自分にできることを考え、進んで仕事に取り組む", grow:"自分にできる仕事を考えて動けるようになってきました"},
+     {head:"学級の仕事では、", can:"気づいたことを自分から行い、みんなのために動く", grow:"気づいたことを自分から行える場面が増えてきました"},
+     {head:"係や委員会の活動では、", can:"自分の役割を考え、進んで仕事を見つけて動く", grow:"自分から仕事を見つけようとする場面が増えてきました"},
+     {head:"学級の生活では、", can:"必要なことに自分から気づき、すぐに行動に移す", grow:"必要なことに気づいて動けることが増えてきました"}],
+ t3:[{head:"係活動では、", can:"友達と相談しながら、学級が楽しくなる企画を考える", grow:"友達と相談しながら係の仕事を進められるようになってきました"},
+     {head:"係の仕事では、", can:"アイデアを出し合い、学級のみんなが喜ぶ活動を工夫する", grow:"係の仕事で自分のアイデアを出せるようになってきました"},
+     {head:"係活動では、", can:"みんなが楽しめるように工夫し、楽しい雰囲気をつくる", grow:"係の仕事に自分なりの工夫を取り入れられるようになってきました"},
+     {head:"学級を楽しくする活動では、", can:"新しいアイデアを考え、係の仕事をよりよくする", grow:"係の仕事をよりよくしようと考える姿が見られるようになりました"}],
+ t4:[{head:"学級会では、", can:"学級がよりよくなるための意見を進んで出す", grow:"話し合いで自分の意見を言える場面が増えてきました"},
+     {head:"学級での話し合いでは、", can:"友達の意見も聞きながら、学級のためになる考えを伝える", grow:"学級の課題を自分のこととして考えられるようになってきました"}],
+ t5:[{head:"行事に向けた練習では、", can:"めあてを決めて、一回一回の練習に真剣に取り組む", grow:"めあてをもって練習に参加できるようになってきました"},
+     {head:"学校行事では、", can:"本番に向けて自分の役割を果たせるよう、練習を重ねる", grow:"行事の練習に意欲的に参加する姿が見られるようになりました"}],
+ t6:[{head:"行事を通して、", can:"一つ一つの経験を自信に変え、堂々と活動する", grow:"人前でも落ち着いて活動できるようになってきました"},
+     {head:"行事の場面では、", can:"やり遂げた経験を次の活動に生かし、自信をもって取り組む", grow:"経験を重ねて、自信をもって取り組めることが増えてきました"}],
+ t7:[{head:"グループで活動する場面では、", can:"リーダーとして友達の意見をまとめ、活動を進める", grow:"グループの意見をまとめようとする姿が見られるようになりました"},
+     {head:"班での活動では、", can:"友達の意見を聞きながら、みんなが動きやすいように声をかける", grow:"友達に声をかけながら活動を進められるようになってきました"}],
+ t8:[{head:"学級での準備や片付けでは、", can:"友達と声をかけ合い、力を合わせて進める", grow:"友達と声をかけ合いながら片付けを進められるようになってきました"},
+     {head:"みんなで準備や片付けをするときには、", can:"自分の分担を果たしながら、周りの友達とも協力する", grow:"周りの友達と協力して動ける場面が増えてきました"},
+     {head:"準備や片付けの場面では、", can:"自分から仕事を見つけ、友達と協力して手際よく進める", grow:"準備や片付けで自分の仕事を見つけて動けるようになってきました"},
+     {head:"学級全体で動く場面では、", can:"周りと声をかけ合い、協力して物事を進める", grow:"周りの友達と息を合わせて動けるようになってきました"}],
+ t9:[{head:"学級の仕事では、", can:"人が気づきにくい仕事にも目を向け、黙々と取り組む", grow:"人が気づきにくい仕事にも取り組めるようになってきました"},
+     {head:"掃除や片付けの場面では、", can:"誰も手をつけていない所にも気づき、進んで取り組む", grow:"みんなのための仕事を自分から引き受けられるようになってきました"},
+     {head:"係や当番を分担する場面では、", can:"人の嫌がる仕事も自分から引き受け、最後までやり遂げる", grow:"自分から仕事を引き受ける場面が増えてきました"},
+     {head:"学級のために働く場面では、", can:"目立たないところでも、みんなのために進んで働く", grow:"みんなのために働こうとする姿が見られるようになりました"}],
+ r1:[{can:"友達の困っている様子に気づくと、そっと声をかけて手伝う", grow:"困っている友達に声をかけられる場面が増えてきました"},
+     {can:"周りの友達の様子に気を配り、助けが必要なときには進んで力を貸す", grow:"友達の様子に気を配れるようになってきました"},
+     {can:"友達が困っているときには、自分から声をかけて助ける", grow:"友達を助けようとする場面が増えてきました"},
+     {can:"相手の気持ちを考え、友達に優しく接する", grow:"友達に優しく声をかける姿が見られるようになりました"}],
+ r2:[{can:"誰とでも分け隔てなく遊び、仲よく過ごす", grow:"いつもと違う友達とも関われるようになってきました"},
+     {can:"いろいろな友達と進んで関わり、温かく接する", grow:"新しい友達と話す機会が増えてきました"},
+     {can:"休み時間にもいろいろな友達と関わり、楽しく過ごす", grow:"休み時間にいろいろな友達と過ごせるようになってきました"},
+     {can:"誰に対しても同じように優しく接する", grow:"誰とでも分け隔てなく関われる場面が増えてきました"}],
+ r3:[{can:"友達の話を最後までしっかり聞き、考えのよいところを見つける", grow:"友達の話を最後まで聞こうとする姿が増えてきました"},
+     {can:"自分と違う考えにも関心をもち、話し合いに生かす", grow:"自分と違う考えを受け止められる場面が増えてきました"}],
+ r4:[{can:"相手の気持ちを考えながら、自分の思いを言葉で伝える", grow:"相手の気持ちを考えて話せるようになってきました"},
+     {can:"思ったことを、相手が受け止めやすい言葉で伝える", grow:"自分の思いを落ち着いて言葉にできるようになってきました"}],
+ r5:[{can:"グループの中で自分にできることを考え、仲間と力を合わせる", grow:"グループの中で自分の役割に取り組めるようになってきました"},
+     {can:"班での活動で任された役割をやり遂げ、仲間と協力して活動する", grow:"仲間と協力して活動できる場面が増えてきました"}],
+ r6:[{can:"意見が分かれたときにも、相手の考えを聞いて落ち着いて話し合う", grow:"意見が分かれたときに、相手の話を聞けるようになってきました"},
+     {can:"友達と考えが違うときにも、冷静に話し合って解決する", grow:"考えが違うときにも落ち着いて話そうとする姿が見られるようになりました"}],
+ r7:[{can:"友達のよいところを見つけ、進んで言葉にして伝える", grow:"友達のよいところを見つけられるようになってきました"},
+     {can:"友達の頑張りに気づき、温かい言葉をかける", grow:"友達の頑張りに目を向けられるようになってきました"}],
+ r8:[{can:"下級生に優しく声をかけ、困っているときには手を貸す", grow:"下級生に声をかけられる場面が増えてきました"},
+     {can:"異学年の活動で、下級生の気持ちを考えて行動する", grow:"下級生の気持ちを考えて関わろうとする姿が増えてきました"}],
+ r9:[{can:"感謝や謝罪の気持ちを、その場で素直に言葉にする", grow:"「ありがとう」を自分から言える場面が増えてきました"},
+     {can:"助けてもらったときには、相手に感謝の気持ちをきちんと伝える", grow:"相手に感謝の気持ちを伝えられるようになってきました"}],
+};
+/* 出席番号から決める、その児童の言い回しのずらし幅（番号がなければ0） */
+function altBase(){ const n = parseInt(state.no, 10); return n > 0 ? n - 1 : 0; }
+/* その文で使う言い回し（DBの項目に ALT の内容を重ねたもの）。seed は「別の言い回し」の番号 */
+function altOf(it, seed){
+  const list = ALT[it.id];
+  if(!list) return it;
+  const k = (altBase() + (ITEM_ORDER.get(it.id) || 0) + (seed || 0)) % (list.length + 1);
+  return k ? Object.assign({}, it, list[k - 1]) : it;
+}
 /* a・b をまとめた専用の文（文末を付ける前の形）。無ければ null。a・b の順は問わない。 */
 function joinText(a, b){
   if(!a || !b || a.lvl !== b.lvl) return null;
@@ -2747,7 +2887,7 @@ const SCENE_CATS = new Set(["特別活動・係活動","生活・行動面"]);  
 function subjHead(name){ return /(活動|時間)$/.test(name) ? name + "では、" : name + "の学習では、"; }
 /* 文の持ち主（owners の1要素）から {key, head} を返す。付けない文は null。
    key が直前の文と同じなら付けない。 */
-function headOf(os, isIssue){
+function headOf(os, isIssue, seed){
   const c = os[0], g = ITEM_GROUP.get(c.it.id);
   if(!g) return null;
   const kind = groupKind(g);
@@ -2768,23 +2908,27 @@ function headOf(os, isIssue){
       const jk = ids.join("+");
       if(jk in JOIN_HEAD) return { key:"j:"+jk, head:bandHead(JOIN_HEAD[jk]) };
     }
+    // v1.48：言い回しの候補が自分の場面を持っていれば、それを使う
+    if(os.length === 1){ const a = altOf(c.it, seed); if(a !== c.it && a.head) return { key:"i:"+c.it.id, head:bandHead(a.head) }; }
     if(c.it.id in ITEM_HEAD) return { key:"i:"+c.it.id, head:bandHead(ITEM_HEAD[c.it.id]) };
     return kind === 'event' && EVENT_HEAD[g.cat] ? { key:g, head:EVENT_HEAD[g.cat] } : null;
   }
   return null;
 }
-function addHeads(parts, owners){
-  let prevKey = null;
+function addHeads(parts, owners, seed){
+  let prevKey = null, prevHead = null;
   for(let p=0; p<parts.length; p++){
     const os = owners[p], c = os[0];
     const isIssue = c.lvl === 'issue';
     if(isIssue && /^今後は、/.test(parts[p])) continue;   // 課題の2文目
-    const h = headOf(os, isIssue);
-    if(!h){ prevKey = null; continue; }
-    if(h.key !== prevKey && h.head){
+    const h = headOf(os, isIssue, seed);
+    if(!h){ prevKey = null; prevHead = null; continue; }
+    // v1.48：違う項目でも、直前の文と同じ場面（例「係活動では、」）は2回続けて付けない
+    const sameHead = h.head && prevHead && h.head.replace(/の/g,'') === prevHead.replace(/の/g,'');
+    if(h.key !== prevKey && h.head && !sameHead){
       parts[p] = parts[p].replace(/^(また、|さらに、)?/, m => m + h.head);
     }
-    prevKey = h.key;
+    prevKey = h.key; prevHead = h.head;
   }
 }
 
@@ -2852,7 +2996,7 @@ function buildText(list, seed){
       }
       if(!block){
         const core = joinCore(c, n);
-        const variant = i + seed;
+        const variant = i + seed + altBase();
         const past = EVENT_IDS.has(c.it.id);   // 2件とも同じカテゴリ（canJoin）
         let sent = c.lvl==='can' ? endCan(core, variant, past) : endGrow(core, variant, past);
         if(c.lvl==='grow' && firstGrowPos.has(i) && i>0) sent = conn() + sent;
@@ -2900,7 +3044,7 @@ function buildText(list, seed){
   // 観点を1件足した完成形を作り、その観点が持つ文だけを取り出す用途に使う（v1.12）。
   // 断片を単独で組み立てる方式にしないのは、文頭の呼称や「また、」・因果接続の有無が
   // 前後の文に左右され、単独では実際の出力と一致しないため。
-  addHeads(parts, owners);   // v1.44：教科名・行事名を文頭に付ける
+  addHeads(parts, owners, seed);   // v1.44：教科名・行事名を文頭に付ける
   const text = parts.join("");
   return { text, len:[...text].length, parts, owners };
 }
@@ -3199,6 +3343,7 @@ function updateMeta(text, target){
   const tip=document.getElementById('tip');
   const j = lenJudge(n, target);
   tip.textContent = j.msg; tip.className = j.cls;
+  renderDupNote(text);   // v1.48
   syncEditBlink();
   if(j.cls === 'meter-short' && needMoreItems())
     tip.textContent = `あと${target - n}字ほどでめやすです（「項目を選び直す」で項目を足してください）`;
@@ -5352,6 +5497,48 @@ $('editItems').addEventListener('click', ()=>{
 });
 
 /* ---- 所見一覧 ---- */
+/* v1.48：学級の中で同じ文が並んでいないかを調べる。
+   文末の言い回し（〜ことができました／〜様子が見られました など）とつなぎの言葉を除いた中身で比べ、
+   DUP_MIN 人以上の所見に入っている文を「同じ文」とする。 */
+const DUP_MIN = 4;
+function sentCore(t){
+  return t.replace(/^(また|さらに|今後は)、/, '')
+    .replace(/(ことができました|ことができていました|様子が見られました|姿が印象的でした|ているところです|てきています|ていきました|てきました|になってきています|になりました|できました|していました|しています|でいます|ています|ていました|ました|ます)$/, '');
+}
+function sentencesOf(text){ return String(text||'').split('。').map(x=>x.trim()).filter(x=>x.length >= 8); }
+/* 文の中身 → その文が入っている児童IDの集合 */
+function dupIndex(exceptId){
+  const m = new Map();
+  roster.students.forEach(s=>{
+    if(!s.out || s.id === exceptId) return;
+    new Set(sentencesOf(s.out).map(sentCore)).forEach(k=>{
+      if(!m.has(k)) m.set(k, new Set());
+      m.get(k).add(s.id);
+    });
+  });
+  return m;
+}
+/* 児童ごとの「同じ文」（DUP_MIN人以上に入っている文）の一覧 */
+function dupOf(s, idx){
+  if(!s.out) return [];
+  return [...new Set(sentencesOf(s.out))].filter(t=>{ const g = idx.get(sentCore(t)); return g && g.size >= DUP_MIN; })
+    .map(t=>({ t, n: idx.get(sentCore(t)).size }));
+}
+/* 文章の確認画面：いまの文章に、ほかの児童と同じ文があれば知らせる */
+function renderDupNote(text){
+  const el = document.getElementById('dupNote');
+  if(!el) return;
+  const rec = (typeof curRec === 'function') ? curRec() : null;
+  const idx = dupIndex(rec ? rec.id : null);
+  const hits = text ? [...new Set(sentencesOf(text))].map(t=>({ t, g: idx.get(sentCore(t)) }))
+    .filter(x=>x.g && x.g.size + 1 >= DUP_MIN) : [];
+  if(!hits.length){ el.style.display = 'none'; el.innerHTML = ''; return; }
+  const show = hits.slice(0, 2).map(x=>`「${esc(x.t.length > 28 ? x.t.slice(0, 28) + '…' : x.t)}」（ほかに${x.g.size}人）`).join('、');
+  el.innerHTML = `<b>学級のほかの児童と同じ文があります。</b>${show}${hits.length > 2 ? `ほか${hits.length - 2}文` : ''}。`
+    + `「別の言い回し」を押すと、言い回しが変わります。`;
+  el.style.display = '';
+}
+
 function renderList(){
   const box = $('listTable');
   if(!box) return;
@@ -5361,8 +5548,22 @@ function renderList(){
   $('rosterCount').innerHTML = `<b>${list.length}人</b>　確認済み <b>${c.ok}</b>・下書き <b>${c.draft}</b>・未作成 <b>${c.none}</b>`;
   const bn = $('listBanner');
   bn.textContent = nav.banner; bn.style.display = nav.banner ? '' : 'none';
+  // v1.48：同じ文のチェック
+  const didx = dupIndex(null);
+  const dups = new Map(list.map(s=>[s.id, dupOf(s, didx)]));
+  const kinds = new Set([...dups.values()].flat().map(x=>sentCore(x.t)));
+  const ds = $('dupSum');
+  if(ds){
+    ds.innerHTML = kinds.size
+      ? `<b>${DUP_MIN}人以上の所見に入っている同じ文が ${kinds.size} 種類あります。</b>「同じ文」の印がある児童を開き、「別の言い回し」を押すと言い回しが変わります。`
+      : '';
+    ds.style.display = kinds.size ? '' : 'none';
+  }
   let html = '<table><thead><tr><th>番号</th><th>名前</th><th>所見（書き出し）</th><th>字数</th><th>状態</th><th></th></tr></thead><tbody>';
   list.forEach(s=>{
+    const dl = dups.get(s.id) || [];
+    const dmark = dl.length
+      ? `<span class="dupmark" title="${esc(dl.map(x=>x.t + '。（' + x.n + '人）').join('\n'))}">同じ文 ${dl.length}</span>` : '';
     const n = s.out ? [...s.out].length : 0;
     const bad = s.out && lenJudge(n, s.len || 175).cls !== 'meter-ok';
     const st = statusOf(s);
@@ -5371,7 +5572,7 @@ function renderList(){
       + `<td class="nm">${esc((s.name||'').trim() || '（名前なし）')}</td>`
       + `<td class="tx">${esc(head)}</td>`
       + `<td class="len${bad?' bad':''}" title="${bad?'めやす（'+(s.len||175)+'字）から離れています':''}">${n ? n + '字' : ''}</td>`
-      + `<td><span class="badge ${st}">${STATUS_LABEL[st]}</span></td>`
+      + `<td><span class="badge ${st}">${STATUS_LABEL[st]}</span>${dmark}</td>`
       + `<td class="ops">${s.out ? '<button type="button" class="cp">コピー</button>' : ''}<button type="button" class="del" title="この児童を削除">×</button></td></tr>`;
   });
   html += '</tbody></table>';
