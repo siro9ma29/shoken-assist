@@ -816,9 +816,11 @@ details.cat>summary{font-size:15px;}
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "v1.41";
+const APP_VERSION = "v1.43";
 const APP_DATE    = "2026-11-04";
 const APP_HISTORY = [
+  {v:"v1.43", d:"2026-11-04", note:"特別活動・学校行事の項目は「できる」だけ選べるようにした。終わった行事に「伸長中」は選べず、「課題」を選んでも今後の指導につなげられないため。(1) 項目の画面の「特別活動・学校行事」のページでは「伸長中」「課題」のボタンを出さない（ページの説明にもその旨を書いた）。(2) 作業ファイルや自動保存に残っている行事の「伸長中」「課題」は、読み込むときに外す。v1.42の過去の形の文末（「〜していました」など）はそのまま使う。"},
+  {v:"v1.42", d:"2026-11-04", note:"特別活動・学校行事の項目（学級活動・児童会活動、儀式的行事、遠足、運動会、学芸会、合唱・音楽発表会、作品展、クラブ活動など）は、終わった行事の様子を書くので、現在形を使わず過去の形にした。(1) 「できる」の「〜しています。」は「〜していました。」にする。(2) 「伸長中」の「〜てきています。」「〜てきているところです。」は使わず、「〜てきました。」か「〜ていきました。」にする。(3) 課題の場面の文「〜ことがあります。」は「〜ことがありました。」にする（今後の手立て「〜ていきます。」はそのまま）。2観点をまとめた文も同じ。学年共通の観点と教科の文は変えていない。"},
   {v:"v1.41", d:"2026-11-04", note:"「C4th用Excelに書き込む」を押すと、C4thに所見を取り込む手順を大きな案内で出し、1つずつ確かめながら進められるようにした。①C4thの「通知表入力」→「エクセル出力」で通知表入力用のExcelを出す（「出力できた → 次へ」）、②「Excelを選ぶ」で①のファイルを選んで書き込む、③保存したファイル名を示し、C4thで読み取らせる（「読み取らせた（終わる）」）。いまの手順を枠で強調し、終わった手順には✓を付ける。書き込みをやめたときや読み込めなかったときは②にとどまる。所見一覧の画面に常に出していた手順の枠（v1.39）は、1行の案内にした。"},
   {v:"v1.40", d:"2026-11-04", note:"項目の追加が必要な児童では、文章の確認画面の「項目を選び直す」ボタンを点滅させるようにした。追加が必要とみなすのは、(1) 項目がまだ1つも選ばれていないとき、(2) 字数がめやすに足りず（めやすの85%未満）、選んだ項目がすべて文章に入っているとき（入っていない観点を「入れる」では足せないとき）。(2) のときは字数の案内も「「項目を選び直す」で項目を足してください」にする。担任が文を外して短くしている場合は点滅させない。動きを減らす設定のパソコンでは点滅させず色だけ変える。"},
   {v:"v1.39", d:"2026-11-04", note:"仕上げ（所見一覧）の画面で、「C4th用Excelに書き込む」ボタンをいちばん左に置いた。その下に、C4thに所見を取り込む手順（①C4thの「通知表入力」→「エクセル出力」で通知表入力用のExcelシートを出力する ②「C4th用Excelに書き込む」で①のExcelを選ぶ ③保存されたファイルをC4thで読み取らせる）を常に見える形で書いた。"},
@@ -1791,17 +1793,34 @@ function toPlainIntent(f){
 }
 
 /* 「できる」系fragはそのまま文末付与、「伸長中」fragは既に語尾を含む場合が多いので調整 */
-function endCan(frag, variant){
+/* v1.42：特別活動・学校行事（groupKind が 'event'）の項目は、終わった行事の様子を書くので
+   現在形（「〜しています」「〜てきています」「〜ているところです」「〜ことがあります」）を使わず、
+   過去の形（「〜していました」「〜ていきました」「〜ことがありました」）にする。
+   past … その文が特別活動・学校行事の項目かどうか */
+const PAST_GROW = [
+  (f)=>f+"。",
+  (f)=>/てきました$/.test(f) ? f.replace(/てきました$/, "ていきました") + "。" : null,
+];
+function toPast(s){
+  return s.replace(/ています。$/, "ていました。").replace(/でいます。$/, "でいました。")
+          .replace(/できています。$/, "できていました。");
+}
+function endCan(frag, variant, past){
   const opts = ENDINGS.can;
   const fn = opts[variant % opts.length];
-  return fn(frag);
+  return past ? toPast(fn(frag)) : fn(frag);
 }
-function endGrow(frag, variant){
+function endGrow(frag, variant, past){
   // grow系fragは敬体で登録済み。念のため常体で来た場合は敬体化する。
   const f = toPolite(frag);
-  const opts = ENDINGS.grow;
+  const opts = past ? PAST_GROW : ENDINGS.grow;
   const r = opts[variant % opts.length](f);
   return r === null ? f + "。" : r;   // 想定外の語尾は案1（そのまま）に戻す
+}
+/* 課題の「場面」の文。行事は「〜ことがありました」にする（今後の手立ては「〜ていきます」のまま） */
+function issueState(it){
+  const t = toPolite(it.issue.state);
+  return EVENT_IDS.has(it.id) ? t.replace(/ことがあります$/, "ことがありました") : t;
 }
 
 /* 常体→敬体 変換（保険。fragが常体で書かれていた場合に備える） */
@@ -1887,6 +1906,8 @@ DB.forEach(g=>{
   g.items.forEach(i=>ITEM_DOMAIN.set(i.id, d));
 });
 function domainOf(c){ return ITEM_DOMAIN.get(c.it.id) || 'life'; }
+/* v1.42：特別活動・学校行事の項目（文末を過去の形にする） */
+const EVENT_IDS = new Set(DB.filter(g=>groupKind(g)==='event').flatMap(g=>g.items.map(i=>i.id)));
 
 function gradeLabel(grade){
   return grade === 'mid' ? '中学年' : grade === 'high' ? '高学年' : '低学年';
@@ -1931,14 +1952,19 @@ DB.forEach((group, gidx)=>{
     const row=document.createElement('div'); row.className='item'; row.dataset.id=it.id;
     // 「課題」ボタンは issue を持つ項目にだけ出す。
     // 体力・性格・内面など、指導で変わる行動として書けない項目には issue がない。
-    const issueBtn = it.issue
+    // v1.43：特別活動・学校行事は終わった行事のことなので「できる」だけ。伸長中・課題は出さない。
+    const evOnly = kind === 'event';
+    const growBtn = evOnly
+      ? `<span class="noissue"></span>`
+      : `<label title="伸びつつある"><input type="checkbox" data-id="${it.id}" data-lvl="grow"><span class="grow">伸長中</span></label>`;
+    const issueBtn = (it.issue && !evOnly)
       ? `<label title="家庭でも意識してほしいことがある"><input type="checkbox" data-id="${it.id}" data-lvl="issue"><span class="issue">課題</span></label>`
       : `<span class="noissue"></span>`;
     row.innerHTML=`<span class="txt">${it.txt}</span>
       <button type="button" class="star" data-id="${it.id}" title="★おすすめ：必ず所見に入れる（最大${MAX_PRI}件）">★</button>
       <span class="lvlpick">
         <label title="できている"><input type="checkbox" data-id="${it.id}" data-lvl="can"><span class="can">できる</span></label>
-        <label title="伸びつつある"><input type="checkbox" data-id="${it.id}" data-lvl="grow"><span class="grow">伸長中</span></label>
+        ${growBtn}
         ${issueBtn}
         <button type="button" class="clr" title="この項目は使わない">選ばない</button>
       </span>`;
@@ -2126,7 +2152,8 @@ document.getElementById('lenInput').addEventListener('input',e=>{
    こうしないと文末の長さの違いで採用・不採用が入れ替わる。 */
 function getFragment(it, lvl, idx, seed){
   const variant = idx + seed;
-  return lvl==='can' ? endCan(it.can, variant) : endGrow(it.grow, variant);
+  const past = EVENT_IDS.has(it.id);
+  return lvl==='can' ? endCan(it.can, variant, past) : endGrow(it.grow, variant, past);
 }
 
 /* ============ 2観点を1文にまとめる（v1.26） ============
@@ -2687,7 +2714,7 @@ function buildText(list, seed){
     if(c.lvl==='issue'){
       // 課題は必ず2文。1文にまとめると65字前後になり読みにくいため。
       // state は「〜場面では、」と場面から始まるので、前に接続語は置かない。
-      const head = toPolite(c.it.issue.state) + "。";
+      const head = issueState(c.it) + "。";
       parts.push(head);   owners.push([c]);
       parts.push("今後は、" + toPolite(c.it.issue.plan) + "。");   owners.push([c]);
       continue;
@@ -2726,7 +2753,8 @@ function buildText(list, seed){
       if(!block){
         const core = joinCore(c, n);
         const variant = i + seed;
-        let sent = c.lvl==='can' ? endCan(core, variant) : endGrow(core, variant);
+        const past = EVENT_IDS.has(c.it.id);   // 2件とも同じカテゴリ（canJoin）
+        let sent = c.lvl==='can' ? endCan(core, variant, past) : endGrow(core, variant, past);
         if(c.lvl==='grow' && firstGrowPos.has(i) && i>0) sent = conn() + sent;
         parts.push(sent);   owners.push([c, n]);
         inJoin.add(i+1);
@@ -3321,6 +3349,7 @@ function normalizeStudent(s){
   Object.entries(s.sel || {}).forEach(([id,lvl])=>{
     if(!VALID_IDS.has(id)) return;
     if(!['can','grow','issue'].includes(lvl)) return;
+    if(lvl !== 'can' && EVENT_IDS.has(id)) return;   // v1.43：特別活動・学校行事は「できる」だけ
     if(lvl==='issue'){
       if(!HAS_ISSUE.has(id)) return;      // 課題を持たない項目
       if(++issues > MAX_ISSUE) return;    // 課題は MAX_ISSUE 件まで
@@ -4786,7 +4815,7 @@ const PAGES = [
   {title:'特別活動・係活動', lead:'当番・係・学級会などでの様子です。', test:d=>d.dataset.cat==='特別活動・係活動'},
   {title:'人とのかかわり', lead:'友達との関わり方の様子です。', test:d=>d.dataset.cat==='人とのかかわり'},
   {title:'各教科', lead:'教科ごとの学習の様子です。教科名を押すと項目が開きます。', test:d=>d.dataset.kind==='subject'},
-  {title:'特別活動・学校行事', lead:'学級活動や行事での様子です。行事名を押すと項目が開きます。', test:d=>d.dataset.kind==='event'},
+  {title:'特別活動・学校行事', lead:'学級活動や行事での様子です。終わった行事のことなので「できる」だけ選べます。行事名を押すと項目が開きます。', test:d=>d.dataset.kind==='event'},
 ];
 /* applyCatFilters() から呼ばれる。見出し（.cat-divider）は使わない。 */
 function pageFilter(d){
