@@ -845,9 +845,10 @@ details.cat>summary{font-size:15px;}
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "v1.50";
+const APP_VERSION = "v1.51";
 const APP_DATE    = "2026-11-05";
 const APP_HISTORY = [
+  {v:"v1.51", d:"2026-11-05", note:"学習面を総括する文を追加した。(1) 学年共通に「学習面の総括」（項目の画面では学習面のページ）を設け、4項目を置いた：学習全体（sm0）、主要教科の「知識・技能」（smc）・「思考・判断・表現」（sms）・「主体的に学習に取り組む態度」（smt）。「できる」だけ選べる。(2) 成績一覧から作るとき、学習の記録（観点別評価のA・B・C。空欄は数えない）の9割以上がAの児童には sm0 を、そうでなければ主要教科（3年以上：国語・算数・理科・社会、1・2年：国語・算数・生活）の同じ観点の8割以上がAの観点に smc・sms・smt を自動で選ぶ（evalSummary。割合は SUM_ALL_RATE・SUM_KANTEN_RATE で変えられる）。4教科のときの8割以上は4教科ともA。取り込み画面に「学習面の総括」の列を出す。(3) 総括の文は学習面の先頭に1文で置き、直後が教科の文なら「特に国語の学習では、〜」でつなぐ。観点の総括が2つ以上あるときは専用の文（SUM_COMBO）で1文にまとめ、sm0 があればそれだけを使う。(4) おすすめの★を付けるとき、総括があればその1件にも★を付ける（★は総括1・学習面2・生活面2の最大5件）。総括の項目はどれか1つに★があれば、選ばれている総括すべてを★として扱う。(5) 学級に評価の高い児童が多くても同じ文が並ばないよう、sm0 は3通り、smc・sms・smt は2通りの言い回しを用意した。"},
   {v:"v1.50", d:"2026-11-05", note:"作業データの保存を使いやすくした。(1) 画面上部（どの画面にも出る）に「開く」「保存」を置いた。Ctrl＋S でも保存できる。はじめの画面にも「作業ファイルを開く」を置いた。(2) Chrome／Edge では、一度選んだ作業ファイル（.json。共有フォルダなども可）に上書き保存する（File System Access API）。保存先はブラウザに記憶し、次に開いたときも同じファイルに保存する。「所見一覧」→「くわしい設定」の「名前を付けて保存」で別のファイルにも保存できる。ファイル保存の機能がないブラウザでは、従来どおり日時入りのファイルをダウンロードする。(3) 保存か開くをしたあとは、変更のたびに作業ファイルへ自動で上書きする（2秒待ってまとめて）。画面を開き直したあとの最初の保存では、このパソコンで最後に保存したあとにファイルがほかで保存されていないかを確かめ、保存されていれば上書きしてよいか尋ねる（別のパソコンで続きをしたときに、その変更を消さないため）。(4) 作業ファイルに保存していない変更があると「保存」ボタンに印を付け、画面下に知らせ、10分たつと「保存する」を出す。画面を閉じようとしたときにも確かめる。(5) 「学級をすべて消す」と、作業ファイル以外から読み込んだときは、保存先を外す（空や別の学級の内容で上書きしないように）。"},
   {v:"v1.49", d:"2026-11-05", note:"教科の文を学年別にした（段階1：算数・国語・社会・理科の「できる」）。(1) v1.48までの教科の文は学年帯（低・中・高）で1つだったため、2年生に「たし算・ひき算」、3年生に「2桁・3桁のかけ算やわり算の筆算」が出るなど、学年に合わないことがあった。勤務校の年間指導計画（単元配当表）から学年ごとに主な学習内容を3つずつ選び、その学習内容に結びつけた文を用意した（GRADE_TEXT。1〜6年、算数・国語は各学年、社会・理科は3〜6年、計60の学習内容）。教材名は入れず、学習内容で書く。(2) 1項目の文・2観点をまとめた文（c・s・t から組み立て、後ろ側は前と同じ言葉がくり返されない形 sp・tp を使う）・3観点の文のすべてに使う。児童の学年（名前と学年の画面・成績一覧で分かる学年）と学年帯が合うときだけ使い、学年が分からないときは従来の学年帯の文を使う。(3) どの学習内容を使うかは出席番号で自動に決め、「別の言い回し」で順に変わる。項目の画面の各教科に「取り上げる学習内容」の選択欄を付け、先生が選ぶこともできる（児童ごとに保存）。学年別の文があるときは、項目の表示名もその学習内容の文にする。(4) 伸長中の文はまだ学年帯のままのため、学年別の「できる」の文と伸長中の文を因果文（〜ことで、〜てきました）でつながない。"},
   {v:"v1.48", d:"2026-11-05", note:"学級の中で同じ文が並ばないようにした（サンプル精読の課題3）。(1) 学年共通の項目（学習面・生活・行動面・健康・体力面・特別活動・係活動・人とのかかわりの全46項目）に言い回しの候補を足した（ALT）。どの項目も3通り、成績一覧の行動の記録から自動で選ばれる13項目（s1・s3・s7・s9・s10・h1・t1・t2・t3・t8・t9・r1・r2）は5通り。特別活動・係活動は文頭の場面も候補ごとに変える（例「学級での準備や片付けでは、」）。どの候補を使うかは出席番号と項目で決まり（altOf）、番号が続く児童では違う言い回しになる。「別の言い回し」を押すと候補も順に変わる。文末（〜ことができました等）も出席番号でずらす。(2) 違う項目でも、直前の文と同じ場面（「係活動では、」と「係の活動では、」など）は続けて付けない。(3) 所見一覧に、4人以上の所見に入っている同じ文（文末の言い回しを除いた中身で比べる）の数を表示し、該当する児童の行に「同じ文 n」の印を付けた（印にマウスを乗せると文が出る）。文章の確認画面でも、ほかの児童と同じ文があれば知らせる。30人の学級で生活面の選び方が似ている場合の試算では、最も多い同じ文が25人→5人に、4人以上に入っている文が18種類→11種類に減った。教科の文・課題の文は今回は1通りのまま。"},
@@ -957,6 +958,26 @@ const DB = [
     grow:"資料やICT機器を目的に合わせて使えるようになってきました",
     issue:{state:"調べ学習では、必要な情報を選ぶことに迷うことがあります",
            plan: "調べ方の手順を一緒に確かめ、目的に合わせて選べるようにしていきます"}},
+ ]},
+ /* v1.51：学習面の総括。成績一覧で評価の高い児童に、教科を通した学習全体のよさを1文で書く。
+    sm0 … 観点別評価（学習の記録）の SUM_ALL_RATE 以上がA
+    smc／sms／smt … 主要教科（3年以上：国語・算数・理科・社会、1・2年：国語・算数・生活）の
+                    同じ観点（知識・技能／思考・判断・表現／主体的に学習に取り組む態度）の SUM_KANTEN_RATE 以上がA
+    成績一覧からは evalSummary() が自動で選ぶ。手で選ぶこともできる。「できる」だけ（canOnly）。
+    文は sumSentence() が組み立てる（複数選ばれていても1文にする）。{S} は主要教科の名前に置き換える。 */
+ {cat:"学習面の総括", grade:"all", canOnly:true, items:[
+   {id:"sm0", txt:"学習全体：観点別評価のほとんど（9割以上）がA",
+    can:"どの教科の学習にも意欲的に取り組み、学んだことを確実に身に付ける",
+    grow:"どの教科の学習にも意欲的に取り組めるようになってきました"},
+   {id:"smc", txt:"主要教科の「知識・技能」がそろってA（8割以上）",
+    can:"{S}のどの教科でも、学習した内容をよく理解し、確かな知識や技能を身に付ける",
+    grow:"{S}の学習で、学習した内容を身に付けられるようになってきました"},
+   {id:"sms", txt:"主要教科の「思考・判断・表現」がそろってA（8割以上）",
+    can:"{S}のどの教科でも、学んだことをもとに自分の考えをもち、筋道を立てて表現する",
+    grow:"{S}の学習で、自分の考えを表せるようになってきました"},
+   {id:"smt", txt:"主要教科の「主体的に学習に取り組む態度」がそろってA（8割以上）",
+    can:"{S}のどの教科の学習にも、目当てをもって進んで取り組む",
+    grow:"{S}の学習に、進んで取り組めるようになってきました"},
  ]},
  {cat:"生活・行動面", grade:"all", items:[
    {id:"s1", txt:"場に応じた気持ちのよい挨拶と返事ができる",
@@ -2120,10 +2141,45 @@ function groupKind(group){
 const DOMAIN_ORDER = ['learn','life'];
 const ITEM_DOMAIN = new Map();
 DB.forEach(g=>{
-  const d = (g.cat === '学習面' || groupKind(g) === 'subject') ? 'learn' : 'life';
+  const d = (g.cat === '学習面' || g.cat === '学習面の総括' || groupKind(g) === 'subject') ? 'learn' : 'life';
   g.items.forEach(i=>ITEM_DOMAIN.set(i.id, d));
 });
 function domainOf(c){ return ITEM_DOMAIN.get(c.it.id) || 'life'; }
+
+/* ============ 学習面の総括（v1.51） ============
+   成績一覧で、学習の記録（観点別評価）の SUM_ALL_RATE 以上がAの児童、または
+   主要教科の同じ観点の SUM_KANTEN_RATE 以上がAの児童に、学習全体をまとめた1文を入れる。
+   文は学習系の先頭に置き、続く教科の文を「特に〜」でつなぐ。
+   例「どの教科の学習にも意欲的に取り組み、学んだことを確実に身に付けることができました。
+       特に国語の学習では、〜。」 */
+const SUM_ALL_RATE    = 0.9;   // 学習全体：Aの割合（A・B・Cが入っている欄のうち）
+const SUM_KANTEN_RATE = 0.8;   // 主要教科の同じ観点：Aの割合
+const SUM_KANTEN_MIN  = 2;     // 主要教科の同じ観点で、評価が入っている欄がこれより少なければ判定しない
+const SUM_ALL_MIN     = 6;     // 学習全体で、評価が入っている欄がこれより少なければ判定しない
+const SUM_IDS  = ['sm0','smc','sms','smt'];
+const SUM_CODE = { smc:'c', sms:'s', smt:'t' };
+function isSum(c){ return SUM_IDS.includes(c.it.id); }
+/* 主要教科。1・2年は理科・社会がないので生活科にする */
+function sumSubjects(band){ return band === 'low' ? ['国語','算数','生活'] : ['国語','算数','理科','社会']; }
+function sumSubjText(band){ return band === 'low' ? '国語・算数・生活科' : '国語・算数・理科・社会'; }
+/* 2つ以上の観点がそろってAのときの文（キーは観点の記号を c→s→t の順に並べたもの） */
+const SUM_COMBO = {
+  cs:  "{S}のどの教科でも、学習した内容を確かに身に付け、それをもとに自分の考えを筋道立てて表現する",
+  ct:  "{S}のどの教科の学習にも進んで取り組み、学習した内容を確かに身に付ける",
+  st:  "{S}のどの教科の学習にも進んで取り組み、自分の考えを筋道立てて表現する",
+  cst: "{S}のどの教科の学習にも進んで取り組み、身に付けた知識をもとに自分の考えを筋道立てて表現する",
+};
+/* 選ばれている総括の項目（複数でも）から、文末を付ける前の1文を作る。
+   sm0（学習全体）があればそれだけを使う（観点ごとの総括より広いため）。 */
+function sumCore(list, seed){
+  const S = sumSubjText(state.grade);
+  const all = list.find(c=>c.it.id==='sm0');
+  if(all) return altOf(all.it, seed).can;
+  const codes = list.map(c=>SUM_CODE[c.it.id]).filter(Boolean)
+    .sort((x,y)=>"cst".indexOf(x)-"cst".indexOf(y)).join("");
+  const t = codes.length > 1 ? SUM_COMBO[codes] : altOf(list[0].it, seed).can;
+  return t.replace(/\{S\}/g, S);
+}
 /* v1.42：特別活動・学校行事の項目（文末を過去の形にする） */
 const EVENT_IDS = new Set(DB.filter(g=>groupKind(g)==='event').flatMap(g=>g.items.map(i=>i.id)));
 
@@ -2187,7 +2243,7 @@ DB.forEach((group, gidx)=>{
     // 「課題」ボタンは issue を持つ項目にだけ出す。
     // 体力・性格・内面など、指導で変わる行動として書けない項目には issue がない。
     // v1.43：特別活動・学校行事は終わった行事のことなので「できる」だけ。伸長中・課題は出さない。
-    const evOnly = kind === 'event';
+    const evOnly = kind === 'event' || !!group.canOnly;   // v1.51：学習面の総括も「できる」だけ
     const growBtn = evOnly
       ? `<span class="noissue"></span>`
       : `<label title="伸びつつある"><input type="checkbox" data-id="${it.id}" data-lvl="grow"><span class="grow">伸長中</span></label>`;
@@ -2840,6 +2896,12 @@ const ALT = {
      {can:"ペアやグループでの話し合いで、友達と考えを出し合って学びを深める", grow:"ペアでの話し合いで、自分の考えを伝えられるようになってきました"}],
  g9:[{can:"本やタブレット端末を使って、必要な情報を集める", grow:"タブレット端末で調べたいことを探せるようになってきました"},
      {can:"調べ学習で、図書資料やタブレット端末から必要な情報を選んでまとめる", grow:"調べたことの中から必要な情報を選べるようになってきました"}],
+ // v1.51：学習面の総括（評価の高い児童が学級に何人もいても、同じ文が並ばないように）
+ sm0:[{can:"どの教科でも学習のねらいをしっかりととらえ、確かな力を身に付ける", grow:"どの教科の学習にも意欲的に取り組めるようになってきました"},
+      {can:"一つ一つの学習に真剣に向き合い、どの教科でも確かな学力を身に付ける", grow:"どの教科の学習にも意欲的に取り組めるようになってきました"}],
+ smc:[{can:"{S}のいずれの教科でも、基礎・基本となる知識や技能をしっかりと身に付ける", grow:"{S}の学習で、学習した内容を身に付けられるようになってきました"}],
+ sms:[{can:"{S}のいずれの教科でも、自分の考えを理由とともに分かりやすく説明する", grow:"{S}の学習で、自分の考えを表せるようになってきました"}],
+ smt:[{can:"{S}のいずれの教科でも、課題に粘り強く向き合い、進んで学習に取り組む", grow:"{S}の学習に、進んで取り組めるようになってきました"}],
  s1:[{can:"朝や帰りに、相手の目を見て明るくあいさつする", grow:"朝のあいさつを自分からできる日が増えてきました"},
      {can:"名前を呼ばれるとはっきりと返事をし、誰にでも明るくあいさつする", grow:"はっきりとした声で返事ができるようになってきました"},
      {can:"毎朝、自分から元気よくあいさつする", grow:"自分から先にあいさつできる場面が増えてきました"},
@@ -3086,8 +3148,10 @@ function canJoin(a, b, force){
    v1.24では領域（学習系→生活系）ごとにまとめ、領域の中で「できる」→「伸長中」の順にする。
    「課題」は従来どおり所見全体の最後に置く（よさ・進歩を先に伝え、課題と手立てで結ぶ定石のため）。
    同じ段の中では、もとの項目の並び順を保つ。 */
+/* v1.51：学習面の総括（sm0 など）は、学習系の「できる」の先頭に置く（★の並びより前） */
 const order = arr => [
-  ...DOMAIN_ORDER.flatMap(d=>['can','grow'].flatMap(l=>arr.filter(c=>c.lvl===l && domainOf(c)===d))),
+  ...arr.filter(c=>c.lvl==='can' && isSum(c)),
+  ...DOMAIN_ORDER.flatMap(d=>['can','grow'].flatMap(l=>arr.filter(c=>c.lvl===l && domainOf(c)===d && !(l==='can' && isSum(c))))),
   ...arr.filter(c=>c.lvl==='issue'),
 ];
 
@@ -3199,6 +3263,15 @@ function buildText(list, seed){
   let subjConnLeft = 2 - [...firstGrowPos].filter(x=>x>0).length;
   for(let i=0; i<ordered.length; i++){
     const c = ordered[i];
+    // v1.51：学習面の総括。選ばれている総括の項目（order() で先頭に並ぶ）をまとめて1文にする
+    if(c.lvl==='can' && isSum(c)){
+      const sums = [];
+      while(i < ordered.length && ordered[i].lvl==='can' && isSum(ordered[i])) sums.push(ordered[i++]);
+      i--;
+      parts.push(endCan(sumCore(sums, seed), i + seed + altBase(), false));
+      owners.push(sums);
+      continue;
+    }
     if(c.lvl==='issue'){
       // 課題は必ず2文。1文にまとめると65字前後になり読みにくいため。
       // state は「〜場面では、」と場面から始まるので、前に接続語は置かない。
@@ -3290,6 +3363,14 @@ function buildText(list, seed){
   // 断片を単独で組み立てる方式にしないのは、文頭の呼称や「また、」・因果接続の有無が
   // 前後の文に左右され、単独では実際の出力と一致しないため。
   addHeads(parts, owners, seed);   // v1.44：教科名・行事名を文頭に付ける
+  // v1.51：総括の文のすぐ後ろが教科の「できる」の文なら、「特に国語の学習では、」の形でつなぐ
+  if(parts.length > 1 && owners[0].some(isSum)){
+    const nx = owners[1][0];
+    if(nx.lvl==='can' && ITEM_GROUP.get(nx.it.id) && groupKind(ITEM_GROUP.get(nx.it.id))==='subject'
+       && /^[^、。]+の学習では、|^[^、。]+(活動|時間)では、/.test(parts[1])){
+      parts[1] = "特に" + parts[1];
+    }
+  }
   const text = parts.join("");
   return { text, len:[...text].length, parts, owners };
 }
@@ -3323,7 +3404,9 @@ function runAdoption(){
     setOut("この学年の項目がまだ選ばれていません。「項目を選び直す」から選んでください。", true);
     return;
   }
-  const isPri = c => state.pri.has(c.it.id);
+  // v1.51：学習面の総括は1文にまとめるので、どれか1つに★があれば、選ばれている総括はすべて★として扱う
+  const sumPri = chosen.some(c=>isSum(c) && state.pri.has(c.it.id));
+  const isPri = c => state.pri.has(c.it.id) || (sumPri && isSum(c));
   let adopted;
 
   if(state.manual){
@@ -4893,6 +4976,9 @@ function evalMarks(ana, st, optC){
       else if(m === "t") tri.push(k);
     }
   });
+  // v1.51：学習面の総括
+  const sum = evalSummary(ana, st, band);
+  sum.ids.forEach(id=>marks.set(id, 'can'));
   // △は「課題」。課題は所見全体で1件までなので、△がちょうど1つの児童だけ付ける。
   // △が2つ以上ある児童はどれを伝えるかを担任が決めるべきなので、自動では付けない。
   // 対応する観点が2つある項目は、課題の文例（issue）を持つほうを使う。持たなければ選ばない。
@@ -4905,7 +4991,39 @@ function evalMarks(ana, st, optC){
   }else if(tri.length > 1){
     issue = { status:'multi', count:tri.length, label:tri.map(k=>k.label).join('・') };
   }
-  return { band, marks, bad, missing, issue };
+  return { band, marks, bad, missing, issue, sum };
+}
+
+/* v1.51：学習面の総括の判定。1人分の学習の記録から、選ぶ総括の項目を返す。
+   割合は「A・B・C（3・2・1）が入っている欄」のうちのAの数で出す（空欄は数えない）。
+   ・学習全体（成績一覧にある教科の全観点）の SUM_ALL_RATE 以上がA → sm0 だけ
+   ・そうでなければ、主要教科の同じ観点ごとに SUM_KANTEN_RATE 以上がA → smc／sms／smt（いくつでも）
+     主要教科は3年以上が国語・算数・理科・社会、1・2年が国語・算数・生活。
+     4教科のとき、8割以上は4教科ともA（3教科は75％）。 */
+function evalSummary(ana, st, band){
+  const main = sumSubjects(band);
+  let allA = 0, allN = 0;
+  const kA = { c:0, s:0, t:0 }, kN = { c:0, s:0, t:0 };
+  ana.cols.forEach((k,i)=>{
+    if(k.kind !== 'gaku') return;
+    const g = evalABC(st.cells[i]);
+    if(!g || g === "?") return;
+    allN++; if(g === "A") allA++;
+    const subj = SUBJECT_ALIAS[k.subj] || k.subj;
+    if(main.includes(subj)){ kN[k.code]++; if(g === "A") kA[k.code]++; }
+  });
+  const pct = (a, n) => n ? Math.round(a / n * 100) : 0;
+  if(allN >= SUM_ALL_MIN && allA / allN >= SUM_ALL_RATE){
+    return { ids:['sm0'], label:`学習全体 A ${pct(allA, allN)}%` };
+  }
+  const NAME = { c:'知識・技能', s:'思考・判断・表現', t:'態度' };
+  const ids = [], lab = [];
+  ['c','s','t'].forEach(code=>{
+    if(kN[code] >= SUM_KANTEN_MIN && kA[code] / kN[code] >= SUM_KANTEN_RATE){
+      ids.push('sm' + code); lab.push(`${NAME[code]} ${kA[code]}/${kN[code]}`);
+    }
+  });
+  return { ids, label: ids.length ? '主要教科 ' + lab.join('・') : '' };
 }
 
 /* 一覧が対象にしている観点IDの全体（「置き換える」で、いったん外す範囲） */
@@ -4915,6 +5033,7 @@ function evalScopeIds(ana, band){
     if(k.kind === 'gaku'){ const id = subjectItemId(k.subj, k.code, band); if(id) ids.add(id); }
     else k.ids.forEach(id=>ids.add(id));
   });
+  if(ana.cols.some(k=>k.kind === 'gaku')) SUM_IDS.forEach(id=>ids.add(id));   // v1.51：学習面の総括も一覧から決める
   return ids;
 }
 
@@ -4952,10 +5071,11 @@ function evalMergeSel(rec, r, o){
    候補が複数あるときは出席番号で振り分け、学級の全員が同じ観点にならないようにする。 */
 function evalRecommend(sel, band, no){
   const k = Math.max(0, (parseInt(no,10) || 1) - 1);
-  const learn = [], life = [];
+  const learn = [], life = [], sums = [];
   DB.filter(g=>(g.grade||'all')==='all' || g.grade===band).forEach(g=>g.items.forEach(it=>{
     if(sel[it.id] !== 'can' || !itemInBand(it, band)) return;
     const c = { it, lvl:'can' };
+    if(isSum(c)){ sums.push(c); return; }   // v1.51：学習面の総括は別枠
     (domainOf(c)==='learn' ? learn : life).push(c);
   }));
   const pairs = [];
@@ -4982,13 +5102,16 @@ function evalRecommend(sel, band, no){
     const pool = other.length ? other : rest;
     if(pool.length) lifePick.push(pool[k % pool.length]);
   }
-  return { ids:[...L, ...lifePick].map(c=>c.it.id), joinable,
+  // v1.51：学習面の総括があれば、その1件にも★を付ける（ほかの総括も runAdoption で一緒に入る）。
+  // 総括の文は先頭に置かれ、学習面の★の教科の文が「特に〜」で続く。★は最大5件（MAX_PRI）に収まる。
+  const sumPick = sums.slice(0, 1);
+  return { ids:[...sumPick, ...L, ...lifePick].map(c=>c.it.id), joinable, nSum: sums.length,
            learnCat: L.length ? ITEM_GROUP.get(L[0].it.id).cat : "", nLearn:L.length,
            nLife: lifePick.length, life: lifePick.map(c=>c.it.txt).join("／") };
 }
 function evalStarLabel(rc){
   if(!rc.ids.length) return "";
-  const a = rc.nLearn ? `学習${rc.nLearn}件` + (rc.joinable ? `（${rc.learnCat}の2件を1文に）` : '（まとめ不可）') : "学習なし";
+  const a = (rc.nSum ? '総括＋' : '') + (rc.nLearn ? `学習${rc.nLearn}件` + (rc.joinable ? `（${rc.learnCat}の2件を1文に）` : '（まとめ不可）') : "学習なし");
   return a + "／" + (rc.nLife ? `生活${rc.nLife}件：${rc.life}` : "生活なし");
 }
 
@@ -5041,15 +5164,15 @@ function evalRenderPreview(){
 
   let html = '<table><thead><tr><th>番号</th><th>一覧の氏名</th><th>'
     + (o.mode==='create' ? '名前（名簿に表示されます）' : '取り込み先（いまの学級）')
-    + '</th><th>できる</th><th>伸長中</th><th>課題（△）</th>'
+    + '</th><th>できる</th><th>伸長中</th><th>課題（△）</th><th>学習面の総括</th>'
     + (o.star==='on' ? '<th>おすすめ★</th>' : '') + '</tr></thead><tbody>';
-  ana.students.forEach(()=>{ html += '<tr><td class="num"></td><td></td><td></td><td class="cnt can"></td><td class="cnt grow"></td><td class="iss"></td>'
+  ana.students.forEach(()=>{ html += '<tr><td class="num"></td><td></td><td></td><td class="cnt can"></td><td class="cnt grow"></td><td class="iss"></td><td class="sum"></td>'
     + (o.star==='on' ? '<td class="star"></td>' : '') + '</tr>'; });
   html += '</tbody></table>';
   const box = document.getElementById('evalPrev');
   box.innerHTML = html;
 
-  let total = 0, matched = 0, bad = 0, gaiji = 0, multi = 0, noIssue = 0, hasIss = 0, noPair = 0, keepStar = 0;
+  let total = 0, matched = 0, bad = 0, gaiji = 0, multi = 0, noIssue = 0, hasIss = 0, noPair = 0, keepStar = 0, nSum = 0;
   const missing = new Set();
   box.querySelectorAll('tbody tr').forEach((tr,i)=>{
     const st = ana.students[i];
@@ -5090,9 +5213,11 @@ function evalRenderPreview(){
       else if(r.issue.status === 'multi'){ ic.textContent = `△${r.issue.count}件：付けません`; ic.title = r.issue.label; ic.classList.add('dim'); multi++; }
       else { ic.textContent = `${r.issue.label}：文例なし`; ic.classList.add('dim'); noIssue++; }
     }
+    // 学習面の総括（v1.51）
+    if(r.sum && r.sum.ids.length){ tr.children[6].textContent = r.sum.label; nSum++; }
     // おすすめ★（v1.27）
     if(o.star === 'on'){
-      const sc = tr.children[6];
+      const sc = tr.children[7];
       const t = o.mode==='create' ? null : evalTarget(st.no);
       if(o.mode!=='create' && !t){ /* 取り込まない児童 */ }
       else if(t && (t.pri||[]).length){ sc.textContent = '★あり：変えません'; sc.classList.add('dim'); keepStar++; }
@@ -5128,6 +5253,8 @@ function evalRenderPreview(){
     if(noPair) msgs.push(`同じ教科で「できる」が2つそろわない児童が ${noPair}人 います。その児童の学習面の★は1件だけにします。`);
     if(keepStar) msgs.push(`すでに★を付けてある児童が ${keepStar}人 います。その児童の★は変えません。`);
   }
+  if(nSum) msgs.push(`学習面の総括（学習の記録の${Math.round(SUM_ALL_RATE*100)}％以上がA、または主要教科の同じ観点の${Math.round(SUM_KANTEN_RATE*100)}％以上がA）に当たる児童が <b>${nSum}人</b> います。所見の学習面の最初に、学習全体をまとめた文を入れます`
+    + (o.star==='on' ? '（★を付けます）。' : '。'));
   if(gaiji) msgs.push(`外字を含む氏名が ${gaiji}人 います。「名前に使う部分」を「名だけ」にすると避けられる場合があります。`);
   document.getElementById('evalWarn').innerHTML = msgs.join('<br>');
 
@@ -5314,7 +5441,7 @@ function stepOf(scr){
 /* 項目の画面の1ページ＝1つのまとまり。学年共通の5つは1ページずつ、
    教科と行事は数が多いので1ページにまとめ、名前を押すと開く形にする。 */
 const PAGES = [
-  {title:'学習面', lead:'学び方や授業への取り組みの様子です。', test:d=>d.dataset.cat==='学習面'},
+  {title:'学習面', lead:'学び方や授業への取り組みの様子です。「学習面の総括」は、成績一覧で評価の高い児童に自動で選ばれます（手で選ぶこともできます）。', test:d=>d.dataset.cat==='学習面' || d.dataset.cat==='学習面の総括'},
   {title:'生活・行動面', lead:'日々の生活の習慣やきまりを守る様子です。', test:d=>d.dataset.cat==='生活・行動面'},
   {title:'健康・体力面', lead:'運動や健康への気配りの様子です。', test:d=>d.dataset.cat==='健康・体力面'},
   {title:'特別活動・係活動', lead:'当番・係・学級会などでの様子です。', test:d=>d.dataset.cat==='特別活動・係活動'},
