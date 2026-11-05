@@ -327,6 +327,28 @@ details.cat>summary{font-size:15px;}
 .childcount{font-size:14px; color:var(--sub); margin:0 0 4px;}
 #scrDraft .out{white-space:pre-wrap;}
 #scrUse .uselist label{font-size:15px; padding:10px 14px;}
+/* ---- 個別の指導計画の読み取り（SN v1.5） ---- */
+.choice.wide2{grid-column:1 / -1;}
+.kk-card{border:1px solid var(--line); border-radius:10px; padding:10px 14px; margin-top:12px; background:var(--panel);}
+.kk-card.ng{border-color:#d9b3a6;}
+.kk-head{cursor:pointer; font-size:15px;}
+.kk-sub{color:var(--sub); font-size:12px; font-weight:400;}
+.kk-tag{display:inline-block; font-size:11.5px; font-weight:700; padding:0 7px; border-radius:10px; margin-right:6px;
+  background:var(--accent-soft); color:var(--accent); border:1px solid var(--accent);}
+.kk-tag.ok{background:#dff3e3; color:#1b6b34; border-color:#9fd2ac;}
+.kk-tag.warn{background:var(--warn-soft); color:var(--warn); border-color:var(--warn); margin-left:8px;}
+.kk-warn{margin:8px 0 4px; padding-left:1.3em; font-size:13px; color:var(--warn);}
+.kk-tbl{max-height:none;}
+.kk-tbl td{vertical-align:top; font-size:13px;}
+.kk-tbl td.kk-d select{font-family:inherit; font-size:13px; padding:4px; max-width:140px;}
+.kk-tbl td:nth-child(2){min-width:150px;}
+.kk-tbl td:nth-child(3){min-width:150px;}
+.kk-tbl td.kk-ev{min-width:240px;}
+.kk-tbl td.kk-d{width:150px; min-width:150px;}
+.kk-tbl tr.need td{background:#fff6d6;}
+.kk-tbl tr.skip td{opacity:.45;}
+.kk-tbl tr.noev td.kk-ev{background:#faf9f5;}
+.kk-need{background:#fff6d6; border-color:#e5cf7a; color:#5d4a00;}
 </style>
 </head>
 <body>
@@ -345,10 +367,14 @@ details.cat>summary{font-size:15px;}
 
 <!-- ===== スタート ===== -->
 <section class="screen" id="scrStart">
-  <p class="lead">教科等の欄ごとに、項目のようすを「一人でできる／言葉かけがあればできる／一緒に取り組めばできる」から選び、欄ごとの所見文の下書きを作ります。</p>
+  <p class="lead">教科等の欄ごとの所見文の下書きを作ります。個別の指導計画の評価を使うか、項目のようすを「一人でできる／言葉かけがあればできる／一緒に取り組めばできる」から選んで作ります。</p>
   <p class="lead">どちらの方法で所見文を作りますか。</p>
   <div class="bigchoice">
-    <button type="button" class="choice" id="goRoster" data-primary>
+    <button type="button" class="choice wide2" id="goKeikaku" data-primary>
+      <span class="ch-title">個別の指導計画から作る</span>
+      <span class="ch-sub">学級全員分の個別の指導計画（Excel）を読み込み、評価の文をもとに作ります。</span>
+    </button>
+    <button type="button" class="choice" id="goRoster">
       <span class="ch-title">名簿から作る</span>
       <span class="ch-sub">C4thから出した学級名簿を読み込み、出席番号の順に一人ずつ作ります。</span>
     </button>
@@ -429,6 +455,61 @@ details.cat>summary{font-size:15px;}
 </section>
 
 
+
+<!-- ===== 個別の指導計画の読み込み ===== -->
+<section class="screen" id="scrKkIn">
+  <h2 class="scrtitle">個別の指導計画を読み込む</h2>
+  <p class="lead">児童の「個別の指導計画」（様式3-1・Excel）を、ここに入れてください。学級の全員分をまとめて選べます。</p>
+  <div class="field">
+    <label>どの学期の評価を使いますか</label>
+    <div class="seg big" id="kkTermSeg" style="max-width:360px;">
+      <button type="button" data-term="前期">前期</button>
+      <button type="button" data-term="後期">後期</button>
+    </div>
+  </div>
+  <div class="dropzone" id="kkDrop">
+    <p class="dz-main">ここにファイルをドラッグ（何人分でも）</p>
+    <p class="dz-or">または</p>
+    <button type="button" class="btn primary wide" id="kkBtn" data-primary>ファイルを選ぶ</button>
+  </div>
+  <div class="errbox" id="kkErr" style="display:none;"></div>
+  <p class="hint" id="kkFiles" style="margin-top:12px;"></p>
+  <details class="fold">
+    <summary>読み込める計画・読み取りのしかた</summary>
+    <p class="hint">様式3-1「個別の指導計画」の .xlsx です。学年（A7）・氏名（D7）・学期（K4）と、教科ごとの「課題と支援」「評価」を読み取ります。前期と後期が別のシートのときは、選んだ学期のシートを使います。<br>
+    支援の文は、同じブックの「支援の程度表」のシートと照らし合わせ、どの観点の何番の支援かを調べます。<br>
+    氏名が空の計画は、ファイル名の先頭の番号（例：05_〜.xlsx）を出席番号として使います。<br>
+    読み取りはこのパソコンの中だけで行い、どこにも送りません。保存するのは評価の文と、どの欄に入れるかだけです。</p>
+  </details>
+  <div class="navrow">
+    <button type="button" class="btn ghost" data-back>← 戻る</button>
+    <button type="button" class="btn ghost" id="kkClear">選んだファイルを外す</button>
+    <button type="button" class="btn primary" id="kkGoOk" style="display:none;">読み取りの確認へ →</button>
+  </div>
+  <input type="file" id="kkFile" multiple accept=".xlsx,.xlsm,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none;">
+</section>
+
+<!-- ===== 読み取りの確認 ===== -->
+<section class="screen" id="scrKkOk">
+  <h2 class="scrtitle">読み取りの確認</h2>
+  <p class="bignum" id="kkSummary"></p>
+  <p class="hint" id="kkInfo" style="margin:0;"></p>
+  <div class="field" style="margin-top:12px;">
+    <label>使う学期</label>
+    <div class="seg" id="kkTermSeg2" style="max-width:260px;">
+      <button type="button" data-term="前期">前期</button>
+      <button type="button" data-term="後期">後期</button>
+    </div>
+  </div>
+  <div class="errbox kk-need" id="kkNeed" style="display:none;"></div>
+  <p class="hint">児童ごとに、計画の行をどの欄の所見に使うかを確かめてください。<b>欄は、学年に合わせて自動で選んであります。</b>「使わない」にした行は取り込みません。</p>
+  <div id="kkList"></div>
+  <div class="navrow">
+    <button type="button" class="btn ghost" id="kkBack">← 戻る</button>
+    <button type="button" class="btn ghost" id="kkAddMore">ファイルを足す</button>
+    <button type="button" class="btn primary" id="kkApply" data-primary>この内容で取り込む</button>
+  </div>
+</section>
 
 <!-- ===== 名前 ===== -->
 <section class="screen" id="scrName">
@@ -646,9 +727,13 @@ details.cat>summary{font-size:15px;}
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "SN v1.4";
-const APP_DATE    = "2026-11-03";
+const APP_VERSION = "SN v1.5";
+const APP_DATE    = "2026-11-05";
 const APP_HISTORY = [
+  "SN v1.5 「個別の指導計画から作る」を追加（第1段階：計画の読み取りと、読み取りの確認まで）。",
+  "　　　　様式3-1の .xlsx を何人分でも読み込み、学期のシート・学年・氏名・教科ごとの観点・支援・評価を読み取る。",
+  "　　　　支援の文はブックごとの「支援の程度表」と照らし合わせる。教科名から入れる欄を学年に合わせて選び、決まらない行は担任が選ぶ。",
+  "　　　　取り込むと、評価の文を児童ごとに保存する（所見文の生成は次の版）。",
   "SN v1.4 通常版 v1.33 と同じ、1画面ずつ進む画面構成にした（生成の処理は SN v1.3 のまま）。",
   "　　　　学級全員分を持てるようにし、C4thから出した学級名簿（.xlsx／.xls／CSV）を読み込めるようにした。",
   "　　　　1人分は 名前→使う欄→支援の手立て→欄ごとに 項目→文章→その児童のまとめ の順。所見一覧・確認済みの印・全員分コピー・CSVを追加。",
@@ -2293,6 +2378,18 @@ function snBlankSecs(){
   SUBJECTS.forEach(s=>{ o[s.key] = { sel:[], pri:[], scene:"", len:s.defLen, out:"", okOut:"", seed:0 }; });
   return o;
 }
+/* 個別の指導計画から取り込んだ内容（rec.kk）を、保存・読み込みのときに整える。無ければ null */
+function kkNorm(k){
+  if(!k || typeof k !== 'object' || !Array.isArray(k.blocks)) return null;
+  const S = v => String(v==null?'':v);
+  return { file:S(k.file), sheet:S(k.sheet), term:S(k.term), grade:parseInt(k.grade,10)||0, at:S(k.at),
+    blocks: k.blocks.filter(b=>b && SUB_BY_KEY[b.sec]).map(b=>{
+      const u = b.sup || {};
+      const sup = u.k === 'table' ? { k:'table', id: PLAN_BY_ID[u.id] ? u.id : '', obs:S(u.obs), n:parseInt(u.n,10)||0 }
+                : u.k === 'free' ? { k:'free', t:S(u.t) } : { k: u.k === 'item' ? 'item' : 'none' };
+      return { sec:b.sec, subj:S(b.subj), group:S(b.group), obs:S(b.obs), level:S(b.level), content:S(b.content), sup, ev:S(b.ev) };
+    }) };
+}
 const APP = {
   appName: "所見文アシスト（特別支援学級）",
   storeKey: "shoken_sn_class_v1",
@@ -2302,8 +2399,10 @@ const APP = {
   steps: {
     roster: ['名簿の読み込み','確認','使う欄','一人ずつ作る','仕上げ'],
     single: ['名前','使う欄','支援の手立て','欄ごとの所見','まとめ'],
+    keikaku: ['計画の読み込み','読み取りの確認','一人ずつ作る','仕上げ'],
   },
   stepOf(scr, flow){
+    if(flow === 'keikaku') return {scrKkIn:0, scrKkOk:1, scrPlan:2, scrItems:2, scrDraft:2, scrChild:2, scrList:3}[scr];
     return flow === 'roster'
       ? {scrRoster:0, scrRosterOk:1, scrUse:2, scrPlan:3, scrItems:3, scrDraft:3, scrChild:3, scrList:4}[scr]
       : {scrName:0, scrUse:1, scrPlan:2, scrItems:3, scrDraft:3, scrChild:4}[scr];
@@ -2330,12 +2429,12 @@ const APP = {
       t.out = String(f.out||""); t.okOut = String(f.okOut||""); t.seed = Math.max(0, parseInt(f.seed,10) || 0);
     });
     const active = (Array.isArray(s.active) ? s.active : []).filter(k=>SUB_BY_KEY[k]);
-    return { yobi:String(s.yobi||""), memo:String(s.memo||""),
+    return { yobi:String(s.yobi||""), memo:String(s.memo||""), kk: kkNorm(s.kk),
              plan:(Array.isArray(s.plan) ? s.plan : []).filter(id=>PLAN_BY_ID[id]).slice(0, MAX_PLAN),
              active: active.length ? SUBJECTS.map(x=>x.key).filter(k=>active.includes(k)) : DEFAULT_ACTIVE.slice(),
              secs };
   },
-  hasWork(s){ return s.plan.length > 0 || Object.values(s.secs).some(f=>f.sel.length || f.out); },
+  hasWork(s){ return !!s.kk || s.plan.length > 0 || Object.values(s.secs).some(f=>f.sel.length || f.out); },
   capture(rec){
     rec.yobi = state.name; rec.plan = state.plan.slice(); rec.active = state.active.slice();
     rec.memo = document.getElementById('memo').value;
@@ -2781,7 +2880,9 @@ async function xlsxParse(buf){
   const all = (doc, tag) => [...doc.getElementsByTagName(tag)];
   const sst = [];
   const ss = await read('xl/sharedStrings.xml');
-  if(ss) all(xml(ss), 'si').forEach(si=>sst.push(all(si,'t').map(t=>t.textContent).join('')));
+  /* ふりがな（rPh の中の t）は本文に混ぜない */
+  const txt = el => all(el,'t').filter(t=>!t.parentNode || t.parentNode.nodeName !== 'rPh').map(t=>t.textContent).join('');
+  if(ss) all(xml(ss), 'si').forEach(si=>sst.push(txt(si)));
   const wb = xml(await read('xl/workbook.xml') || '<w/>');
   const rels = xml(await read('xl/_rels/workbook.xml.rels') || '<r/>');
   const target = {};
@@ -2802,13 +2903,17 @@ async function xlsxParse(buf){
         const v = c.getElementsByTagName('v')[0];
         let val = '';
         if(tp === 's') val = sst[+(v ? v.textContent : 0)] || '';
-        else if(tp === 'inlineStr') val = all(c,'t').map(x=>x.textContent).join('');
+        else if(tp === 'inlineStr') val = txt(c);
         else val = v ? v.textContent : '';
         row[col >= 0 ? col : row.length] = val;
       });
       rows[r] = row;
     });
-    sheets.push({ name: sh.getAttribute('name') || '', rows: rows.filter(Boolean).map(r=>Array.from(r, v=>v==null?'':v)) });
+    /* rows … 空の行を詰めたもの（名簿の読み取り用）
+       grid … 行番号どおりの並び（grid[0] が1行目。個別の指導計画のようにセルの位置で読むとき用） */
+    const clean = r => Array.from(r, v=>v==null?'':v);
+    sheets.push({ name: sh.getAttribute('name') || '', rows: rows.filter(Boolean).map(clean),
+                  grid: Array.from(rows, r=>r ? clean(r) : []) });
   }
   return sheets;
 }
@@ -2973,7 +3078,7 @@ function normRec(s){
 function loadData(data){
   if(!data || !Array.isArray(data.students) || !data.students.length) return false;
   R.cls = String(data.cls||"");
-  SH.savedFlow = ['roster','single'].includes(data.flow) ? data.flow : '';
+  SH.savedFlow = ['roster','single','keikaku'].includes(data.flow) ? data.flow : '';
   APP.classApply(data.cfg || {});
   R.students = data.students.map(normRec);
   R.curId = R.students.some(s=>s.id===data.curId) ? data.curId : R.students[0].id;
@@ -3680,7 +3785,8 @@ $('tourSkip').addEventListener('click', closeTour);
 /* ---------- 起動 ---------- */
 window.SHELL = { R, SH, save, saveNow, capture, curRec, sorted, show, secsOf, sec, recStatus, secStatus,
                  lenJudge, meter, afterEdit, setSec, switchStudent, startNewChild, openItems, readRoster,
-                 rosterAnalyze, allTsv, recText, EMPTY, setSave, firstSec, startSeq, childStart, regenAll, nextChild };
+                 rosterAnalyze, allTsv, recText, EMPTY, setSave, firstSec, startSeq, childStart, regenAll, nextChild,
+                 readSheets, blankRec, yobiOf, esc, renderStepbar };
 (function boot(){
   let data = null;
   try{ data = JSON.parse(localStorage.getItem(APP.storeKey) || "null"); }catch(e){}
@@ -3700,5 +3806,403 @@ window.SHELL = { R, SH, save, saveNow, capture, curRec, sorted, show, secsOf, se
 })();
 
 </script>
+<script>
+/* ==================================================================
+   個別の指導計画（様式3-1 .xlsx）の読み取り   SN v1.5〜
+   ------------------------------------------------------------------
+   調査メモ：プロジェクトの「所見文アシスト特支_個別の指導計画の読み取り.md」
+   この段階では「読み取り」と「読み取りの確認」まで。所見文の生成はまだ行わない。
+
+   様式のあらまし（行番号は目安。行の追加・削除があるので、番号には頼らない）
+     A7＝学年（「小学１」〜）、D7＝氏名、H7＝性別、K4＝学期（前期／後期）
+     見出しの行（「評価」と「教科」を含む行）の下から、2行で1組のブロックが並ぶ
+       1行目：A区分　B教科名（空なら前の教科の続き）　C大グループ／自立活動の区分　D観点　F学習の程度または学習内容　I評価（I〜K結合）
+       2行目：C支援の文（支援の程度表の文）または自立活動の項目　F学習内容
+
+   読み取りの処理（KK_*）は画面に触らない。テストは sn/test/ の架空の計画で行う。
+   ================================================================== */
+
+/* 文字を比べるための正規化（全角半角・空白・改行の違いをなくす） */
+const kkN = v => String(v==null?'':v).normalize('NFKC').replace(/[\s　]+/g,'');
+/* 画面に出すための整え（前後の空白だけ取る） */
+const kkT = v => String(v==null?'':v).replace(/\r/g,'').trim();
+const kkCol = c => { let s=''; c++; while(c>0){ const m=(c-1)%26; s=String.fromCharCode(65+m)+s; c=Math.floor((c-1)/26); } return s; };
+const KK_COL = { A:0, B:1, C:2, D:3, F:5, H:7, I:8, J:9, K:10 };
+
+/* 学習の程度の選択肢（F列1行目がこのどれかなら「程度」、違えば「学習内容」として読む） */
+const KK_LEVELS = ["当該学年","下学年","特別支援学級","当該学年と下学年","下学年と特別支援学校"];
+/* 大グループ（C列1行目）と、自立活動の区分 */
+const KK_GROUP_RE = /^(学習|運動|認知|感覚|認知・感覚|コミュニケーション|自立活動)$/;
+const KK_JIRITSU_RE = /^[①-⑥]|健康の保持|心理的な安定|人間関係の形成|環境の把握|身体の動き/;
+const KK_ITEM_RE = /^[（(][0-9０-９一二三四五六七八九十]+[)）]/;   // 自立活動の項目「（１）〜」
+
+/* 教科名 → 欄のキー。grade は学年（1〜6）。
+   戻り値 {key, note} … key が '' なら担任が選ぶ。'prev' は直前の教科に含める */
+const KK_SUBJ = [
+  [/^交流及び共同学習|^交流学習|^交流$/, ()=>'prev'],
+  [/^社会・?生活科?$/, g=> g && g<=2 ? 'sk' : 'sh'],
+  [/^国語/, ()=>'ko'], [/^算数/, ()=>'sa'], [/^社会/, ()=>'sh'], [/^理科/, ()=>'ri'],
+  [/^生活単元/, ()=>'se'], [/^生活科?$/, ()=>'sk'],
+  [/^音楽/, ()=>'on'], [/^図画工作|^図工/, ()=>'zu'], [/^体育/, ()=>'ta'], [/^家庭/, ()=>'kt'],
+  [/道徳/, ()=>'do'], [/^外国語/, ()=>'ga'],
+  [/^特別活動|^学級活動/, ()=>'tk'], [/^総合/, ()=>'so'], [/^自立活動/, ()=>'ji'],
+];
+function kkSubjKey(name, grade){
+  const n = kkN(name);
+  if(!n) return { key:'', cands:[] };
+  for(const [re, f] of KK_SUBJ){
+    if(!re.test(n)) continue;
+    /* 「社会・理科・総合…」のように複数の教科を1つのセルにまとめた行は、担任が選ぶ */
+    const parts = n.split(/[・、,，\/／]/).filter(Boolean);
+    if(parts.length >= 2 && !/^社会・?生活科?$/.test(n)){
+      const ks = [...new Set(parts.map(p=>kkSubjKey(p, grade).key).filter(k=>k && k!=='prev'))];
+      if(ks.length >= 2) return { key:'', cands:ks, multi:true };
+    }
+    const key = f(grade);
+    const note = /^外国語(?!活動)/.test(n) ? '外国語活動の欄に入れます' : /^社会・?生活/.test(n) ? (key==='sk'?'1・2年なので生活':'3年以上なので社会') : '';
+    return { key, cands:[], note };
+  }
+  return { key:'', cands:[] };   // 日常生活の指導 など：担任が選ぶ
+}
+
+/* ---------- 支援の程度表 ----------
+   シート名に「支援の程度」を含むシートを読む。
+   A列に程度の番号（1〜）がある行を「程度の行」とし、そのすぐ上の行を観点の見出しとみなす。
+   A列に番号がない表は、観点の名前（PLAN の観点名）の見出しを探し、その下を上から1,2,3…とする。
+   戻り値：Map（正規化した支援の文 → {obs, n}） */
+function kkSupportTable(sheets){
+  const map = new Map();
+  const sh = sheets.find(s=>/支援の程度/.test(kkN(s.name)));
+  if(!sh || !sh.grid) return map;
+  const g = sh.grid;
+  const isNum = v => /^[1-9]$/.test(kkN(v));
+  const lvRows = []; g.forEach((row,r)=>{ if(row && isNum(row[0])) lvRows.push(r); });
+  if(lvRows.length){
+    /* 番号の行のまとまりごとに、すぐ上の行を見出しにする（表が上下に2つあっても読める） */
+    let head = -1, prev = -2;
+    lvRows.forEach(r=>{
+      if(r !== prev + 1) head = r - 1;
+      prev = r;
+      const hd = g[head] || [], row = g[r] || [];
+      for(let c=1; c<row.length; c++){
+        const t = kkN(row[c]); if(!t) continue;
+        const obs = kkT(hd[c]) || kkT((g[head-1]||[])[c]);
+        if(obs && !map.has(t)) map.set(t, { obs, n: +kkN(row[0]) });
+      }
+    });
+  }else{
+    const names = new Set(PLAN.map(p=>kkN(p.name)));
+    g.forEach((row,r)=>(row||[]).forEach((v,c)=>{
+      if(!names.has(kkN(v))) return;
+      let n = 0;
+      for(let rr=r+1; rr<g.length; rr++){
+        const t = kkN((g[rr]||[])[c]); if(!t) continue;
+        if(names.has(t)) break;
+        n++; if(!map.has(t)) map.set(t, { obs:kkT(v), n });
+      }
+    }));
+  }
+  return map;
+}
+const KK_PLAN_KEY = {}; PLAN.forEach(p=>{ KK_PLAN_KEY[kkN(p.name)] = p.key; });
+
+/* ---------- 計画のシートを探す ---------- */
+function kkHeaderRow(g){
+  for(let r=0; r<Math.min(g.length, 30); r++){
+    const t = (g[r]||[]).map(kkN).join('|');
+    if(/評価/.test(t) && /教科|課題/.test(t)) return r;
+  }
+  return -1;
+}
+function kkTermOf(g){
+  const k4 = kkN((g[3]||[])[KK_COL.K]);
+  if(/前期|後期/.test(k4)) return k4.match(/前期|後期/)[0];
+  for(let r=0; r<8; r++) for(const v of (g[r]||[])){ const m = kkN(v).match(/^(前期|後期)$/); if(m) return m[1]; }
+  return '';
+}
+function kkGradeOf(g){
+  const a7 = kkN((g[6]||[])[0]).match(/小学?([1-6])/);
+  if(a7) return +a7[1];
+  for(let r=0; r<9; r++) for(const v of (g[r]||[])){ const m = kkN(v).match(/^小学?([1-6])(年)?$/); if(m) return +m[1]; }
+  return 0;
+}
+function kkNameOf(g){
+  const d7 = kkT((g[6]||[])[KK_COL.D]);
+  if(d7) return d7;
+  /* 「氏名」の見出しの下か右のセル */
+  for(let r=0; r<9; r++){ const row = g[r]||[];
+    for(let c=0; c<row.length; c++) if(kkN(row[c]) === '氏名'){
+      const below = kkT((g[r+1]||[])[c]); if(below) return below;
+      for(let cc=c+1; cc<c+4; cc++){ const v = kkT(row[cc]); if(v) return v; }
+    }
+  }
+  return '';
+}
+
+/* ---------- 1枚のシートのブロックを読む ---------- */
+function kkBlocks(g, head, grade, table){
+  const blocks = [], warns = [];
+  const cell = (r,c) => kkT((g[r]||[])[c]);
+  const isGroup = t => KK_GROUP_RE.test(kkN(t)) || KK_JIRITSU_RE.test(kkN(t));
+  const isStart = r => !!cell(r, KK_COL.B) || isGroup(cell(r, KK_COL.C));
+  let kubun = '', subj = '', cur = { key:'', cands:[] }, prevKey = '';
+  for(let r = head+1; r < g.length; r++){
+    const row = g[r] || [];
+    /* 評価の欄（I〜K）より右に文がある：所見には使わず知らせる */
+    for(let c = KK_COL.K+1; c < row.length; c++){
+      const v = kkT(row[c]); if(v && !/^[0-9.\/\-:年月日]+$/.test(kkN(v))) warns.push(`${kkCol(c)}${r+1} に、評価の欄の外の文があります（読み飛ばしました）：「${v.slice(0,30)}」`);
+    }
+    if(!row.slice(0, KK_COL.K+1).some(v=>kkT(v))) continue;
+    if(!isStart(r)){
+      const t = row.slice(0, KK_COL.K+1).map(kkT).filter(Boolean).join(' ');
+      warns.push(`${r+1}行目を読み取れませんでした（ブロックの1行目ではない行）：「${t.slice(0,30)}」`);
+      continue;
+    }
+    const r2 = (r+1 < g.length && !isStart(r+1)) ? r+1 : -1;
+    if(cell(r, KK_COL.A)) kubun = cell(r, KK_COL.A);
+    const b = cell(r, KK_COL.B);
+    if(b){
+      const k = kkSubjKey(b, grade);
+      if(k.key === 'prev'){ cur = { key: prevKey, cands:[], note:'交流及び共同学習：前の教科に含めます', kouryu:true }; }
+      else{ subj = b; cur = k; }
+    }
+    const c1 = cell(r, KK_COL.C), c2 = r2>=0 ? cell(r2, KK_COL.C) : '';
+    const f1 = cell(r, KK_COL.F), f2 = r2>=0 ? cell(r2, KK_COL.F) : '';
+    const isLv = KK_LEVELS.map(kkN).includes(kkN(f1));
+    /* 評価：I列（結合の先頭）。I が空なら J・K、2行目も見る */
+    let ev = '';
+    for(const rr of [r, r2]) if(rr>=0) for(const c of [KK_COL.I, KK_COL.J, KK_COL.K]){ const v = cell(rr,c); if(v && !ev) ev = v; }
+    /* 支援の文 */
+    let sup = { k:'none', t:'' };
+    if(c2){
+      const hit = table.get(kkN(c2));
+      if(hit){
+        const key = KK_PLAN_KEY[kkN(hit.obs)];
+        sup = { k:'table', obs:hit.obs, n:hit.n, id: key && PLAN_BY_ID[key+hit.n] ? key+hit.n : '', t:c2 };
+      }else if(KK_ITEM_RE.test(kkN(c2))) sup = { k:'item', t:c2 };
+      else sup = { k:'free', t:c2 };
+    }
+    const jiritsu = cur.key === 'ji' || KK_JIRITSU_RE.test(kkN(c1));
+    blocks.push({
+      row: r+1, kubun, subj: cur.kouryu ? b : subj,
+      key: cur.key, cands: cur.cands.slice(), multi: !!cur.multi, note: cur.note || '',
+      group: jiritsu ? '' : c1, obs: jiritsu ? (cell(r, KK_COL.D) || c1) : cell(r, KK_COL.D),
+      level: isLv ? f1 : '', content: [isLv ? '' : f1, f2].filter(Boolean).join('／'),
+      sup, ev,
+    });
+    if(cur.key) prevKey = cur.key;
+    if(r2 >= 0) r = r2;
+  }
+  return { blocks, warns };
+}
+
+/* ---------- 1つのファイル（ブック）を読む ----------
+   term … '前期'／'後期'。戻り値は確認画面にそのまま出す形 */
+function kkAnalyze(fileName, sheets, term){
+  const res = { file:fileName, ok:false, err:'', warns:[], blocks:[] };
+  const table = kkSupportTable(sheets);
+  const cands = sheets.filter(s=>s.grid && !/支援の程度|大グループ|選択/.test(kkN(s.name)))
+    .map(s=>{ const h = kkHeaderRow(s.grid); return h < 0 ? null : { s, h, term: kkTermOf(s.grid) }; })
+    .filter(Boolean);
+  if(!cands.length){ res.err = '個別の指導計画のシートが見つかりませんでした（「評価」「教科」の見出しの行がありません）。'; return res; }
+  cands.forEach(c=>{ c.grade = kkGradeOf(c.s.grid); c.read = kkBlocks(c.s.grid, c.h, c.grade, table); c.nev = c.read.blocks.filter(b=>b.ev).length; });
+  /* 学期が合い、評価が入っているシートを選ぶ（評価の数が多いほう） */
+  const score = c => (c.term === term ? 2 : 0) + (c.nev ? 1 : 0);
+  cands.sort((a,b)=> score(b)-score(a) || b.nev-a.nev);
+  const c = cands[0];
+  Object.assign(res, { ok:true, sheet:c.s.name, term:c.term, grade:c.grade, name:kkNameOf(c.s.grid),
+                       blocks:c.read.blocks, warns:c.read.warns.slice(), tableSize:table.size });
+  if(c.term && c.term !== term) res.warns.unshift(`「${term}」のシートがないため、「${c.term}」のシート（${c.s.name}）を読みました。`);
+  if(!c.term) res.warns.unshift('学期（K4）が読み取れませんでした。');
+  if(!c.nev) res.warns.unshift(`評価が1つも入っていません（シート「${c.s.name}」）。`);
+  if(!c.grade) res.warns.unshift('学年（A7）が読み取れませんでした。社会・生活科などの振り分けは、担任が確かめてください。');
+  if(!table.size) res.warns.push('「支援の程度表」のシートが見つからないため、支援の文はすべて自由記述として扱います。');
+  const m = fileName.match(/^\s*([0-9０-９]{1,2})/);
+  res.noFromFile = m ? String(+kkN(m[1])) : '';
+  if(!res.name) res.warns.unshift(res.noFromFile
+    ? `氏名（D7）が空です。ファイル名の先頭の番号から、出席番号 ${res.noFromFile} として扱います。`
+    : '氏名（D7）が空で、ファイル名にも番号がありません。取り込んだあと、所見一覧で名前を入れてください。');
+  return res;
+}
+</script>
+<script>
+/* ==================================================================
+   個別の指導計画から作る：読み込み（scrKkIn）と読み取りの確認（scrKkOk）
+   取り込んだ内容は、児童ごとに rec.kk に入れる（評価の文と、欄の振り分けだけ）。
+   支援の程度表の文そのものは保存しない（一致した観点と番号だけ持つ）。
+   ================================================================== */
+(function(){
+const $ = id => document.getElementById(id);
+const S = window.SHELL, esc = S.esc;
+const KKS = { files:[], term:'', res:[] };   // files … [{name, sheets}]。読み直さずに学期を切り替えられるよう、読んだシートを持っておく
+/* 学期の初期値：前期の通知表は10月ごろなので、10月までは前期 */
+const defTerm = () => { const m = new Date().getMonth()+1; return (m >= 4 && m <= 10) ? '前期' : '後期'; };
+const SEC_OPTS = () => SUBJECTS.map(s=>`<option value="${s.key}">${esc(s.name)}</option>`).join('');
+
+function kkErr(html){ const el = $('kkErr'); el.innerHTML = html; el.style.display = html ? 'block' : 'none'; }
+function analyzeAll(){
+  KKS.res = KKS.files.map(f=>kkAnalyze(f.name, f.sheets, KKS.term));
+  /* 行き先が決まっていない行は、担任が選ぶまで空のまま（dest=''） */
+  KKS.res.forEach(r=>r.blocks.forEach(b=>{ b.dest = b.key || ''; }));
+}
+async function readFiles(list){
+  kkErr('');
+  const files = [...list].filter(f=>f && f.name);
+  if(!files.length) return;
+  const bad = [];
+  for(const f of files){
+    if(KKS.files.some(x=>x.name === f.name)) KKS.files = KKS.files.filter(x=>x.name !== f.name);   // 同じ名前は入れ替え
+    try{
+      const sheets = await S.readSheets(f);
+      if(!sheets.some(s=>s.grid)) throw new Error('not xlsx');
+      KKS.files.push({ name:f.name, sheets });
+    }catch(e){ bad.push(f.name); }
+  }
+  KKS.files.sort((a,b)=>a.name.localeCompare(b.name, 'ja', {numeric:true}));
+  analyzeAll();
+  if(bad.length) kkErr(`<b>読み込めなかったファイルがあります。</b><br>${bad.map(esc).join('<br>')}<br>個別の指導計画は、Excelの .xlsx 形式のまま選んでください（.xls の場合は、Excelで .xlsx に保存し直してください）。`);
+  renderIn();
+  if(KKS.files.length && !bad.length) S.show('scrKkOk');
+}
+
+/* ---------- 読み込み画面 ---------- */
+function renderTermSeg(id){
+  document.querySelectorAll(`#${id} button`).forEach(b=>b.classList.toggle('on', b.dataset.term === KKS.term));
+}
+function renderIn(){
+  if(!KKS.term) KKS.term = defTerm();
+  renderTermSeg('kkTermSeg');
+  $('kkFiles').innerHTML = KKS.files.length
+    ? '<b>読み込んだファイル（' + KKS.files.length + '）</b><br>' + KKS.files.map(f=>'・' + esc(f.name)).join('<br>')
+    : '';
+  $('kkGoOk').style.display = KKS.files.length ? '' : 'none';
+}
+APP.render.scrKkIn = renderIn;
+
+/* ---------- 確認画面 ---------- */
+const SUP_LABEL = b => {
+  const s = b.sup;
+  if(s.k === 'table') return `<span class="kk-tag ok">程度表と一致</span>${esc(s.obs)}・${s.n}` + (s.id ? '' : '<br><span class="kk-sub">（この観点の手立ての言い回しはまだありません）</span>');
+  if(s.k === 'item')  return '<span class="kk-tag">自立活動の項目</span><span class="kk-sub">具体的な手立てなし</span>';
+  if(s.k === 'free')  return `<span class="kk-tag warn">自由記述</span><span class="kk-sub">${esc(s.t.slice(0,40))}${s.t.length>40?'…':''}</span>`;
+  return '<span class="kk-sub">—</span>';
+};
+function unresolved(){ return KKS.res.reduce((n,r)=>n + (r.ok ? r.blocks.filter(b=>!b.dest).length : 0), 0); }
+function renderOk(){
+  if(!KKS.files.length){ S.show('scrKkIn'); return; }
+  renderTermSeg('kkTermSeg2');
+  const ok = KKS.res.filter(r=>r.ok);
+  const nev = ok.reduce((n,r)=>n + r.blocks.filter(b=>b.ev).length, 0);
+  $('kkSummary').textContent = `${ok.length}人分の計画を読み取りました（${KKS.term}）`;
+  $('kkInfo').textContent = `評価の文が入っている欄：${nev}` + (KKS.res.length > ok.length ? `　／　読み取れなかったファイル：${KKS.res.length - ok.length}` : '');
+  const un = unresolved();
+  $('kkNeed').innerHTML = un ? `<b>入れる欄を選んでいない行が ${un}つ あります。</b>黄色の行で、欄を選んでください（所見に使わない行は「使わない」）。` : '';
+  $('kkNeed').style.display = un ? '' : 'none';
+  $('kkList').innerHTML = KKS.res.map((r, i)=>{
+    if(!r.ok) return `<div class="kk-card ng"><div class="kk-head"><b>${esc(r.file)}</b></div><div class="errbox" style="margin-top:6px;">${esc(r.err)}</div></div>`;
+    const who = `${r.noFromFile && !r.name ? r.noFromFile + '番　' : ''}${esc(r.name || '（氏名なし）')}`;
+    const nUn = r.blocks.filter(b=>!b.dest).length;
+    const rows = r.blocks.map((b, j)=>{
+      const cls = !b.dest ? 'need' : b.dest === 'skip' ? 'skip' : !b.ev ? 'noev' : '';
+      const sel = `<select class="kk-dest" data-f="${i}" data-b="${j}"><option value="">選んでください</option>${SEC_OPTS()}<option value="skip">使わない</option></select>`;
+      const hint = b.multi ? `<div class="kk-sub">複数の教科：${b.cands.map(k=>esc(SUB_BY_KEY[k].name)).join('・')}</div>` : (b.note ? `<div class="kk-sub">${esc(b.note)}</div>` : '');
+      const obs = [b.group, b.obs].filter(Boolean).map(esc).join('／') + (b.level ? `<div class="kk-sub">${esc(b.level)}</div>` : '');
+      const ev = b.ev ? esc(b.ev).replace(/\n/g,'<br>') : '<span class="kk-sub">評価なし（この欄は項目を選んで作ります）</span>';
+      return `<tr class="${cls}"><td class="kk-d">${sel}${hint}</td><td><b>${esc(b.subj || '—')}</b><div class="kk-sub">${b.row}行目</div><div>${obs}</div></td><td>${SUP_LABEL(b)}</td><td class="kk-ev">${ev}</td></tr>`;
+    }).join('');
+    const warns = r.warns.length ? `<ul class="kk-warn">${r.warns.map(w=>`<li>${esc(w)}</li>`).join('')}</ul>` : '';
+    return `<details class="kk-card" ${nUn || r.warns.length ? 'open' : ''}>
+      <summary class="kk-head"><b>${who}</b>　<span class="kk-sub">${r.grade ? r.grade + '年　' : ''}${esc(r.file)}（シート「${esc(r.sheet)}」）</span>${nUn ? `<span class="kk-tag warn">未選択 ${nUn}</span>` : ''}</summary>
+      ${warns}
+      <div class="csvprev kk-tbl"><table><thead><tr><th>入れる欄</th><th>計画の教科・観点</th><th>支援</th><th>評価の文</th></tr></thead><tbody>${rows}</tbody></table></div>
+    </details>`;
+  }).join('');
+  document.querySelectorAll('#kkList select.kk-dest').forEach(s=>{ s.value = KKS.res[+s.dataset.f].blocks[+s.dataset.b].dest; });
+  $('kkApply').disabled = !ok.length;
+}
+APP.render.scrKkOk = renderOk;
+
+/* 欄を選んだら、同じ教科名で欄が決まっていない後ろの行にも同じ欄を入れる */
+document.addEventListener('change', e=>{
+  const s = e.target.closest && e.target.closest('#kkList select.kk-dest'); if(!s) return;
+  const r = KKS.res[+s.dataset.f], j = +s.dataset.b, b = r.blocks[j];
+  const wasEmpty = !b.dest;
+  b.dest = s.value;
+  if(wasEmpty) for(let k=j+1; k<r.blocks.length && r.blocks[k].subj === b.subj && !r.blocks[k].dest; k++) r.blocks[k].dest = s.value;
+  const y = window.scrollY; renderOk(); window.scrollTo(0, y);
+});
+
+/* ---------- 取り込み ----------
+   氏名（敬称・空白を除いて同じ）か、氏名がないときは出席番号で、いまの学級の児童に重ねる。
+   見つからなければ児童を足す。所見文がすでにある欄はそのまま残る（生成は次の段階）。 */
+const bare = s => kkN(s).replace(/(さん|くん|君|ちゃん)$/,'');
+function toKk(r){
+  return { file:r.file, sheet:r.sheet, term:r.term || KKS.term, grade:r.grade, at:new Date().toISOString(),
+    blocks: r.blocks.filter(b=>b.dest && b.dest !== 'skip').map(b=>({
+      sec:b.dest, subj:b.subj, group:b.group, obs:b.obs, level:b.level, content:b.content,
+      sup: b.sup.k === 'table' ? { k:'table', id:b.sup.id, obs:b.sup.obs, n:b.sup.n } : b.sup.k === 'free' ? { k:'free', t:b.sup.t } : { k:b.sup.k },
+      ev:b.ev })) };
+}
+function applyKk(){
+  const ok = KKS.res.filter(r=>r.ok);
+  const un = unresolved();
+  if(un){ alert(`入れる欄を選んでいない行が ${un}つ あります。\n黄色の行で欄を選んでください（所見に使わない行は「使わない」）。`); return; }
+  S.capture();
+  const R = S.R;
+  if(R.students.length === 1 && !R.students[0].name && !APP.hasWork(R.students[0])) R.students = [];   // 空の1人目は使わない
+  let added = 0, merged = 0;
+  const used = new Set();
+  ok.forEach(r=>{
+    let rec = r.name ? R.students.find(s=>!used.has(s.id) && s.name && bare(s.name) === bare(r.name)) : null;
+    if(!rec && !r.name && r.noFromFile) rec = R.students.find(s=>!used.has(s.id) && s.no === r.noFromFile);
+    if(rec) merged++;
+    else{
+      rec = S.blankRec(); added++;
+      const nums = R.students.map(s=>parseInt(s.no,10)).filter(n=>!isNaN(n));
+      rec.no = r.noFromFile && !R.students.some(s=>s.no === r.noFromFile) ? r.noFromFile : String(nums.length ? Math.max(...nums)+1 : 1);
+      rec.name = r.name ? S.yobiOf(r.name, 'full', 'さん') : '';
+      R.students.push(rec);
+    }
+    used.add(rec.id);
+    rec.kk = toKk(r);
+    /* 使う欄：計画にある欄＋「行動のようす」「学校から」（この2つは計画にないので項目を選んで作る） */
+    const ks = new Set(rec.kk.blocks.map(b=>b.sec).concat(['gy','gk']));
+    rec.active = SUBJECTS.map(s=>s.key).filter(k=>ks.has(k));
+  });
+  R.curId = S.sorted()[0].id;
+  S.SH.sec = S.secsOf(S.curRec())[0] || '';
+  APP.apply(S.curRec(), S.SH.sec);
+  S.saveNow();
+  S.setSave(`個別の指導計画から${ok.length}人分を取り込みました`, true);
+  S.SH.flow = 'keikaku'; S.SH.mode = 'seq';
+  KKS.files = []; KKS.res = [];
+  S.SH.banner = `個別の指導計画から ${ok.length}人分 を取り込みました（新しく足した児童 ${added}人・いまの児童に重ねた ${merged}人）。`
+    + '評価の文から所見の下書きを作る機能は、次の版で追加します。';
+  S.show('scrList');
+}
+
+/* ---------- つなぎこみ ---------- */
+$('goKeikaku').addEventListener('click', ()=>{ S.SH.flow = 'keikaku'; S.SH.mode = 'seq'; kkErr(''); S.show('scrKkIn'); });
+$('kkBtn').addEventListener('click', ()=>$('kkFile').click());
+$('kkFile').addEventListener('change', e=>{ const fs = [...e.target.files]; e.target.value = ''; readFiles(fs); });
+(function(){
+  const dz = $('kkDrop');
+  ['dragenter','dragover'].forEach(t=>dz.addEventListener(t, e=>{ e.preventDefault(); dz.classList.add('over'); }));
+  ['dragleave','drop'].forEach(t=>dz.addEventListener(t, ()=>dz.classList.remove('over')));
+  dz.addEventListener('drop', e=>{ e.preventDefault(); if(e.dataTransfer) readFiles(e.dataTransfer.files); });
+})();
+['kkTermSeg','kkTermSeg2'].forEach(id=>document.querySelectorAll(`#${id} button`).forEach(b=>b.addEventListener('click', ()=>{
+  KKS.term = b.dataset.term; analyzeAll();
+  if(S.SH.scr === 'scrKkOk'){ const y = window.scrollY; renderOk(); window.scrollTo(0, y); } else renderIn();
+})));
+$('kkGoOk').addEventListener('click', ()=>S.show('scrKkOk'));
+$('kkClear').addEventListener('click', ()=>{ KKS.files = []; KKS.res = []; kkErr(''); renderIn(); });
+$('kkAddMore').addEventListener('click', ()=>$('kkFile').click());
+$('kkBack').addEventListener('click', ()=>S.show('scrKkIn'));
+$('kkApply').addEventListener('click', applyKk);
+window.KK_DEBUG = KKS;   // 動作確認用（コンソールから読み取り結果を見る）
+})();
+</script>
+
 </body>
 </html>
