@@ -328,7 +328,6 @@ details.cat>summary{font-size:15px;}
 #scrDraft .out{white-space:pre-wrap;}
 #scrUse .uselist label{font-size:15px; padding:10px 14px;}
 /* ---- 個別の指導計画の読み取り（SN v1.5） ---- */
-.choice.wide2{grid-column:1 / -1;}
 .kk-card{border:1px solid var(--line); border-radius:10px; padding:10px 14px; margin-top:12px; background:var(--panel);}
 .kk-card.ng{border-color:#d9b3a6;}
 .kk-head{cursor:pointer; font-size:15px;}
@@ -370,13 +369,9 @@ details.cat>summary{font-size:15px;}
   <p class="lead">教科等の欄ごとの所見文の下書きを作ります。個別の指導計画の評価を使うか、項目のようすを「一人でできる／言葉かけがあればできる／一緒に取り組めばできる」から選んで作ります。</p>
   <p class="lead">どちらの方法で所見文を作りますか。</p>
   <div class="bigchoice">
-    <button type="button" class="choice wide2" id="goKeikaku" data-primary>
+    <button type="button" class="choice" id="goKeikaku" data-primary>
       <span class="ch-title">個別の指導計画から作る</span>
-      <span class="ch-sub">学級全員分の個別の指導計画（Excel）を読み込み、評価の文をもとに作ります。</span>
-    </button>
-    <button type="button" class="choice" id="goRoster">
-      <span class="ch-title">名簿から作る</span>
-      <span class="ch-sub">C4thから出した学級名簿を読み込み、出席番号の順に一人ずつ作ります。</span>
+      <span class="ch-sub">学級全員分の個別の指導計画（Excel）を読み込み、氏名と評価の文を読み取って作ります。</span>
     </button>
     <button type="button" class="choice" id="goSingle">
       <span class="ch-title">一人ずつ作る</span>
@@ -730,7 +725,7 @@ details.cat>summary{font-size:15px;}
 const APP_VERSION = "SN v1.5";
 const APP_DATE    = "2026-11-05";
 const APP_HISTORY = [
-  "SN v1.5 「個別の指導計画から作る」を追加（第1段階：計画の読み取りと、読み取りの確認まで）。",
+  "SN v1.5 「個別の指導計画から作る」を追加（第1段階：計画の読み取りと、読み取りの確認まで）。はじめの画面の「名簿から作る」はこれに置き換えた。",
   "　　　　様式3-1の .xlsx を何人分でも読み込み、学期のシート・学年・氏名・教科ごとの観点・支援・評価を読み取る。",
   "　　　　支援の文はブックごとの「支援の程度表」と照らし合わせる。教科名から入れる欄を学年に合わせて選び、決まらない行は担任が選ぶ。",
   "　　　　取り込むと、評価の文を児童ごとに保存する（所見文の生成は次の版）。",
@@ -2513,7 +2508,7 @@ const APP = {
     return { students:[rec], cfg:{ variant:old.variant, join:old.join, closer:old.closer } };
   },
   tour: [
-    ['2つの作り方があります', '<p><b>名簿から作る</b>：C4thから出した学級名簿を読み込み、出席番号の順に一人ずつ作ります。</p><p><b>一人ずつ作る</b>：名前を入れて、一人分ずつ作ります。</p>'],
+    ['2つの作り方があります', '<p><b>個別の指導計画から作る</b>：学級全員分の個別の指導計画（Excel）を読み込み、氏名と評価の文を読み取って作ります。</p><p><b>一人ずつ作る</b>：名前を入れて、一人分ずつ作ります。</p>'],
     ['1画面ずつ進みます', '<p>使う欄と支援の手立てを選んだら、欄ごとに「項目を選ぶ→文章を確かめる」を順に進み、最後にその児童の全部の欄をまとめて見ます。</p><p>「← 戻る」やブラウザの戻るボタンで1つ前に戻れます。</p>'],
     ['保存と確認', '<p>入力は自動で保存されます。途中で閉じても「続きから」で再開できます。</p><p>下書きは定型文の組み合わせです。<b>その子自身の伸びを捉える個人内評価になるよう、必ず担任が確かめてから通知表に転記してください。</b></p>'],
   ],
@@ -3718,7 +3713,7 @@ function showTour(){ tourAt = 0; renderTour(); $('tourModal').style.display = 'f
 function closeTour(){ $('tourModal').style.display = 'none'; try{ localStorage.setItem(TOUR_KEY,'1'); }catch(e){} }
 
 /* ---------- つなぎこみ ---------- */
-$('goRoster').addEventListener('click', ()=>{ SH.flow = 'roster'; SH.mode = 'seq'; rosterErr(''); show('scrRoster'); });
+if($('goRoster')) $('goRoster').addEventListener('click', ()=>{ SH.flow = 'roster'; SH.mode = 'seq'; rosterErr(''); show('scrRoster'); });
 $('goSingle').addEventListener('click', ()=>{ SH.flow = 'single'; startNewChild('new', true); });
 $('goResume').addEventListener('click', ()=>{
   SH.flow = SH.savedFlow || SH.flow || 'single';
