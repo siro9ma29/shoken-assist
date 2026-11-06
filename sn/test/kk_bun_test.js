@@ -8,7 +8,7 @@ const core = html.slice(html.indexOf('/* ===TEXT-CORE-START==='), html.indexOf('
 const kkStart = html.indexOf('   個別の指導計画（様式3-1 .xlsx）の読み取り');
 const kk = html.slice(html.lastIndexOf('/* ====', kkStart), html.indexOf('</script>', kkStart));
 const ctx = {}; vm.createContext(ctx);
-vm.runInContext(core + '\n' + kk + '\nthis.API = { kkPutPhrase, kkSplit, kkKind, kkPart, kkPolite, kkFix, kkSentsOf, kkCompose, kkHas, kkPending, kkResolve, kkResetPick, kkNameKey, kkMatch, kkDupTo, kkKeepSecs, kkRedoPlan, SUB_BY_KEY };', ctx);
+vm.runInContext(core + '\n' + kk + '\nthis.API = { kkPutPhrase, kkSplit, kkKind, kkPart, kkPolite, kkFix, kkSentsOf, kkCompose, kkHas, kkPending, kkResolve, kkResetPick, kkNameKey, kkMatch, kkDupTo, kkKeepSecs, kkRedoPlan, kkSubjKey, SUB_BY_KEY };', ctx);
 const A = ctx.API;
 
 let ng = 0, n = 0;
@@ -205,6 +205,14 @@ eq(A.kkNameKey('髙橋　一郎さん'), '高橋一郎', '照合の名前：敬�
   A.kkRedoPlan(rec2, { blocks:[ { sec:'ko', ev:'国語。' }, { sec:'sa', ev:'算数。' } ], pick:{} }, (rc, k)=>'新:' + k);
   eq(rec2.secs.ko.out + '|' + rec2.secs.sa.out, '先に書いた文|新:sa', 'はじめての取り込みは、文章のある欄を残す');
 }
+
+
+/* 外国語・外国語活動の振り分け（SN v1.11〜） */
+[
+  ['外国語', 6, 'gg'], ['外国語', 5, 'gg'], ['外国語', 4, 'ga'], ['外国語', 0, 'gg'],
+  ['外国語活動', 3, 'ga'], ['外国語活動', 5, 'gg'], ['外国語活動', 0, 'ga'],
+].forEach(([nm, g, want])=>eq(A.kkSubjKey(nm, g).key, want, `欄の振り分け：${nm}（${g}年）`));
+eq(!!A.SUB_BY_KEY.gg && A.SUB_BY_KEY.gg.name, '外国語', '外国語の欄がある');
 
 console.log(`${n - ng} / ${n} OK`);
 process.exit(ng ? 1 : 0);
