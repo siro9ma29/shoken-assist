@@ -835,9 +835,10 @@ details.cat>summary{font-size:15px;}
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "SN v1.17";
+const APP_VERSION = "SN v1.18";
 const APP_DATE    = "2026-11-07";
 const APP_HISTORY = [
+  "SN v1.18 「評価の文から選ぶ」の「この欄をおすすめの選び方に戻す」を「この欄のチェックを読み込んだときに戻す」にし、確認の文で何が戻るか（使う文・使わない文・要確認の文）と何が消えるかを書いた。",
   "SN v1.17 「評価の文から選ぶ」を見やすくした（教科のまとまりを枠と見出しの帯で分け、各文に「所見」「元の文」の札を付け、元の文は灰色の帯に。使う文は左に青い線、外した文・使わない文は灰色の背景）。",
   "SN v1.16 過去の個別の指導計画（令和3〜7年度・15人分）の評価の文から、項目を23件足し、印の見分けの語（KW）を足した。",
   "　　　　（促音・拗音／書き写す／物語の内容／パズル／カレンダー／手遊び歌／発表会／用具を安全に／見立て／縄跳び／水泳・スケート／集合・整列／",
@@ -868,7 +869,7 @@ const APP_HISTORY = [
   "　　　　自動で見分け、名簿の出席番号・氏名で児童を足す。名簿にいて計画がない児童も足せる。読み込み直しでは、",
   "　　　　手で直した欄・OKを押した欄を残し、ほかの下書きを新しい評価の文で作り直す。",
   "SN v1.8 文章の手直し。文章の画面に「文章を手で直す」を追加。直した文章は「✎ 手で直した文章です」の印が付き、",
-  "　　　　項目・文のチェック・呼び方・字数を変えても作り直さない。チェックの変更・「別の言い方にする」・「おすすめの選び方に戻す」では",
+  "　　　　項目・文のチェック・呼び方・字数を変えても作り直さない。チェックの変更・「別の言い方にする」・「チェックを読み込んだときに戻す」では",
   "　　　　「手直しを消して作り直しますか」と聞く（キャンセルなら文章はそのまま）。「手直しを消して作り直す」でいまの選び方から作り直す。",
   "　　　　字数の知らせを、評価の文から作る欄では「下の一覧で使う文を足す／減らす」、手で直した欄では足す・減らすを言わない形にした。",
   "SN v1.7 一人ずつの確認画面（第3段階）。文章の画面の下に「評価の文から選ぶ」の一覧を追加。",
@@ -2772,7 +2773,7 @@ function kkShowNote(r, nItem){
 /* ---------- 文章の手直し（SN v1.8〜） ----------
    「文章を手で直す」で、文章を直接書き換えられる。「この文章にする」で、その欄の文章（out）を置き換え、
    hand（手直しあり）の印を付ける。hand の欄は、項目・チェック・呼び方・字数などを変えても文章を作り直さない。
-     ・チェックの変更／「別の言い方にする」／「おすすめの選び方に戻す」では、「手直しを消して作り直しますか」と聞く
+     ・チェックの変更／「別の言い方にする」／「チェックを読み込んだときに戻す」では、「手直しを消して作り直しますか」と聞く
        （「キャンセル」なら文章はそのまま。チェックの変更は保存される）
      ・「手直しを消して作り直す」で、いまの選び方から作り直す
    データ：rec.secs[欄].hand（true／false）。元に戻す・バックアップにも入る。 */
@@ -2969,8 +2970,8 @@ function kkRenderPick(r){
     html += `<div class="kkblk"><div class="kkbh">${title}</div>${rows.map(kkRowHtml).join('')}</div>`;
   });
   if(mode === 'chk' && !chkAll) html += '<p class="hint">この欄には要確認の文はありません。</p>';
-  html += `<div class="kkfoot"><span>${mode === 'chk' && hidden ? `ほかの ${hidden}文 は、おすすめの選び方のままです（「すべての文」で見られます）。` : ''}</span>`
-    + `<button type="button" class="linkbtn" id="kkReset">この欄をおすすめの選び方に戻す</button></div>`;
+  html += `<div class="kkfoot"><span>${mode === 'chk' && hidden ? `要確認の印のないほかの ${hidden}文 は、「すべての文」で見られます。` : ''}</span>`
+    + `<button type="button" class="linkbtn" id="kkReset" title="この欄で変えたチェックと「このままでよい」を取り消します">この欄のチェックを読み込んだときに戻す</button></div>`;
   box.innerHTML = html; box.style.display = 'block';
 }
 /* 一覧の操作。チェック・「このままでよい」は rec.kk.pick に書いて、文章を作り直す（元に戻すも効く） */
@@ -2994,7 +2995,9 @@ document.getElementById('kkPick').addEventListener('click', e=>{
   if(v){ kkView.mode = v.dataset.view; SHELL.afterEdit(); return; }
   if(e.target.closest('#kkReset')){
     const hd = cur().hand ? '\n手で直した文章も消えて、作り直します。' : '';
-    if(!confirm('この欄で選んだ文をすべて取り消して、おすすめの選び方に戻します。' + hd + 'よろしいですか。')) return;
+    if(!confirm('この欄で変えたチェックと「このままでよい」をすべて取り消して、計画を読み込んだときのチェックに戻します。\n'
+      + '・できたこと・様子の文 → 使う\n・教師の手立て・課題の文、健康や家庭に関わる文 → 使わない\n・要確認の文 → もう一度「要確認」になります\n'
+      + hd + 'よろしいですか（あとから「元に戻す」で戻せます）。')) return;
     SHELL.snapUndo(); cur().hand = false; handKeepAt = ''; kkResetPick(SHELL.curRec(), state.cur); SHELL.afterEdit();
   }
 });
@@ -5435,7 +5438,7 @@ function kkResolve(rec, k, opt){
   list.forEach(s=>{ rec.kk.pick[s.key] = s.use ? 1 : 0; });
   return list.length;
 }
-/* この欄の pick（担任の選び方）を消して、おすすめの選び方に戻す */
+/* この欄の pick（担任の選び方）を消して、読み込んだときのチェック（kkCompose の既定）に戻す。画面のボタンは「この欄のチェックを読み込んだときに戻す」（SN v1.18〜） */
 function kkResetPick(rec, k){
   if(!rec.kk || !rec.kk.pick) return;
   rec.kk.blocks.forEach((b, bi)=>{
