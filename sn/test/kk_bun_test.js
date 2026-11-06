@@ -8,7 +8,7 @@ const core = html.slice(html.indexOf('/* ===TEXT-CORE-START==='), html.indexOf('
 const kkStart = html.indexOf('   個別の指導計画（様式3-1 .xlsx）の読み取り');
 const kk = html.slice(html.lastIndexOf('/* ====', kkStart), html.indexOf('</script>', kkStart));
 const ctx = {}; vm.createContext(ctx);
-vm.runInContext(core + '\n' + kk + '\nthis.API = { kkPutPhrase, kkSplit, kkKind, kkPart, kkPolite, kkFix, kkSentsOf, kkCompose, kkHas, kkPending, kkResolve, kkResetPick, kkNameKey, kkMatch, kkDupTo, kkKeepSecs, kkRedoPlan, kkSubjKey, SUB_BY_KEY };', ctx);
+vm.runInContext(core + '\n' + kk + '\nthis.API = { kkPutPhrase, kkSplit, kkKind, kkPart, kkPolite, kkFix, kkSentsOf, kkCompose, kkHas, kkPending, kkResolve, kkResetPick, kkNameKey, kkMatch, kkDupTo, kkKeepSecs, kkRedoPlan, kkSubjKey, kkJoinItems, SUB_BY_KEY };', ctx);
 const A = ctx.API;
 
 let ng = 0, n = 0;
@@ -206,6 +206,27 @@ eq(A.kkNameKey('髙橋　一郎さん'), '高橋一郎', '照合の名前：敬�
   eq(rec2.secs.ko.out + '|' + rec2.secs.sa.out, '先に書いた文|新:sa', 'はじめての取り込みは、文章のある欄を残す');
 }
 
+{
+  /* SN v1.12：項目を足した欄の読み込み直し。選んだ項目はそのままで、計画の文章を作り直す */
+  const sec = (o)=>Object.assign({ sel:[], out:'', okOut:'', hand:false }, o);
+  const rec = { active:['ko','sa','gy','gk'], kk:{ blocks:[ { sec:'ko', ev:'前の国語。' }, { sec:'sa', ev:'前の算数。' } ] }, secs:{
+    ko: sec({ out:'前の国語＋項目', sel:[['x','a']] }),
+    sa: sec({ out:'OKの算数＋項目', okOut:'OKの算数＋項目', sel:[['x','a']] }),
+    gy: sec({ out:'項目だけ', sel:[['x','a']] }), gk: sec({}) } };
+  eq(A.kkKeepSecs(rec).join(), 'sa', '残す欄（項目を足した欄のOKも数える）');
+  A.kkRedoPlan(rec, { blocks:[ { sec:'ko', ev:'新しい国語。' } ], pick:{} }, (rc, k)=>'新:' + k);
+  eq([rec.secs.ko.out, rec.secs.sa.out, rec.secs.gy.out].join('|'), '新:ko|OKの算数＋項目|項目だけ', '項目を足した欄の読み込み直し');
+  eq(rec.secs.ko.sel.length, 1, '読み込み直しで選んだ項目は消さない');
+}
+/* SN v1.12：計画の文章と項目の文章のつなぎ */
+[
+  ['計画の文です。', '項目の文です。', '計画の文です。また、項目の文です。'],
+  ['計画の文です。また、二つ目です。', '項目の文です。', '計画の文です。また、二つ目です。項目の文です。'],
+  ['計画の文です。', 'また、項目の文です。', '計画の文です。また、項目の文です。'],
+  ['計画の文です。', '項目の文です。また、次です。', '計画の文です。項目の文です。また、次です。'],
+  ['', '〇〇さんは、項目の文です。', '〇〇さんは、項目の文です。'],
+  ['計画の文です。', '', '計画の文です。'],
+].forEach(([a,b,c])=>eq(A.kkJoinItems(a, b), c, `つなぎ：${a}＋${b}`));
 
 /* 外国語・外国語活動の振り分け（SN v1.11〜） */
 [

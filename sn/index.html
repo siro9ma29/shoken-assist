@@ -378,6 +378,13 @@ details.cat>summary{font-size:15px;}
 .kkpend{color:var(--warn); font-weight:700;}
 .kkblk{margin-top:10px;}
 .kkbh{font-size:12.5px; font-weight:700; color:var(--accent); border-bottom:1px solid var(--line); padding:2px 0; margin-bottom:4px;}
+/* ---- 項目の画面に出す、この欄の計画の内容（SN v1.12） ---- */
+.kkplan{border:1px solid var(--line); border-radius:10px; background:var(--panel); padding:8px 12px; margin:6px 0 12px;}
+.kkplan > summary{cursor:pointer; font-weight:700; font-size:14px;}
+.kkplan .kkadd{font-size:13px; margin:6px 0 4px;}
+.kkplan dl{display:grid; grid-template-columns:auto 1fr; gap:3px 10px; margin:4px 0 0; font-size:13px;}
+.kkplan dt{color:var(--sub); white-space:nowrap;}
+.kkplan dd{margin:0; white-space:pre-wrap;}
 .kkrow{display:flex; gap:8px; padding:7px 6px; border-radius:6px; border-left:3px solid transparent;}
 .kkrow + .kkrow{border-top:1px dashed #ebe8df;}
 .kkrow.pend{background:#fff8ea; border-left-color:var(--warn);}
@@ -626,6 +633,8 @@ details.cat>summary{font-size:15px;}
   <div class="pagechips" id="pageChips"></div>
   <h2 class="scrtitle" id="pageTitle"></h2>
   <p class="lead" id="pageLead"></p>
+  <!-- この欄の個別の指導計画の内容（SN v1.12〜。中身は kkItemsPlan が作る。計画のない欄では出さない） -->
+  <details class="kkplan" id="kkItemsPlan" open style="display:none;"></details>
   <details class="fold mini">
     <summary>一人で／言葉かけ／一緒に の使い分け</summary>
     <dl class="guidedl">
@@ -792,9 +801,10 @@ details.cat>summary{font-size:15px;}
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "SN v1.11";
+const APP_VERSION = "SN v1.12";
 const APP_DATE    = "2026-11-06";
 const APP_HISTORY = [
+  "SN v1.12 計画の評価の文がある欄で項目を選ぶと、評価の文から作った文章のあとに項目の文を足すようにした（それまでは項目だけの文章に切り替わっていた）。項目の画面の上に、その欄の個別の指導計画の内容（教科・観点・学習の程度・学習内容・支援・評価）を表示。ボタンの名前は「項目を選んで足す」。",
   "SN v1.11 外国語（5・6年）の欄を追加（聞く・話す／読む・書く／かかわる の9項目）。既定では「使う欄」オフ。",
   "　　　　個別の指導計画の「外国語」「外国語活動」の行は学年で振り分ける（5・6年→外国語、3・4年→外国語活動）。",
   "SN v1.10 実物の計画（10人分）と学級名簿で確かめて直した。学年ごとに出席番号がある名簿（番号が重なる）でも別の児童として照合し、",
@@ -2302,14 +2312,16 @@ function opts(){
 
 function generate(){
   const sub = curSub(), st = cur();
+  /* 計画の評価の文がある欄では、項目は「足す」もの（SN v1.12〜） */
+  document.getElementById('editItems').textContent = kkUse() ? '項目を選んで足す' : '項目を選び直す';
   handEditEnd();                          // 手直しの途中で作り直しになったときは、手直しをやめる
   if(st.hand && st.out){ showHand(); return; }   // 手で直した文章は作り直さない（SN v1.8〜）
   st.hand = false; handBar();
   const chosen = sub.groups.flatMap(g=>g.items)
     .filter(i=>st.sel.has(i.id))
     .map(i=>({it:i, lvl:st.sel.get(i.id)}));
-  if(chosen.length===0 && kkUse()){ kkGenerate(); return; }
-  kkHidePick();   // 項目から作るときは、評価の文の一覧を出さない
+  if(kkUse()){ kkGenerate(chosen); return; }   // 計画の評価の文がある欄：計画の文章＋選んだ項目の文（SN v1.12〜）
+  kkHidePick();   // 項目だけから作るときは、評価の文の一覧を出さない
   if(chosen.length===0){
     setOut("この欄の項目を1つ以上選んでから「この欄の所見文をつくる」を押してください。", true);
     return;
@@ -2326,30 +2338,63 @@ function generate(){
 }
 
 /* ---------- 個別の指導計画の評価の文から作る（SN v1.6〜） ----------
-   項目が1つも選ばれていない欄で、計画の評価の文があるときはこちらで作る。
-   項目を選ぶと、項目から作る文章に切り替わる（項目を全部外すと、評価の文からに戻る）。
-   文の見分け・言い換え・組み立ては kkCompose（個別の指導計画の読み取りの囲みの中）。 */
+   計画の評価の文がある欄では、評価の文から文章を作る。
+   SN v1.12〜：項目を選ぶと、評価の文から作った文章のあとに、選んだ項目の文を足す
+   （それまでは項目を選ぶと項目だけの文章に切り替わっていた）。
+     ・計画の文章は、項目がないときと同じ（めやすの字数で外す文も同じ）
+     ・選んだ項目は、字数に関わらずすべて入れる（担任が足すと決めた文のため）。長くなったら字数の知らせで伝える
+     ・結びの一文は、足すとめやすに近づくときだけ
+   文の見分け・言い換え・組み立ては kkCompose、つなぎは kkJoinItems（個別の指導計画の読み取りの囲みの中）。 */
 function kkUse(){ return !!(window.SHELL && SHELL.R.students.length && typeof kkHas === 'function' && kkHas(SHELL.curRec(), state.cur)); }
 function kkOptOf(rec, k){
   const f = (rec.secs && rec.secs[k]) || {};
   return { name: String(rec.yobi||'').trim(), len: f.len || (SUB_BY_KEY[k] ? SUB_BY_KEY[k].defLen : 150),
            closer: state.closer, subject: SUB_BY_KEY[k], seed: f.seed || 0 };
 }
-const KK_EMPTY = "評価の文から、所見に使える文が見つかりませんでした（課題・今後の方針・メモの文だけでした）。「項目を選び直す」から項目を選んで作ってください。";
-function kkGenerate(){
+/* 選んだ項目（Map：項目ID → 支援の程度）を、文を作る形 [{it, lvl}] にする */
+function snChosen(k, selMap){
+  const sub = SUB_BY_KEY[k]; if(!sub) return [];
+  return sub.groups.flatMap(g=>g.items).filter(i=>selMap.has(i.id)).map(i=>({ it:i, lvl:selMap.get(i.id) }));
+}
+/* 計画の文章＋項目の文章。o … kkOptOf の形（name, len, closer, subject, seed）
+   io … 項目の文を作る設定（scene, join, variant, regenSeed, plan）。chosen … snChosen の結果
+   戻り値 { text, len, r（kkCompose の結果）, nItem（足した項目の数）, closer } */
+function snMix(rec, k, o, io, chosen){
+  const n = chosen ? chosen.length : 0;
+  const r = kkCompose(rec, k, n ? Object.assign({}, o, { closer:false }) : o);
+  if(!n) return { text:r.text, len:r.len, r, nItem:0 };
+  const sub = SUB_BY_KEY[k];
+  const it = buildText(chosen, Object.assign({}, io, { subject:sub, name: r.text ? '' : o.name, closer:false }));
+  let text = kkJoinItems(r.text, it.text), len = [...text].length, closer = '';
+  const c = o.closer && sub && sub.closers, target = o.len || 150;
+  if(c && c.length){
+    const cl = c[(o.seed||0) % c.length], n2 = len + [...cl].length;
+    if(Math.abs(n2 - target) < Math.abs(len - target) && n2 <= Math.round(target * 1.15)){ text += cl; len = n2; closer = cl; }
+  }
+  return { text, len, r, nItem:n, closer };
+}
+/* 児童のレコードだけから作る（読み込み直しのとき。画面の今の児童でなくてよい） */
+function snMixRec(rec, k){
+  const f = (rec.secs && rec.secs[k]) || {}, sub = SUB_BY_KEY[k];
+  const io = { scene: sub && sub.scene ? String(f.scene||'').trim() : '', join:state.join, variant:state.variant,
+               regenSeed: f.seed || 0, plan: rec.plan || [] };
+  return snMix(rec, k, kkOptOf(rec, k), io, snChosen(k, new Map(f.sel || []))).text;
+}
+const KK_EMPTY = "評価の文から、所見に使える文が見つかりませんでした（課題・今後の方針・メモの文だけでした）。「項目を選んで足す」から項目を選んで作ってください。";
+function kkGenerate(chosen){
   const st = cur(), rec = SHELL.curRec();
   const o = kkOptOf(rec, state.cur);
   o.name = state.name.trim(); o.len = st.len; o.seed = state.regenSeed || 0;
-  const r = kkCompose(rec, state.cur, o);
-  st.out = r.text;
-  if(r.text){ setOut(r.text, false); updateMeta(r.text, st.len); } else setOut(KK_EMPTY, true);
-  kkShowNote(r);
-  kkRenderPick(r);
-  showLint(r.text);
+  const x = snMix(rec, state.cur, o, opts(), chosen || []);
+  st.out = x.text;
+  if(x.text){ setOut(x.text, false); updateMeta(x.text, st.len); } else setOut(KK_EMPTY, true);
+  kkShowNote(x.r, x.nItem);
+  kkRenderPick(x.r);
+  showLint(x.text);
   renderAll(); buildTabs(); save();
 }
 /* 外した文・要確認の文を知らせる（文ごとに選ぶのは、下の「評価の文から選ぶ」の一覧） */
-function kkShowNote(r){
+function kkShowNote(r, nItem){
   const box = document.getElementById('dropped');
   const n = r.n, out = [];
   if(n.issue)   out.push(`課題の文 ${n.issue}`);
@@ -2358,6 +2403,7 @@ function kkShowNote(r){
   if(n.health)  out.push(`健康・家庭に関わる文 ${n.health}`);
   if(n.cut)     out.push(`字数のめやすで外した文 ${n.cut}`);
   let h = `個別の指導計画の評価の文から作りました（${n.all}文のうち ${n.use}文を使用）。`;
+  if(nItem) h += `<br>そのあとに、選んだ項目 ${nItem}件 の文を足しました（項目の文は字数に関わらずすべて入れます）。`;
   if(out.length) h += `<br>使わなかった文：${out.join('・')}。`;
   if(n.pend) h += `<br><b class="kkpend">要確認 ${n.pend}文</b>：下の一覧で、所見に載せてよいか確かめてください。`;
   box.innerHTML = h; box.style.display = 'block';
@@ -2378,7 +2424,7 @@ function showHand(){
   const st = cur();
   setOut(st.out, false); updateMeta(st.out, st.len);
   showDropped([]); showLint(st.out);
-  if(!st.sel.size && kkUse()) kkRenderPick(kkCompose(SHELL.curRec(), state.cur, Object.assign(kkOptOf(SHELL.curRec(), state.cur), { name: state.name.trim(), len: st.len, seed: state.regenSeed || 0 })));
+  if(kkUse()) kkRenderPick(kkCompose(SHELL.curRec(), state.cur, Object.assign(kkOptOf(SHELL.curRec(), state.cur), { name: state.name.trim(), len: st.len, seed: state.regenSeed || 0 })));
   else kkHidePick();
   handBar(); renderAll(); buildTabs(); save();
 }
@@ -2461,6 +2507,35 @@ const KK_CHK_LABEL  = { health:'健康・家庭に関わる', name:'固有の名
 const KK_KIND_LABEL = { issue:'課題の文', teacher:'教師の手立て・今後の方針', memo:'メモ' };
 let kkView = { at:'', mode:'' };   // mode：'chk'（要確認の文だけ）／'all'（すべての文）。児童・欄が変わると自動で決め直す
 const kkEsc = s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+/* 項目の画面の上に、この欄の個別の指導計画の内容を出す（SN v1.12〜）。
+   教科・観点・学習の程度・学習内容・支援・評価（元の文）を、計画のブロックごとに並べる。
+   項目を選ぶと、評価の文から作った文章のあとに足すことも、ここで知らせる */
+function kkItemsPlan(rec, k){
+  const box = document.getElementById('kkItemsPlan');
+  if(!box) return;
+  const blocks = rec && rec.kk ? rec.kk.blocks.filter(b=>b.sec === k) : [];
+  if(!blocks.length){ box.style.display = 'none'; box.innerHTML = ''; return; }
+  const supTxt = u=>{
+    if(!u) return '';
+    if(u.k === 'table'){ const p = PLAN_BY_ID[u.id]; return p ? `${p.obs}（程度${p.n}）：${p.phrase}` : '支援の程度表の文'; }
+    if(u.k === 'free') return u.t + '（自由記述）';
+    if(u.k === 'item') return '自立活動の項目（具体的な手立ての記述なし）';
+    return '';
+  };
+  const row = (dt, dd)=> String(dd||'').trim() ? `<dt>${dt}</dt><dd>${kkEsc(dd)}</dd>` : '';
+  const has = kkHas(rec, k);
+  let h = `<summary>個別の指導計画の内容（${kkEsc(SUB_BY_KEY[k] ? SUB_BY_KEY[k].name : k)}の欄）</summary>`;
+  h += `<p class="kkadd">${has
+    ? 'ここで選んだ項目の文は、評価の文から作った文章の<b>あとに足します</b>（評価の文から作った文章は消えません）。項目をすべて外すと、評価の文からの文章だけに戻ります。'
+    : 'この欄の評価は空です。項目を選んで文章を作ってください。'}</p>`;
+  blocks.forEach(b=>{
+    const title = [b.subj, b.obs].filter(x=>String(x||'').trim()).map(kkEsc).join('　');
+    h += `<div class="kkblk"><div class="kkbh">${title || '（教科名なし）'}</div><dl>`
+      + row('学習の程度', b.level) + row('学習内容', b.content) + row('支援', supTxt(b.sup))
+      + (String(b.ev||'').trim() ? row('評価', b.ev) : '<dt>評価</dt><dd>（空）</dd>') + '</dl></div>';
+  });
+  box.innerHTML = h; box.style.display = '';
+}
 function kkHidePick(){ const b = document.getElementById('kkPick'); if(b){ b.style.display = 'none'; b.innerHTML = ''; } }
 function kkRowHtml(s){
   const usable = s.kind === 'pos' || s.kind === 'act';
@@ -2533,11 +2608,9 @@ document.getElementById('kkPick').addEventListener('click', e=>{
     SHELL.snapUndo(); cur().hand = false; handKeepAt = ''; kkResetPick(SHELL.curRec(), state.cur); SHELL.afterEdit();
   }
 });
-/* 児童のまとめ・所見一覧に出す、欄ごとの「要確認が残っている文」の数（項目から作っている欄は0） */
+/* 児童のまとめ・所見一覧に出す、欄ごとの「要確認が残っている文」の数（項目を足した欄も数える。SN v1.12〜） */
 function kkPendingN(rec, k){
   if(!rec || typeof kkHas !== 'function' || !kkHas(rec, k)) return 0;
-  const f = rec.secs && rec.secs[k];
-  if(f && f.sel && f.sel.length) return 0;
   return kkPending(kkCompose(rec, k, kkOptOf(rec, k))).length;
 }
 
@@ -2574,7 +2647,8 @@ function setOut(t, empty){
 function snLenWord(){
   const st = cur();
   if(st.hand && st.out) return '';
-  return (!st.sel.size && kkUse()) ? '下の一覧で使う文' : '項目';
+  if(!kkUse()) return '項目';
+  return st.sel.size ? '下の一覧で使う文や項目' : '下の一覧で使う文';
 }
 function updateMeta(text, target){
   const n=[...text].length;
@@ -2593,6 +2667,7 @@ document.getElementById('clearBtn').addEventListener('click',()=>{
   const st = cur();
   st.sel.clear(); st.pri.clear(); st.out = ""; st.hand = false;
   buildItems();
+  if(kkUse()){ generate(); return; }   // 計画の評価の文がある欄は、計画の文章だけに戻す
   setOut("この欄の項目を選んで「この欄の所見文をつくる」を押してください。", true);
   showDropped([]); showLint(""); renderAll(); buildTabs(); save();
 });
@@ -2797,6 +2872,8 @@ const APP = {
              active: active.length ? SUBJECTS.map(x=>x.key).filter(k=>active.includes(k)) : DEFAULT_ACTIVE.slice(),
              secs };
   },
+  /* 項目の画面を開くとき：この欄の計画の内容を上に出す（SN v1.12〜） */
+  beforeItems(k){ kkItemsPlan(SHELL.curRec(), k); },
   /* 項目を選ばなくても文章を作れる欄（個別の指導計画の評価の文がある欄） */
   hasSrc(rec, k){ return typeof kkHas === 'function' && kkHas(rec, k); },
   hasWork(s){ return !!s.kk || s.plan.length > 0 || Object.values(s.secs).some(f=>f.sel.length || f.out); },
@@ -2839,9 +2916,7 @@ const APP = {
   },
   /* 欄の「OK」を押したとき：残っている要確認の文を、いまの選び方で確定する（SN v1.7〜） */
   onConfirm(rec, k){
-    const f = rec.secs && rec.secs[k];
-    if(f && f.sel && f.sel.length) return;
-    kkResolve(rec, k, kkOptOf(rec, k));
+    kkResolve(rec, k, kkOptOf(rec, k));   // 項目を足した欄でも、計画の文の要確認は確定する（SN v1.12〜）
   },
   /* 児童のまとめ・所見一覧の印：その欄に残っている要確認の文の数（SN v1.7〜） */
   secFlag(rec, k){ return kkPendingN(rec, k); },
@@ -3738,7 +3813,7 @@ function firstSec(){
 function hasSrc(r, k){ return (sec(r,k).sel||[]).length > 0 || !!(APP.hasSrc && APP.hasSrc(r, k)); }
 function openSec(){
   const r = curRec();
-  if(!(sec(r, SH.sec).sel||[]).length && APP.hasSrc && APP.hasSrc(r, SH.sec)) show('scrDraft');
+  if(APP.hasSrc && APP.hasSrc(r, SH.sec)) show('scrDraft');   // 計画の文がある欄は、項目を足していても文章の画面から
   else openItems(0, '');
 }
 function startSeq(){
@@ -3825,7 +3900,12 @@ RENDER.scrItems = ()=>{
 function itemsMeter(){
   const n = document.querySelectorAll('#cats .item.sel').length;
   const el = $('itemsMeter');
-  if(!n){ el.innerHTML = '<span>まだ項目が選ばれていません。</span>'; return; }
+  if(!n){
+    el.innerHTML = APP.hasSrc && APP.hasSrc(curRec(), SH.sec)
+      ? '<span>項目は選ばれていません（いまの文章は計画の評価の文だけから作っています）。</span>'
+      : '<span>まだ項目が選ばれていません。</span>';
+    return;
+  }
   const o = $('out'), len = o.classList.contains('empty') ? 0 : [...o.textContent].length;
   const L = APP.curLen(), j = lenJudge(len, L, APP.lenWord && APP.lenWord() === '' ? '' : undefined);   // 手で直した欄では「項目を足す」と言わない
   el.innerHTML = `<span>選んだ項目 <b>${n}件</b>　いまの文章 <b>${len}字</b>（めやす ${L}字）</span><span class="${j.cls}">${j.msg}</span>`
@@ -4526,24 +4606,30 @@ function kkDupTo(assign){
 }
 
 /* 読み込み直しで、前の計画から作った下書きを「残す」欄（手で直した欄・OKを押した欄）。
-   項目を選んで作った欄（sel あり）は計画と関係がないので数えない */
+   項目だけで作った欄（sel があり、前の計画にその欄の評価の文がない）は計画と関係がないので数えない。
+   SN v1.12〜：計画の文章に項目を足した欄（sel があり、前の計画に評価の文がある）は数える */
 function kkKeepSecs(rec){
   if(!rec || !rec.kk) return [];
   return Object.keys(rec.secs||{}).filter(k=>{
     const f = rec.secs[k];
-    return f && !(f.sel||[]).length && f.out && (f.hand || f.okOut === f.out);
+    return f && (!(f.sel||[]).length || kkHas(rec, k)) && f.out && (f.hand || f.okOut === f.out);
   });
 }
 /* 計画（kk）を児童に取り込み、評価の文がある欄の下書きを作る。compose(rec, k) → 文章
    ・使う欄：計画にある欄＋行動のようす・学校から＋前から作業のある欄
    ・はじめて取り込む児童：文章がすでにある欄・項目を選んである欄はそのまま
-   ・読み込み直し：手で直した欄・OKを押した欄・項目の欄は残し、ほかは新しい評価の文で作り直す
+   ・読み込み直し：手で直した欄・OKを押した欄・項目だけの欄は残し、ほかは新しい評価の文で作り直す
      （新しい計画に評価の文がなければ、前の計画から作った文章は消す）
+     SN v1.12〜：項目を足した欄（前か新しい計画に評価の文がある）も、選んだ項目はそのままで作り直す
+     （compose が「計画の文章＋項目の文」を返す。新しい計画に評価の文がなければ項目の文だけになる）
    戻り値 { drafted:作った欄の数, kept:[残した欄] } */
 function kkRedoPlan(rec, kk, compose){
   const redo = !!rec.kk;
   const kept = kkKeepSecs(rec);
+  const before = new Set(Object.keys(rec.secs||{}).filter(k=>redo && kkHas(rec, k)));   // 前の計画に評価の文があった欄
   rec.kk = kk;
+  /* 項目だけで作った欄（前の計画にも新しい計画にも評価の文がない）は触らない */
+  const itemOnly = k => { const f = rec.secs[k]; return f && (f.sel||[]).length && !before.has(k) && !kkHas(rec, k); };
   /* 前からの作業：項目を選んだ欄と、残す欄（はじめての取り込みなら文章のある欄も） */
   const work = k => { const f = rec.secs[k]; return f && ((f.sel||[]).length || kept.includes(k) || (!redo && f.out)); };
   const ks = new Set(kk.blocks.map(b=>b.sec).concat(['gy','gk']).concat((rec.active||[]).filter(work)));
@@ -4552,9 +4638,9 @@ function kkRedoPlan(rec, kk, compose){
   /* 読み込み直しのときは、使わなくなった欄に残る前の計画の文章も消す */
   (redo ? Object.keys(rec.secs) : rec.active).forEach(k=>{
     const f = rec.secs[k];
-    if(!f || (f.sel||[]).length || kept.includes(k)) return;
+    if(!f || itemOnly(k) || kept.includes(k)) return;
     if(f.out && !redo) return;
-    f.out = rec.active.includes(k) && kkHas(rec, k) ? compose(rec, k) : '';
+    f.out = rec.active.includes(k) && (kkHas(rec, k) || (f.sel||[]).length) ? compose(rec, k) : '';
     f.hand = false;
     if(f.out) drafted++;
   });
@@ -4884,6 +4970,17 @@ function kkCompose(rec, k, opt){
   return { text: r.text, len: r.len, closer: r.closer || '', sents, n };
 }
 
+/* ---------- 計画の文章に、項目から作った文章を足す（SN v1.12〜） ----------
+   計画の評価の文から作った文章（planText）のあとに、担任が選んだ項目の文章（itemText）をつなぐ。
+   つなぎの「また、」は、どちらの文章にも「また、」がないときだけ入れる（1つの所見に2回出さないため）。 */
+function kkJoinItems(planText, itemText){
+  planText = String(planText||''); itemText = String(itemText||'');
+  if(!planText) return itemText;
+  if(!itemText) return planText;
+  const conj = /^(また|さらに|そして)、/.test(itemText) || planText.includes('また、') || itemText.includes('また、');
+  return planText + (conj ? '' : 'また、') + itemText;
+}
+
 /* ---------- 要確認の文（SN v1.7〜） ----------
    要確認の印（chk）があり、担任がまだ「使う・使わない」を決めていない文（pick に無い文）を「要確認が残っている」とする。
    kkResolve … いまの選び方（use）を、そのまま担任の決定として pick に書く（欄の「OK」を押したとき）。 */
@@ -5122,7 +5219,7 @@ function applyKk(){
     return String(nums.length ? Math.max(...nums)+1 : 1);
   };
   const fromRos = t => { const rec = S.blankRec(); rec.no = nextNo(t.no); rec.name = S.yobiOf(t.name, 'full', 'さん'); if(t.year) rec.grade = t.year; rec._no = t.no; R.students.push(rec); return rec; };
-  const compose = (rc, k) => kkCompose(rc, k, kkOptOf(rc, k)).text;
+  const compose = (rc, k) => snMixRec(rc, k);   // 計画の文章＋項目の文（SN v1.12〜）
   let added = 0, merged = 0, drafted = 0;
   const kept = [];
   go.forEach(({ r, a })=>{
