@@ -722,9 +722,14 @@ details.cat>summary{font-size:15px;}
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "SN v1.5";
-const APP_DATE    = "2026-11-05";
+const APP_VERSION = "SN v1.6";
+const APP_DATE    = "2026-11-06";
 const APP_HISTORY = [
+  "SN v1.6 個別の指導計画の評価の文から、欄ごとの所見の下書きを作る（第2段階：文の見分け・言い換え・組み立て）。",
+  "　　　　評価の文を1文ずつに分け、できたこと／様子／課題／教師の手立て・今後の方針／メモを見分ける。できたこと・様子の文だけを使い、",
+  "　　　　「〜が、〜」の文は肯定の側を使う。文末を敬体にし、「本児」「〜してあげる」を直す。健康・家庭に関わる文は既定で外し、固有の名前は要確認とする。",
+  "　　　　支援の語がない文にだけ、計画の手立ての言い回しを足す。めやすの字数を超えるときは優先度の低い文から外す。",
+  "　　　　取り込むと評価の文がある欄の下書きを作り、その欄は項目の画面を飛ばして文章の画面を開く（項目を選ぶと項目から作る文章に切り替わる）。",
   "SN v1.5 「個別の指導計画から作る」を追加（第1段階：計画の読み取りと、読み取りの確認まで）。はじめの画面の「名簿から作る」はこれに置き換えた。",
   "　　　　様式3-1の .xlsx を何人分でも読み込み、学期のシート・学年・氏名・教科ごとの観点・支援・評価を読み取る。",
   "　　　　支援の文はブックごとの「支援の程度表」と照らし合わせる。教科名から入れる欄を学年に合わせて選び、決まらない行は担任が選ぶ。",
@@ -2172,6 +2177,7 @@ function generate(){
   const chosen = sub.groups.flatMap(g=>g.items)
     .filter(i=>st.sel.has(i.id))
     .map(i=>({it:i, lvl:st.sel.get(i.id)}));
+  if(chosen.length===0 && kkUse()){ kkGenerate(); return; }
   if(chosen.length===0){
     setOut("この欄の項目を1つ以上選んでから「この欄の所見文をつくる」を押してください。", true);
     return;
@@ -2185,6 +2191,43 @@ function generate(){
   renderAll();
   buildTabs();
   save();
+}
+
+/* ---------- 個別の指導計画の評価の文から作る（SN v1.6〜） ----------
+   項目が1つも選ばれていない欄で、計画の評価の文があるときはこちらで作る。
+   項目を選ぶと、項目から作る文章に切り替わる（項目を全部外すと、評価の文からに戻る）。
+   文の見分け・言い換え・組み立ては kkCompose（個別の指導計画の読み取りの囲みの中）。 */
+function kkUse(){ return !!(window.SHELL && SHELL.R.students.length && typeof kkHas === 'function' && kkHas(SHELL.curRec(), state.cur)); }
+function kkOptOf(rec, k){
+  const f = (rec.secs && rec.secs[k]) || {};
+  return { name: String(rec.yobi||'').trim(), len: f.len || (SUB_BY_KEY[k] ? SUB_BY_KEY[k].defLen : 150),
+           closer: state.closer, subject: SUB_BY_KEY[k], seed: f.seed || 0 };
+}
+const KK_EMPTY = "評価の文から、所見に使える文が見つかりませんでした（課題・今後の方針・メモの文だけでした）。「項目を選び直す」から項目を選んで作ってください。";
+function kkGenerate(){
+  const st = cur(), rec = SHELL.curRec();
+  const o = kkOptOf(rec, state.cur);
+  o.name = state.name.trim(); o.len = st.len; o.seed = state.regenSeed || 0;
+  const r = kkCompose(rec, state.cur, o);
+  st.out = r.text;
+  if(r.text){ setOut(r.text, false); updateMeta(r.text, st.len); } else setOut(KK_EMPTY, true);
+  kkShowNote(r);
+  showLint(r.text);
+  renderAll(); buildTabs(); save();
+}
+/* 外した文・要確認の文を知らせる（文ごとに選び直す画面は次の版） */
+function kkShowNote(r){
+  const box = document.getElementById('dropped');
+  const n = r.n, out = [];
+  if(n.issue)   out.push(`課題の文 ${n.issue}`);
+  if(n.teacher) out.push(`教師の手立て・今後の方針の文 ${n.teacher}`);
+  if(n.memo)    out.push(`メモ ${n.memo}`);
+  if(n.health)  out.push(`健康・家庭に関わる文 ${n.health}`);
+  if(n.cut)     out.push(`字数のめやすで外した文 ${n.cut}`);
+  let h = `個別の指導計画の評価の文から作りました（${n.all}文のうち ${n.use}文を使用）。`;
+  if(out.length) h += `<br>使わなかった文：${out.join('・')}。`;
+  if(n.chk) h += `<br><b>要確認</b>：学級名・人名などの固有の名前や、様子を述べただけの文が ${n.chk}文 入っています。元の評価の文と見比べてください。`;
+  box.innerHTML = h; box.style.display = 'block';
 }
 
 function showLint(text){
@@ -2385,7 +2428,10 @@ function kkNorm(k){
       const sup = u.k === 'table' ? { k:'table', id: PLAN_BY_ID[u.id] ? u.id : '', obs:S(u.obs), n:parseInt(u.n,10)||0 }
                 : u.k === 'free' ? { k:'free', t:S(u.t) } : { k: u.k === 'item' ? 'item' : 'none' };
       return { sec:b.sec, subj:S(b.subj), group:S(b.group), obs:S(b.obs), level:S(b.level), content:S(b.content), sup, ev:S(b.ev) };
-    }) };
+    }),
+    /* 担任が文ごとに選んだ結果（"ブロック番号.文番号" → 1／0）。SN v1.6〜 */
+    pick: Object.fromEntries(Object.entries((k.pick && typeof k.pick === 'object') ? k.pick : {})
+            .filter(([key, v])=>/^\d+\.\d+$/.test(key)).map(([key, v])=>[key, v ? 1 : 0])) };
 }
 const APP = {
   appName: "所見文アシスト（特別支援学級）",
@@ -2431,6 +2477,8 @@ const APP = {
              active: active.length ? SUBJECTS.map(x=>x.key).filter(k=>active.includes(k)) : DEFAULT_ACTIVE.slice(),
              secs };
   },
+  /* 項目を選ばなくても文章を作れる欄（個別の指導計画の評価の文がある欄） */
+  hasSrc(rec, k){ return typeof kkHas === 'function' && kkHas(rec, k); },
   hasWork(s){ return !!s.kk || s.plan.length > 0 || Object.values(s.secs).some(f=>f.sel.length || f.out); },
   capture(rec){
     rec.yobi = state.name; rec.plan = state.plan.slice(); rec.active = state.active.slice();
@@ -2466,7 +2514,7 @@ const APP = {
   },
   regen(){
     const st = cur();
-    if(st.sel.size) generate();
+    if(st.sel.size || kkUse()) generate();
     else{ st.out = ""; setOut(SHELL_EMPTY(), true); showDropped([]); showLint(""); }
   },
   curLen(){ return cur().len; },
@@ -3338,7 +3386,14 @@ function firstSec(){
   const ks = secsOf(curRec());
   if(!ks.length){ show(APP.multi ? 'scrChild' : 'scrList'); return; }
   setSec(ks[0]);
-  openItems(0, '');
+  openSec();
+}
+/* 項目を選ばなくても作れる欄（APP.hasSrc：特別支援学級版の、個別の指導計画の評価の文がある欄）は、文章の画面から */
+function hasSrc(r, k){ return (sec(r,k).sel||[]).length > 0 || !!(APP.hasSrc && APP.hasSrc(r, k)); }
+function openSec(){
+  const r = curRec();
+  if(!(sec(r, SH.sec).sel||[]).length && APP.hasSrc && APP.hasSrc(r, SH.sec)) show('scrDraft');
+  else openItems(0, '');
 }
 function startSeq(){
   const list = sorted();
@@ -3441,7 +3496,7 @@ function regen(){
 /* この児童の、項目を選んである欄をすべて作り直す（呼び方・支援の手立てを変えたとき） */
 function regenAll(){
   const keep = SH.sec, r = curRec();
-  secsOf(r).forEach(k=>{ if((sec(r,k).sel||[]).length){ setSec(k); APP.regen(r, k); capture(); } });
+  secsOf(r).forEach(k=>{ if(hasSrc(r,k)){ setSec(k); APP.regen(r, k); capture(); } });
   if(keep) setSec(keep);
   saveNow();
 }
@@ -3488,7 +3543,7 @@ function draftMain(){
   if(APP.multi){
     if(!empty) confirmSec();
     const ks = secsOf(curRec()), i = ks.indexOf(SH.sec);
-    if(i < ks.length-1){ setSec(ks[i+1]); openItems(0, ''); }
+    if(i < ks.length-1){ setSec(ks[i+1]); openSec(); }
     else show('scrChild');
     return;
   }
@@ -3522,7 +3577,7 @@ RENDER.scrChild = ()=>{
   $('childList').innerHTML = html;
   $('childList').querySelectorAll('.crow').forEach(el=>el.addEventListener('click', ()=>{
     setSec(el.dataset.sec); SH.ret = 'child';
-    if(sec(curRec(), el.dataset.sec).sel && sec(curRec(), el.dataset.sec).sel.length) show('scrDraft');
+    if(hasSrc(curRec(), el.dataset.sec)) show('scrDraft');
     else openItems(0, '');
   }));
   const main = $('childMain'), sub = $('childSub');
@@ -4031,6 +4086,298 @@ function kkAnalyze(fileName, sheets, term){
     : '氏名（D7）が空で、ファイル名にも番号がありません。取り込んだあと、所見一覧で名前を入れてください。');
   return res;
 }
+
+/* ==================================================================
+   評価の文の分類・言い換えと、欄ごとの組み立て   SN v1.6〜
+   ------------------------------------------------------------------
+   方針（調査メモ「6. 改修方針」）：所見を一から「生成」するのではなく、
+   計画の評価の文を通知表の言い方に「変換」し、使う文を「選ぶ」。
+
+   1. 評価の文を1文ずつに分け、種類（kind）を見分ける
+        pos     … できたこと（肯定）                    → 既定で使う
+        act     … 様子を述べた文（どちらとも言えない）  → 既定で使う・要確認
+        issue   … 課題・できなかったこと                → 既定で外す
+        teacher … 教師の手立て・今後の方針              → 既定で外す
+        memo    … 文になっていないメモ                  → 既定で外す
+      「〜が、〜」の文は両側を見て、肯定の側だけを使う（前だけ使うのは誤り）
+   2. 要確認の印（chk）
+        health … 健康・家庭に関わる語（排泄・食事の量・家族・送迎・介添員 など）→ 既定で外す
+        name   … 学級名・学校名・人名など、固有の名前
+        act    … どちらとも言えない文
+        kuse   … 直しきれなかった書き癖（「本児」「〜してあげる」など）
+   3. 通知表の言い方に直す（文末を敬体に、「本児」→呼び方／自分、「〜てあげた」→「〜た」）
+   4. 評価の文に支援の語がないときだけ、計画の手立ての言い回し（PLAN_BY_ID）を文頭に足す
+   5. めやすの字数を超えるときは、優先度の低い文から外す
+      （優先度：できたこと＞様子。各ブロックの最初の文は残す。同じなら後ろの文から外す）
+
+   担任が文ごとに選んだ結果は rec.kk.pick（"ブロック番号.文番号" → 1 使う／0 使わない）に入る。
+   選んだ文は字数で外さない。
+   画面には触らない。テスト：sn/test/kk_bun_test.js（node sn/test/kk_bun_test.js）
+   ================================================================== */
+
+/* ---------- 1文ずつに分ける ----------
+   「」（）の中の句点では切らない。行頭の記号（・○※ ①　1. など）は取る。
+   ※で始まる行は、担任のメモとして扱う（memo:true） */
+function kkSplit(ev){
+  const src = String(ev==null?'':ev).replace(/\r/g,'');
+  const out = []; let buf = '', depth = 0;
+  const push = ()=>{ if(buf.trim()) out.push(buf); buf = ''; };
+  for(const ch of src){
+    if(ch === '\n'){ if(depth === 0){ push(); continue; } buf += ch; continue; }
+    buf += ch;
+    if('「『（(【'.includes(ch)) depth++;
+    else if('」』）)】'.includes(ch)) depth = Math.max(0, depth-1);
+    else if(depth === 0 && '。！？!?'.includes(ch)) push();
+  }
+  push();
+  return out.map(s=>{
+    const memo = /^[\s　]*※/.test(s);
+    let t = s.replace(/^[\s　]*(?:[・○●◎◇◆□■※＊*\-－―]+|[①-⑳]|[0-9０-９]{1,2}[.．)）]|[（(][0-9０-９]{1,2}[)）])[\s　]*/, '');
+    /* 空白は、英字どうしの間だけ1つ残す（日本語の途中の改行・空白は取る） */
+    t = t.replace(/[\s　]+/g, (m, off, str)=> /[A-Za-z]/.test(str[off-1]||'') && /[A-Za-z]/.test(str[off+m.length]||'') ? ' ' : '');
+    return { t, memo };
+  }).filter(x=>x.t && !/^[。、．，]+$/.test(x.t));
+}
+
+/* ---------- 種類を見分ける ---------- */
+const kkBody = s => String(s).replace(/[。！？!?」』）)\s]+$/,'');
+/* 文末に述語がある（＝文になっている）か */
+function kkHasPred(s){
+  const t = kkBody(s);
+  return t.length >= 5 && /(た|だ|る|う|く|ぐ|す|つ|ぬ|ぶ|む|い|ず|です|ます|ました|でした|ません)$/.test(t);
+}
+/* 教師の行動・今後の方針。「完成させた」のように児童が主語の「させ」は除く */
+const KK_TEACHER_HEAD = /^(今後|後期|次年度|来年度|引き続き|継続して|次期|来期|これからも)/;
+const KK_TEACHER_END  = /((?<!完成|成功|終わら|間に合わ|合わ|向上|安定|発展|成立|満足|両立)させ(た|ている|る|ていく|ていきたい|たい)|ていきたい|でいきたい|ていく|でいく|ていきます|必要がある|必要である|必要だ|が必要|を行った|を行っている|を行う|指導した|支援した|指導している|支援している|指導する|支援する|促した|記述する|記述予定|見守っていく|見守りたい|図りたい|ねらいとした|ねらった|予定である|予定だ|予定)$/;
+const KK_TEACHER_CAUS = /(取り組ま|書か|読ま|言わ|やら|行わ|聞か|話さ|選ば|使わ|持た|作ら|歌わ|数えさ)せ(た|ている|る|ていく|たい)$/;   // 取り組ませた など
+const KK_TEACHER_MID  = /(させることができ|させるようにし|ように支援|ように指導|よう支援|よう指導|支援を行|指導を行|個別に指導した|評価を記述|後期に評価|後期は評価)/;
+/* 課題・できなかったこと（文末で見る語と、文のどこにあっても課題とみなす語） */
+const KK_ISSUE_END = /(難しかった|難しい|むずかしかった|むずかしい|できなかった|できない|できず|できていない|苦手|課題がある|課題が残る|課題が残った|課題|見られなかった|至らなかった|至っていない|ていない|でいない|時間がかかった|時間がかかる|不十分|困難|なかった|ない)(である|だ|です|でした|だった)?$/;
+const KK_ISSUE_MID = /(てしまう|でしまう|てしまっ|でしまっ|パニック|離席|大声を|トラブル|乱暴|嫌が|拒否|かんしゃく|癇癪|他害|自傷|泣いてしま|怒ってしま|が課題|課題が見られ)/;
+/* できたこと（肯定）の手がかり */
+const KK_POS = /(できた|できる|できるようになっ|ようになっ|ようになってき|られた|られる|られるようになっ|身に付け|身につけ|覚えた|覚えて|理解した|理解して|分かった|わかった|増えた|増えて|伸び|上達|向上|成長|楽しん|楽しそう|楽しく|意欲|進んで|自分から|自ら|最後まで|集中して|頑張|がんば|取り組|挑戦|見られ|喜んで|笑顔|すらすら|上手|丁寧|正しく|一人で|ひとりで|自分で|積極的|落ち着いて|安定して|慣れ)/;
+function kkKind(s){
+  const t = kkBody(s);
+  if(!kkHasPred(t)) return 'memo';
+  if(KK_TEACHER_HEAD.test(t) || KK_TEACHER_END.test(t) || KK_TEACHER_CAUS.test(t) || KK_TEACHER_MID.test(t)) return 'teacher';
+  if(KK_ISSUE_END.test(t) || KK_ISSUE_MID.test(t)) return 'issue';
+  if(KK_POS.test(t)) return 'pos';
+  return 'act';
+}
+/* 「〜が、〜」「〜ものの、〜」の文を前後に分けて、使える側を選ぶ。
+   「友達が、」のような主語の「が、」で切らないよう、「が」の前が述語の終わり（た・い・る など）のときだけ切る */
+const KK_BUT = /([たいるうくすつむぶぐぬだ])(が|けれど|けれども|けど|ものの|ながらも|のに)、/;
+function kkPart(s){
+  const t = kkBody(s);
+  const m = t.match(KK_BUT);
+  if(!m) return { t, kind:kkKind(t), part:'' };
+  const cut = m.index + m[1].length;
+  const before = t.slice(0, cut), after = t.slice(cut + m[2].length + 1);
+  const kb = kkKind(before), ka = kkKind(after);
+  const good = k => k === 'pos' || k === 'act';
+  if(good(kb) && good(ka)) return { t, kind: kkKind(t) === 'teacher' ? 'teacher' : (kb==='pos'||ka==='pos' ? 'pos' : 'act'), part:'' };
+  if(good(ka)) return { t:after,  kind:ka, part:'after' };    // 「〜は難しかったが、〜できるようになった」→後ろ
+  if(good(kb)) return { t:before, kind:kb, part:'before' };   // 「〜できたが、〜は難しかった」→前
+  return { t, kind: [kb,ka].includes('teacher') ? 'teacher' : 'issue', part:'' };
+}
+
+/* ---------- 要確認の語 ---------- */
+const KK_HEALTH = /(排泄|排せつ|はいせつ|トイレ|おむつ|オムツ|排便|排尿|失禁|漏ら|おもらし|鼻水|鼻血|よだれ|嘔吐|吐い|発作|服薬|薬|通院|病院|入院|受診|診断|医療|療育|てんかん|アレルギー|体調|発熱|熱が|睡眠|眠そう|寝不足|偏食|完食|食べ残|残食|残さず食べ|食事の量|給食の量|おかわり|食が細|転居|引っ越|転校|家族|家庭(?!科)|保護者|母親|父親|お母さん|お父さん|祖父|祖母|おじいさん|おばあさん|兄|姉|弟|妹|送迎|お迎え|送り迎え|介添員|介助員|支援員|放課後等デイ|放デイ|デイサービス|福祉)/;
+/* 学級名：ひらがな・カタカナの名前＋学級／組（「交流学級」など漢字の一般名は除く） */
+const KK_CLASSNAME = /(?:^|[^ぁ-んァ-ヶー])([ぁ-んァ-ヶー]{2,8})(学級|組)/;
+const KK_SCHOOL = /([一-龠々ァ-ヶ]{1,6})(小学校|中学校|特別支援学校|支援学校|養護学校|幼稚園|保育園|こども園|小(?=の|で|と|に|へ|から|まで|、))/g;
+const KK_SCHOOL_OK = /(当該|近隣|地域|同|他|各|本|附属|大|最|縮|極|狭|中|特別)$/;
+const KK_PERSON = /([一-龠々ァ-ヶぁ-ん]{1,6})(さん|くん|君|ちゃん|先生)/g;
+const KK_PERSON_OK = /(お母|お父|お客|お店|店員|屋|お兄|お姉|おじい|おばあ|お医者|お巡り|おまわり|みな|皆|みんな|担任|校長|教頭|保健|養護|専科|講師|学年|運転手|指導員|[のがはとにをもや、])$/;
+function kkNames(t, yobi){
+  const hits = [];
+  const c = t.match(KK_CLASSNAME); if(c) hits.push(c[1] + c[2]);
+  for(const m of t.matchAll(KK_SCHOOL)) if(!KK_SCHOOL_OK.test(m[1])) hits.push(m[0]);
+  const y = String(yobi||'').trim();
+  for(const m of t.matchAll(KK_PERSON)) if(!KK_PERSON_OK.test(m[1]) && !(y && m[0].length >= 2 && y.includes(m[0]))) hits.push(m[0]);
+  return hits;
+}
+
+/* ---------- 文末を敬体にする ----------
+   過去形（〜た）から「〜ました」を作るには、五段動詞の元の形が要る（待った→待ちました／言った→言いました／帰った→帰りました）。
+   評価の文によく出る動詞だけ表で見分け、残りは一番多い「る」として扱う。 */
+const KK_V_TSU = /(待|持|立|打|勝|育|保|経|放|建|断|絶|討|満)$/;                         // 〜った → 〜ちました
+const KK_V_U   = /(言|使|歌|習|払|拾|洗|笑|伝|戦|通|会|合|買|思|願|誘|従|揃|扱|争|吸|追|祝|救|奪|補|養|培|迷|問|舞|狙|整|もら|わら|あら|うた|そろ|かよ|ひろ|はら|むか|てつだ|なら|まよ|すく|ねが|おも)$/;   // 〜った → 〜いました
+const KK_V_BU  = /(遊|選|学|並|運|呼|飛|結|喜|叫|転|浮|及|跳|あそ|えら|まな|はこ|よろこ|むす)$/;   // 〜んだ → 〜びました
+const KK_V_GU  = /(泳|急|脱|注|稼|騒|剥|仰|扇|嗅|研|漕|担|繋|紡|継|塞|つな|およ|いそ|ぬ|そそ|かせ|さわ)$/; // 〜いだ → 〜ぎました
+const KK_V_KARU = /(分|わ|見つ|預|授|助|掛|か|浸|乗りか|取りか|とりか|通りか)$/;           // 〜かった（動詞）→ 〜かりました
+function kkPolite(s){
+  let t = kkBody(s);
+  const tail = String(s).slice(t.length).replace(/[。\s]/g,'');   // 」など文末の記号
+  const done = x => x + tail + '。';
+  if(/(ます|ました|です|でした|ません|ませんでした)$/.test(t)) return done(t);
+  let m;
+  if((m = t.match(/(て|で)いた$/)))  return done(t.slice(0,-2) + 'いました');
+  if((m = t.match(/(て|で)いる$/)))  return done(t.slice(0,-2) + 'います');
+  if(/だった$/.test(t)) return done(t.replace(/だった$/, 'でした'));
+  if(/かった$/.test(t)){
+    const st = t.slice(0,-3);
+    if(/向$/.test(st) || /むか$/.test(st)) return done(st + 'かいました');
+    if(KK_V_KARU.test(st)) return done(st + 'かりました');
+    return done(t + 'です');                                  // 楽しかった → 楽しかったです
+  }
+  if(/った$/.test(t)){
+    const st = t.slice(0,-2);
+    if(/行$/.test(st)) return done(st + (/[をも]行$/.test(st) ? 'いました' : 'きました'));   // 活動を行った／校外学習に行った
+    if(KK_V_TSU.test(st)) return done(st + 'ちました');
+    if(KK_V_U.test(st))   return done(st + 'いました');
+    return done(st + 'りました');
+  }
+  if(/んだ$/.test(t)){
+    const st = t.slice(0,-2);
+    if(KK_V_BU.test(st)) return done(st + 'びました');
+    if(/死$/.test(st))   return done(st + 'にました');
+    return done(st + 'みました');
+  }
+  if(/いだ$/.test(t)){
+    const st = t.slice(0,-2);
+    if(KK_V_GU.test(st)) return done(st + 'ぎました');
+    return done(t.replace(/だ$/, 'です'));                   // きれいだ → きれいです
+  }
+  if(/いた$/.test(t)){
+    const st = t.slice(0,-2);
+    if(!st || /[にでとはがをもへ、]$/.test(st)) return done(st + 'いました');   // 教室にいた
+    return done(st + 'きました');                             // 書いた → 書きました
+  }
+  if(/した$/.test(t)) return done(t.slice(0,-2) + 'しました');
+  if(/た$/.test(t))   return done(t.slice(0,-1) + 'ました');  // 覚えた・見た・できた・来た（一段動詞）
+  if(/(だ|である)$/.test(t)) return done(t.replace(/(だ|である)$/, 'です'));
+  const p = toPolite(t);                                      // 現在形（〜できる・〜している など）
+  return done(p);
+}
+
+/* ---------- 書き癖を直す ----------
+   yobi … 文頭の呼び方（「〇〇さん」）。空なら「本児」は「自分」にするか、外す */
+function kkFix(s, yobi){
+  let t = s, kuse = false;
+  t = t.replace(/(本児|本人|本生徒)なりに/g, '自分なりに');
+  t = t.replace(/^(本児|本人|本生徒|Ａ児|A児)(は|が|も)、?/, '');
+  t = t.replace(/、(本児|本人|本生徒)(は|が|も)、?/g, '、');
+  t = t.replace(/(本児|本人|本生徒)の/g, '自分の');
+  if(/本児|本生徒/.test(t)){ if(yobi) t = t.replace(/本児|本生徒/g, yobi); else kuse = true; }
+  /* 「〜てあげた」は「〜た」（て形と た形は同じ形なので必ず正しい）。「〜てあげて」は「〜て」 */
+  t = t.replace(/てあげた/g, 'た').replace(/であげた/g, 'だ').replace(/てあげて/g, 'て').replace(/であげて/g, 'で');
+  /* 「〜てあげる（こと）」は、一段動詞（教えて・見て）と「〇〇して」（説明して）だけ直す */
+  t = t.replace(/([一-龠々]{2,}|[ァ-ヶー]{2,})してあげる/g, '$1する');
+  t = t.replace(/([えけげせぜてでねへべめれ]|[一-龠々])てあげる/g, '$1る');
+  if(/てあげ|であげ/.test(t)) kuse = true;
+  return { t, kuse };
+}
+
+/* ---------- 支援の語・手立ての言い回し ---------- */
+const KK_SUPWORD = /(一緒に|いっしょに|手を添え|手添え|介助|支援|補助|手伝|手本|見本|言葉かけ|言葉掛け|声かけ|声掛け|声をかけ|声を掛け|促し|促され|促す|ヒント|見守|個別に|一人で|ひとりで|自分で|自分から|自ら|進んで|教師と|教師が|担任と|担任が|絵カード|視覚|提示)/;
+/* 手立ての言い回しと評価の文が同じことを言っている（「ふりがなを付けると、」＋「ふりがなを付けた文章を〜」）か */
+function kkOverlap(phrase, t){
+  return phrase.replace(/(すると|ると|と)、$/,'').split(/[をにやとでが、]/)
+    .filter(w=>w.length >= 2 && /[一-龠ァ-ヶ]/.test(w)).some(w=>t.includes(w));
+}
+
+/* 手立ての言い回しを文に入れる。文が場面（「町たんけんで、」「交流学級では、」）で始まるときは、その後ろに入れる
+   （「教師が間に入ってつなぐと、町たんけんで、〜」より「町たんけんで、教師が間に入ってつなぐと、〜」のほうが自然なため） */
+function kkPutPhrase(ph, t){
+  const m = t.match(/^[^、。]{1,20}?(では|でも|で|には|の中で|において)、/);
+  return m ? m[0] + ph + t.slice(m[0].length) : ph + t;
+}
+
+/* ---------- 1つのブロックの評価の文を、文ごとの候補にする ---------- */
+function kkSentsOf(b, bi, yobi){
+  return kkSplit(b.ev).map((x, si)=>{
+    const p = x.memo ? { t:kkBody(x.t), kind:'memo', part:'' } : kkPart(x.t);
+    const fx = kkFix(p.t, yobi);
+    const chk = [];
+    if(KK_HEALTH.test(p.t)) chk.push('health');
+    const names = kkNames(p.t, yobi); if(names.length) chk.push('name');
+    if(p.kind === 'act') chk.push('act');
+    if(fx.kuse) chk.push('kuse');
+    const usable = p.kind === 'pos' || p.kind === 'act';
+    return { key: bi + '.' + si, b:bi, si, src:x.t, kind:p.kind, part:p.part, names,
+             text: usable ? kkPolite(fx.t) : fx.t,
+             chk: usable ? chk : chk.filter(c=>c==='health'),
+             on: usable && !chk.includes('health') };
+  });
+}
+
+/* ---------- 欄ごとの組み立て ----------
+   rec … 児童のレコード（rec.kk がある）　k … 欄のキー
+   opt = { name（呼び方）, len（めやすの字数）, closer（結びの一文を付けるか）, subject, seed }
+   戻り値 { text, len, sents（全部の文。use＝所見に入れたか、cut＝字数で外したか）, n:{…} } */
+function kkHas(rec, k){
+  return !!(rec && rec.kk && rec.kk.blocks.some(b=>b.sec === k && String(b.ev||'').trim()));
+}
+function kkCompose(rec, k, opt){
+  opt = opt || {};
+  const name = String(opt.name||'').trim();
+  const pick = (rec.kk && rec.kk.pick) || {};
+  const blocks = rec.kk ? rec.kk.blocks : [];
+  const sents = [];
+  blocks.forEach((b, bi)=>{ if(b.sec === k) sents.push(...kkSentsOf(b, bi, name)); });
+  sents.forEach(s=>{
+    s.fixed = Object.prototype.hasOwnProperty.call(pick, s.key);
+    s.use = s.fixed ? !!pick[s.key] : s.on;
+    s.cut = false;
+  });
+  const phraseOf = bi => { const u = blocks[bi].sup || {}; const p = u.k === 'table' && PLAN_BY_ID[u.id]; return p ? p.phrase : ''; };
+
+  /* 選ばれた文から、1つの文章を組み立てる */
+  const build = list=>{
+    const usedPhrase = new Set(), doneBlock = new Set();
+    let firstBlock = null, mata = false;
+    const parts = list.map((s, i)=>{
+      let t = s.text;
+      const isHead = i === 0 && !!name;
+      /* 手立ての言い回し：ブロックごとに1回。文に支援の語がなく、同じことを言っていないときだけ。
+         呼び方が付く1文目には付けない（「〇〇さんは、ふりがなを付けると、」は誰が付けたのか曖昧になる） */
+      if(!doneBlock.has(s.b) && !isHead){
+        const ph = phraseOf(s.b);
+        if(ph && !usedPhrase.has(ph) && !KK_SUPWORD.test(s.text) && !kkOverlap(ph, s.text)){ t = kkPutPhrase(ph, t); usedPhrase.add(ph); }
+        doneBlock.add(s.b);
+      }
+      if(isHead) t = name + 'は、' + t;
+      /* 2つ目の観点（ブロック）に移るところに1回だけ「また、」 */
+      if(firstBlock === null) firstBlock = s.b;
+      else if(!mata && s.b !== firstBlock && blocks[s.b] && blocks[firstBlock] && !/^(また|さらに|そして|まず|はじめ|最初)/.test(t)){
+        t = 'また、' + t; mata = true;
+      }
+      return t;
+    });
+    const text = parts.join('');
+    return { text, len:[...text].length };
+  };
+
+  /* めやすの字数（＋15％）を超える間、優先度の低い文から外す。担任が選んだ文は外さない */
+  const target = opt.len || 150, hi = Math.round(target * 1.15);
+  let list = sents.filter(s=>s.use);
+  const firstOf = new Set(); { const seen = new Set(); list.forEach(s=>{ if(!seen.has(s.b)){ seen.add(s.b); firstOf.add(s.key); } }); }
+  const prio = s => (s.kind === 'pos' ? 3 : 1) + (firstOf.has(s.key) ? 2 : 0);
+  let r = build(list);
+  while(r.len > hi && list.length > 1){
+    const cand = list.filter(s=>!s.fixed);
+    if(!cand.length) break;
+    const low = Math.min(...cand.map(prio));
+    const drop = cand.filter(s=>prio(s) === low).pop();   // 同じ優先度なら後ろの文から
+    drop.cut = true;
+    list = list.filter(s=>s !== drop);
+    r = build(list);
+  }
+  sents.forEach(s=>{ s.use = list.includes(s); });
+
+  /* 結びの一文：足すとめやすに近づくときだけ */
+  const c = opt.closer && opt.subject && opt.subject.closers;
+  if(list.length && c && c.length){
+    const cl = c[(opt.seed||0) % c.length], n2 = r.len + [...cl].length;
+    if(Math.abs(n2 - target) < Math.abs(r.len - target) && n2 <= hi) r = { text: r.text + cl, len: n2, closer: cl };
+  }
+  const n = { all: sents.length, use: list.length, cut: sents.filter(s=>s.cut).length };
+  ['issue','teacher','memo'].forEach(x=>{ n[x] = sents.filter(s=>s.kind === x && !s.use).length; });
+  n.health = sents.filter(s=>s.chk.includes('health') && !s.use).length;
+  n.chk = sents.filter(s=>s.use && s.chk.length).length;
+  return { text: r.text, len: r.len, closer: r.closer || '', sents, n };
+}
 </script>
 <script>
 /* ==================================================================
@@ -4148,7 +4495,7 @@ function toKk(r){
     blocks: r.blocks.filter(b=>b.dest && b.dest !== 'skip').map(b=>({
       sec:b.dest, subj:b.subj, group:b.group, obs:b.obs, level:b.level, content:b.content,
       sup: b.sup.k === 'table' ? { k:'table', id:b.sup.id, obs:b.sup.obs, n:b.sup.n } : b.sup.k === 'free' ? { k:'free', t:b.sup.t } : { k:b.sup.k },
-      ev:b.ev })) };
+      ev:b.ev })), pick:{} };
 }
 function applyKk(){
   const ok = KKS.res.filter(r=>r.ok);
@@ -4157,7 +4504,7 @@ function applyKk(){
   S.capture();
   const R = S.R;
   if(R.students.length === 1 && !R.students[0].name && !APP.hasWork(R.students[0])) R.students = [];   // 空の1人目は使わない
-  let added = 0, merged = 0;
+  let added = 0, merged = 0, drafted = 0;
   const used = new Set();
   ok.forEach(r=>{
     let rec = r.name ? R.students.find(s=>!used.has(s.id) && s.name && bare(s.name) === bare(r.name)) : null;
@@ -4175,6 +4522,13 @@ function applyKk(){
     /* 使う欄：計画にある欄＋「行動のようす」「学校から」（この2つは計画にないので項目を選んで作る） */
     const ks = new Set(rec.kk.blocks.map(b=>b.sec).concat(['gy','gk']));
     rec.active = SUBJECTS.map(s=>s.key).filter(k=>ks.has(k));
+    /* 評価の文がある欄は、下書きを作っておく（項目を選んである欄・文章がすでにある欄はそのまま） */
+    rec.active.forEach(k=>{
+      const f = rec.secs[k];
+      if(!f || f.out || (f.sel||[]).length || !kkHas(rec, k)) return;
+      f.out = kkCompose(rec, k, kkOptOf(rec, k)).text;
+      if(f.out) drafted++;
+    });
   });
   R.curId = S.sorted()[0].id;
   S.SH.sec = S.secsOf(S.curRec())[0] || '';
@@ -4184,7 +4538,7 @@ function applyKk(){
   S.SH.flow = 'keikaku'; S.SH.mode = 'seq';
   KKS.files = []; KKS.res = [];
   S.SH.banner = `個別の指導計画から ${ok.length}人分 を取り込みました（新しく足した児童 ${added}人・いまの児童に重ねた ${merged}人）。`
-    + '評価の文から所見の下書きを作る機能は、次の版で追加します。';
+    + `評価の文から ${drafted}欄 の下書きを作りました。児童を開いて、欄ごとに確かめてください（文ごとに選び直す画面は次の版で追加します）。`;
   S.show('scrList');
 }
 
