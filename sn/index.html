@@ -348,6 +348,17 @@ details.cat>summary{font-size:15px;}
 .kk-tbl tr.skip td{opacity:.45;}
 .kk-tbl tr.noev td.kk-ev{background:#faf9f5;}
 .kk-need{background:#fff6d6; border-color:#e5cf7a; color:#5d4a00;}
+/* ---- 文章の手直し（SN v1.8） ---- */
+#outEdit{display:block; width:100%; box-sizing:border-box; resize:vertical; font-family:inherit; color:var(--ink, inherit);
+  border:2px solid var(--accent);}
+.handbar{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;
+  margin-top:8px; padding:8px 12px; border-radius:8px; background:#eef5fb; border:1px solid #c9dcec; font-size:13px; line-height:1.6;}
+.handbar b{color:var(--accent);}
+.handbar .hbtns{display:flex; gap:8px; flex-wrap:wrap;}
+.handbar button{padding:6px 12px; border:1px solid var(--line); border-radius:8px; background:var(--panel);
+  font-family:inherit; font-size:13px; cursor:pointer;}
+.handbar button.pri{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:700;}
+#scrDraft.editing .tools, #scrDraft.editing .kkpick, #scrDraft.editing .navrow{opacity:.35; pointer-events:none;}
 /* ---- 評価の文を1文ずつ選ぶ（SN v1.7） ---- */
 .kkpick{border:1px solid var(--line); border-radius:10px; background:var(--panel); padding:10px 12px; margin-top:12px;}
 .kkph{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;}
@@ -630,6 +641,9 @@ details.cat>summary{font-size:15px;}
 <section class="screen" id="scrDraft">
   <div class="whobar" id="draftWho"></div>
   <div class="out empty" id="out">ここに所見文の下書きが表示されます。</div>
+  <!-- 文章の手直し（SN v1.8〜）。「文章を手で直す」で #out の代わりに出す -->
+  <textarea class="out" id="outEdit" style="display:none;" aria-label="所見文の手直し"></textarea>
+  <div class="handbar" id="handBar" style="display:none;"></div>
   <div class="meterbar">
     <span id="lenMeta">— 字</span>
     <span id="tip"></span>
@@ -640,6 +654,7 @@ details.cat>summary{font-size:15px;}
   <div class="kkpick" id="kkPick" style="display:none;"></div>
   <div class="tools">
     <button id="copyBtn">コピー</button>
+    <button id="editBtn">文章を手で直す</button>
     <button id="regenBtn">別の言い方にする</button>
     <button id="editItems">項目を選び直す</button>
     <button id="undoDraft" disabled>元に戻す</button>
@@ -760,9 +775,13 @@ details.cat>summary{font-size:15px;}
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "SN v1.7";
+const APP_VERSION = "SN v1.8";
 const APP_DATE    = "2026-11-06";
 const APP_HISTORY = [
+  "SN v1.8 文章の手直し。文章の画面に「文章を手で直す」を追加。直した文章は「✎ 手で直した文章です」の印が付き、",
+  "　　　　項目・文のチェック・呼び方・字数を変えても作り直さない。チェックの変更・「別の言い方にする」・「おすすめの選び方に戻す」では",
+  "　　　　「手直しを消して作り直しますか」と聞く（キャンセルなら文章はそのまま）。「手直しを消して作り直す」でいまの選び方から作り直す。",
+  "　　　　字数の知らせを、評価の文から作る欄では「下の一覧で使う文を足す／減らす」、手で直した欄では足す・減らすを言わない形にした。",
   "SN v1.7 一人ずつの確認画面（第3段階）。文章の画面の下に「評価の文から選ぶ」の一覧を追加。",
   "　　　　評価の文を計画の順に並べ、所見での形と元の文を上下に表示。チェックで使う文を選ぶと、その場で文章を作り直す。",
   "　　　　要確認の文（健康・家庭／固有の名前／様子を述べただけ／書き癖）には印。チェックを変えるか「このままでよい」で確認済みになる。",
@@ -2217,6 +2236,9 @@ function opts(){
 
 function generate(){
   const sub = curSub(), st = cur();
+  handEditEnd();                          // 手直しの途中で作り直しになったときは、手直しをやめる
+  if(st.hand && st.out){ showHand(); return; }   // 手で直した文章は作り直さない（SN v1.8〜）
+  st.hand = false; handBar();
   const chosen = sub.groups.flatMap(g=>g.items)
     .filter(i=>st.sel.has(i.id))
     .map(i=>({it:i, lvl:st.sel.get(i.id)}));
@@ -2274,6 +2296,92 @@ function kkShowNote(r){
   if(n.pend) h += `<br><b class="kkpend">要確認 ${n.pend}文</b>：下の一覧で、所見に載せてよいか確かめてください。`;
   box.innerHTML = h; box.style.display = 'block';
 }
+
+/* ---------- 文章の手直し（SN v1.8〜） ----------
+   「文章を手で直す」で、文章を直接書き換えられる。「この文章にする」で、その欄の文章（out）を置き換え、
+   hand（手直しあり）の印を付ける。hand の欄は、項目・チェック・呼び方・字数などを変えても文章を作り直さない。
+     ・チェックの変更／「別の言い方にする」／「おすすめの選び方に戻す」では、「手直しを消して作り直しますか」と聞く
+       （「キャンセル」なら文章はそのまま。チェックの変更は保存される）
+     ・「手直しを消して作り直す」で、いまの選び方から作り直す
+   データ：rec.secs[欄].hand（true／false）。元に戻す・バックアップにも入る。 */
+let handKeepAt = '';   // チェックの変更で「文章はそのまま」を選んだ欄（児童ID/欄）。同じ欄では続けて聞かない
+function handAt(){ return SHELL.curRec().id + '/' + state.cur; }
+function handEditing(){ return document.getElementById('scrDraft').classList.contains('editing'); }
+/* 手で直した文章を表示する（作り直しはしない。評価の文の一覧は、作り直すときのために出しておく） */
+function showHand(){
+  const st = cur();
+  setOut(st.out, false); updateMeta(st.out, st.len);
+  showDropped([]); showLint(st.out);
+  if(!st.sel.size && kkUse()) kkRenderPick(kkCompose(SHELL.curRec(), state.cur, Object.assign(kkOptOf(SHELL.curRec(), state.cur), { name: state.name.trim(), len: st.len, seed: state.regenSeed || 0 })));
+  else kkHidePick();
+  handBar(); renderAll(); buildTabs(); save();
+}
+/* 文章の下の帯：手直し中は「この文章にする／やめる」、手直しありの欄はその知らせと「作り直す」 */
+function handBar(){
+  const bar = document.getElementById('handBar'), st = cur();
+  if(handEditing()){
+    const n = [...document.getElementById('outEdit').value.trim()].length;
+    bar.innerHTML = `<span><b>手直し中</b>　${n}字（めやす ${st.len}字）　直し終わったら「この文章にする」を押してください。</span>`
+      + `<span class="hbtns"><button type="button" class="pri" id="handSave">この文章にする</button><button type="button" id="handCancel">やめる</button></span>`;
+    bar.style.display = 'flex'; return;
+  }
+  if(st.hand && st.out){
+    bar.innerHTML = `<span><b>✎ 手で直した文章です。</b>項目や文のチェック、呼び方を変えても、この文章は変わりません。</span>`
+      + `<span class="hbtns"><button type="button" id="handDrop">手直しを消して作り直す</button></span>`;
+    bar.style.display = 'flex'; return;
+  }
+  bar.innerHTML = ''; bar.style.display = 'none';
+}
+function handEditStart(){
+  const st = cur(), o = document.getElementById('out');
+  if(!st.out || o.classList.contains('empty')) return;
+  const ta = document.getElementById('outEdit');
+  ta.value = st.out;
+  ta.style.height = Math.max(o.offsetHeight, 170) + 'px';
+  o.style.display = 'none'; ta.style.display = 'block';
+  document.getElementById('scrDraft').classList.add('editing');
+  handBar(); ta.focus();
+}
+/* 手直しを終える（save：直した文章を使う）。画面が変わるときは、保存せずに閉じる */
+function handEditEnd(save){
+  if(!handEditing()) return;
+  const ta = document.getElementById('outEdit'), st = cur();
+  const t = ta.value.replace(/\r/g, '').trim();
+  if(save){
+    if(!t){ alert('文章が空です。消したいときは「やめる」を押してから、「手直しを消して作り直す」などを使ってください。'); return; }
+  }
+  ta.style.display = 'none'; document.getElementById('out').style.display = '';
+  document.getElementById('scrDraft').classList.remove('editing');
+  if(save && t !== st.out){
+    SHELL.snapUndo();
+    st.out = t; st.hand = true;
+    SHELL.afterEdit();     // 文章の画面を描き直す（hand なので作り直さずに表示）
+  }else handBar();
+}
+/* 手直しを消して、いまの選び方から作り直す */
+function handDrop(){
+  SHELL.snapUndo();
+  cur().hand = false; handKeepAt = '';
+  SHELL.afterEdit();
+}
+/* 作り直す操作の前に聞く。true＝手直しを消して作り直してよい（手直しがない欄も true） */
+function handAsk(what){
+  const st = cur();
+  if(!st.hand || !st.out) return true;
+  if(confirm(`この欄の文章は手で直してあります。\n${what}と、手直しした文章は消えて、作り直します。\n\nOK：手直しを消して作り直す\nキャンセル：文章はそのまま`)){
+    st.hand = false; handKeepAt = ''; return true;
+  }
+  return false;
+}
+document.getElementById('editBtn').addEventListener('click', handEditStart);
+document.getElementById('outEdit').addEventListener('input', handBar);
+document.getElementById('handBar').addEventListener('click', e=>{
+  if(e.target.closest('#handSave')) handEditEnd(true);
+  else if(e.target.closest('#handCancel')) handEditEnd(false);
+  else if(e.target.closest('#handDrop')){
+    if(confirm('手で直した文章を消して、いまの選び方から作り直します。よろしいですか。\n（すぐあとなら「元に戻す」で戻せます）')) handDrop();
+  }
+});
 
 /* ---------- 評価の文を1文ずつ選ぶ（SN v1.7〜） ----------
    文章の画面の下に、この欄の評価の文を計画の順に並べる。
@@ -2335,8 +2443,11 @@ function kkRenderPick(r){
   box.innerHTML = html; box.style.display = 'block';
 }
 /* 一覧の操作。チェック・「このままでよい」は rec.kk.pick に書いて、文章を作り直す（元に戻すも効く） */
-function kkSetPick(key, v){
+function kkSetPick(key, v, noAsk){
   SHELL.snapUndo();
+  /* 手直しした欄：作り直すかを聞く（「文章はそのまま」を選んだら、同じ欄では続けて聞かない。
+     「このままでよい」は選び方が変わらないので聞かない） */
+  if(!noAsk && cur().hand && handKeepAt !== handAt() && !handAsk('チェックを変える')) handKeepAt = handAt();
   const rec = SHELL.curRec();
   rec.kk.pick = rec.kk.pick || {};
   rec.kk.pick[key] = v ? 1 : 0;
@@ -2347,12 +2458,13 @@ document.getElementById('kkPick').addEventListener('change', e=>{
 });
 document.getElementById('kkPick').addEventListener('click', e=>{
   const ok = e.target.closest('.kkok');
-  if(ok){ kkSetPick(ok.dataset.k, ok.dataset.v === '1'); return; }
+  if(ok){ kkSetPick(ok.dataset.k, ok.dataset.v === '1', true); return; }
   const v = e.target.closest('[data-view]');
   if(v){ kkView.mode = v.dataset.view; SHELL.afterEdit(); return; }
   if(e.target.closest('#kkReset')){
-    if(!confirm('この欄で選んだ文をすべて取り消して、おすすめの選び方に戻します。よろしいですか。')) return;
-    SHELL.snapUndo(); kkResetPick(SHELL.curRec(), state.cur); SHELL.afterEdit();
+    const hd = cur().hand ? '\n手で直した文章も消えて、作り直します。' : '';
+    if(!confirm('この欄で選んだ文をすべて取り消して、おすすめの選び方に戻します。' + hd + 'よろしいですか。')) return;
+    SHELL.snapUndo(); cur().hand = false; handKeepAt = ''; kkResetPick(SHELL.curRec(), state.cur); SHELL.afterEdit();
   }
 });
 /* 児童のまとめ・所見一覧に出す、欄ごとの「要確認が残っている文」の数（項目から作っている欄は0） */
@@ -2391,21 +2503,29 @@ function setOut(t, empty){
     document.getElementById('nglint').style.display='none';
   }
 }
+/* 字数の知らせで「何を足す／減らすか」（SN v1.8〜）。項目から作る欄＝項目、評価の文から作る欄＝下の一覧で使う文、
+   手で直した欄＝なし（文章を直して合わせる） */
+function snLenWord(){
+  const st = cur();
+  if(st.hand && st.out) return '';
+  return (!st.sel.size && kkUse()) ? '下の一覧で使う文' : '項目';
+}
 function updateMeta(text, target){
   const n=[...text].length;
   document.getElementById('lenMeta').textContent = n+' 字（めやす '+target+'字）';
   const tip=document.getElementById('tip');
   const diff=n-target;
+  const w = snLenWord();
   if(Math.abs(diff)<=target*0.2){ tip.textContent='めやすの範囲内です'; tip.className=''; }
-  else if(diff>0){ tip.innerHTML='<span class="over">やや長め：項目を減らすと近づきます</span>'; }
-  else { tip.textContent='やや短め：項目を足すと近づきます'; }
+  else if(diff>0){ tip.innerHTML='<span class="over">やや長め' + (w ? '：' + w + 'を減らすと近づきます' : '') + '</span>'; }
+  else { tip.textContent='やや短め' + (w ? '：' + w + 'を足すと近づきます' : ''); }
 }
 
 document.getElementById('genBtn').addEventListener('click',()=>{ state.regenSeed=0; generate(); });
-document.getElementById('regenBtn').addEventListener('click',()=>{ state.regenSeed++; generate(); });
+document.getElementById('regenBtn').addEventListener('click',()=>{ if(!handAsk('別の言い方にする')) return; state.regenSeed++; generate(); });
 document.getElementById('clearBtn').addEventListener('click',()=>{
   const st = cur();
-  st.sel.clear(); st.pri.clear(); st.out = "";
+  st.sel.clear(); st.pri.clear(); st.out = ""; st.hand = false;
   buildItems();
   setOut("この欄の項目を選んで「この欄の所見文をつくる」を押してください。", true);
   showDropped([]); showLint(""); renderAll(); buildTabs(); save();
@@ -2548,7 +2668,7 @@ function showAnalysis(hits, msg){
    ================================================================== */
 function snBlankSecs(){
   const o = {};
-  SUBJECTS.forEach(s=>{ o[s.key] = { sel:[], pri:[], scene:"", len:s.defLen, out:"", okOut:"", seed:0 }; });
+  SUBJECTS.forEach(s=>{ o[s.key] = { sel:[], pri:[], scene:"", len:s.defLen, out:"", okOut:"", seed:0, hand:false }; });
   return o;
 }
 /* 個別の指導計画から取り込んだ内容（rec.kk）を、保存・読み込みのときに整える。無ければ null */
@@ -2603,6 +2723,7 @@ const APP = {
       t.pri = (Array.isArray(f.pri) ? f.pri : []).filter(id=>ids.has(id)).slice(0, MAX_PRI);
       t.scene = String(f.scene||""); t.len = Math.min(600, Math.max(30, parseInt(f.len,10) || sub.defLen));
       t.out = String(f.out||""); t.okOut = String(f.okOut||""); t.seed = Math.max(0, parseInt(f.seed,10) || 0);
+      t.hand = !!f.hand && !!t.out;   // 担任が手で直した文章（SN v1.8〜）
     });
     const active = (Array.isArray(s.active) ? s.active : []).filter(k=>SUB_BY_KEY[k]);
     return { yobi:String(s.yobi||""), memo:String(s.memo||""), kk: kkNorm(s.kk),
@@ -2618,7 +2739,7 @@ const APP = {
     rec.memo = document.getElementById('memo').value;
     SUBJECTS.forEach(s=>{
       const st = state.sub[s.key], f = rec.secs[s.key] || {};
-      rec.secs[s.key] = { sel:[...st.sel], pri:[...st.pri], scene:st.scene, len:st.len, out:st.out,
+      rec.secs[s.key] = { sel:[...st.sel], pri:[...st.pri], scene:st.scene, len:st.len, out:st.out, hand: !!st.hand && !!st.out,
                           okOut: f.okOut || "", seed: s.key === state.cur ? state.regenSeed : (f.seed || 0) };
     });
   },
@@ -2626,7 +2747,7 @@ const APP = {
     state.name = rec.yobi; state.plan = rec.plan.slice(); state.active = rec.active.slice();
     SUBJECTS.forEach(s=>{
       const f = rec.secs[s.key];
-      state.sub[s.key] = { sel:new Map(f.sel), pri:new Set(f.pri), scene:f.scene, len:f.len, out:f.out };
+      state.sub[s.key] = { sel:new Map(f.sel), pri:new Set(f.pri), scene:f.scene, len:f.len, out:f.out, hand:!!f.hand };
     });
     document.getElementById('nameInput').value = rec.yobi;
     document.getElementById('memo').value = rec.memo;
@@ -2647,8 +2768,8 @@ const APP = {
   },
   regen(){
     const st = cur();
-    if(st.sel.size || kkUse()) generate();
-    else{ st.out = ""; setOut(SHELL_EMPTY(), true); showDropped([]); showLint(""); kkHidePick(); }
+    if(st.sel.size || kkUse() || (st.hand && st.out)) generate();   // 手直しした文章は、項目を全部外しても残す
+    else{ st.out = ""; st.hand = false; setOut(SHELL_EMPTY(), true); showDropped([]); showLint(""); kkHidePick(); handEditEnd(); handBar(); }
   },
   /* 欄の「OK」を押したとき：残っている要確認の文を、いまの選び方で確定する（SN v1.7〜） */
   onConfirm(rec, k){
@@ -2659,6 +2780,8 @@ const APP = {
   /* 児童のまとめ・所見一覧の印：その欄に残っている要確認の文の数（SN v1.7〜） */
   secFlag(rec, k){ return kkPendingN(rec, k); },
   curLen(){ return cur().len; },
+  /* 文章の画面の字数の知らせで、何を足す／減らすか（SN v1.8〜） */
+  lenWord(){ return snLenWord(); },
   classCapture(){ return { variant:state.variant, join:state.join, closer:state.closer }; },
   classApply(d){
     state.variant = d.variant !== false; state.join = !!d.join; state.closer = d.closer !== false;
@@ -2701,7 +2824,7 @@ const APP = {
   tour: [
     ['2つの作り方があります', '<p><b>個別の指導計画から作る</b>：学級全員分の個別の指導計画（Excel）を読み込み、氏名と評価の文を読み取って作ります。</p><p><b>一人ずつ作る</b>：名前を入れて、一人分ずつ作ります。</p>'],
     ['1画面ずつ進みます', '<p>使う欄と支援の手立てを選んだら、欄ごとに「項目を選ぶ→文章を確かめる」を順に進み、最後にその児童の全部の欄をまとめて見ます。</p><p>「← 戻る」やブラウザの戻るボタンで1つ前に戻れます。</p>'],
-    ['保存と確認', '<p>入力は自動で保存されます。途中で閉じても「続きから」で再開できます。</p><p>下書きは定型文の組み合わせです。<b>その子自身の伸びを捉える個人内評価になるよう、必ず担任が確かめてから通知表に転記してください。</b></p>'],
+    ['保存と確認', '<p>入力は自動で保存されます。途中で閉じても「続きから」で再開できます。</p><p>文章の画面の「文章を手で直す」で、下書きを直接直せます。直した文章は、項目やチェックを変えても消えません。</p><p>下書きは定型文の組み合わせです。<b>その子自身の伸びを捉える個人内評価になるよう、必ず担任が確かめてから通知表に転記してください。</b></p>'],
   ],
 };
 function SHELL_EMPTY(){ return "項目がまだ選ばれていません。「項目を選び直す」から選んでください。"; }
@@ -3622,7 +3745,7 @@ function itemsMeter(){
   const el = $('itemsMeter');
   if(!n){ el.innerHTML = '<span>まだ項目が選ばれていません。</span>'; return; }
   const o = $('out'), len = o.classList.contains('empty') ? 0 : [...o.textContent].length;
-  const L = APP.curLen(), j = lenJudge(len, L);
+  const L = APP.curLen(), j = lenJudge(len, L, APP.lenWord && APP.lenWord() === '' ? '' : undefined);   // 手で直した欄では「項目を足す」と言わない
   el.innerHTML = `<span>選んだ項目 <b>${n}件</b>　いまの文章 <b>${len}字</b>（めやす ${L}字）</span><span class="${j.cls}">${j.msg}</span>`
     + `<button type="button" class="linkbtn strong" id="toDraft">文章を見る →</button>`;
   $('toDraft').addEventListener('click', ()=>show('scrDraft'));
@@ -3827,15 +3950,17 @@ function allTsv(){
 }
 
 /* ---------- 文字数の判定（めやすの±15%を範囲内） ---------- */
-function lenJudge(n, target){
+/* w：何を足す／減らすか（省略＝項目。空文字＝言わない。特別支援学級版は APP.lenWord で欄ごとに変える） */
+function lenJudge(n, target, w){
+  if(w === undefined) w = '項目';
   const lo = Math.round(target*0.85), hi = Math.round(target*1.15);
   if(n >= lo && n <= hi) return { cls:'meter-ok', msg:'めやすの範囲内です' };
-  if(n < lo) return { cls:'meter-short', msg:`あと${target-n}字ほどでめやすです（項目を足すと近づきます）` };
-  return { cls:'meter-over', msg:`めやすより${n-target}字多いです（項目を減らすと近づきます）` };
+  if(n < lo) return { cls:'meter-short', msg:`あと${target-n}字ほどでめやすです` + (w ? `（${w}を足すと近づきます）` : '') };
+  return { cls:'meter-over', msg:`めやすより${n-target}字多いです` + (w ? `（${w}を減らすと近づきます）` : '') };
 }
 function meter(){
   const o = $('out'); if(o.classList.contains('empty')) return;
-  const n = [...o.textContent].length, L = APP.curLen(), j = lenJudge(n, L);
+  const n = [...o.textContent].length, L = APP.curLen(), j = lenJudge(n, L, APP.lenWord ? APP.lenWord() : undefined);
   $('lenMeta').textContent = `${n}字（めやす ${L}字）`;
   $('tip').textContent = j.msg; $('tip').className = j.cls;
 }
