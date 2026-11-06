@@ -348,6 +348,40 @@ details.cat>summary{font-size:15px;}
 .kk-tbl tr.skip td{opacity:.45;}
 .kk-tbl tr.noev td.kk-ev{background:#faf9f5;}
 .kk-need{background:#fff6d6; border-color:#e5cf7a; color:#5d4a00;}
+/* ---- 評価の文を1文ずつ選ぶ（SN v1.7） ---- */
+.kkpick{border:1px solid var(--line); border-radius:10px; background:var(--panel); padding:10px 12px; margin-top:12px;}
+.kkph{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;}
+.kkph b{font-size:14.5px;}
+.kkph .seg{flex:none;}
+.kkph .seg button{flex:none; padding:5px 10px; font-size:12px;}
+.kkpend{color:var(--warn); font-weight:700;}
+.kkblk{margin-top:10px;}
+.kkbh{font-size:12.5px; font-weight:700; color:var(--accent); border-bottom:1px solid var(--line); padding:2px 0; margin-bottom:4px;}
+.kkrow{display:flex; gap:8px; padding:7px 6px; border-radius:6px; border-left:3px solid transparent;}
+.kkrow + .kkrow{border-top:1px dashed #ebe8df;}
+.kkrow.pend{background:#fff8ea; border-left-color:var(--warn);}
+.kkrow.no{opacity:.6;}
+.kkrow:not(.use) .kknew{color:var(--sub); text-decoration:line-through; text-decoration-color:#c9c5b9;}
+.kkchk{flex:none; padding-top:2px; cursor:pointer;}
+.kkchk input{width:18px; height:18px; cursor:pointer;}
+.kkdash{display:inline-block; width:18px; text-align:center; color:var(--sub);}
+.kkbody{flex:1; min-width:0;}
+.kknew{font-size:14px; line-height:1.7;}
+.kksrc{font-size:12px; color:var(--sub); line-height:1.6; margin-top:2px;}
+.kksrc span{display:inline-block; font-size:10.5px; border:1px solid var(--line); border-radius:4px; padding:0 4px; margin-right:5px;}
+.kktags{margin-top:3px;}
+.kktag{display:inline-block; font-size:11px; padding:0 7px; border-radius:9px; margin:2px 4px 0 0; background:#fff1d9; color:#7a5200;}
+.kktag.warn{background:var(--warn-soft); color:var(--warn); font-weight:700;}
+.kktag.off{background:#f0eee7; color:var(--sub);}
+.kktag.ok{background:#dff3e3; color:#1b6b34;}
+.kkok{font-family:inherit; font-size:11.5px; border:1px solid var(--warn); color:var(--warn); background:#fff; border-radius:9px; padding:1px 8px; margin-top:2px; cursor:pointer;}
+.kkok:hover{background:var(--warn-soft);}
+.kkfoot{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-top:8px; font-size:12px; color:var(--sub);}
+.kkflag{display:inline-block; font-size:11.5px; font-weight:700; padding:1px 8px; border-radius:10px; background:var(--warn-soft); color:var(--warn); margin-right:6px;}
+.sechip.pend{box-shadow:inset 0 0 0 1px var(--warn);}
+.sechip.pend::after{content:"！"; color:var(--warn); font-weight:700;}
+.listfilter{display:flex; align-items:center; gap:8px; margin-top:10px; font-size:12.5px; color:var(--sub);}
+.listfilter .seg button{flex:none; padding:5px 12px; font-size:12.5px;}
 </style>
 </head>
 <body>
@@ -602,6 +636,8 @@ details.cat>summary{font-size:15px;}
   </div>
   <div class="nglint" id="nglint" style="display:none;"></div>
   <div class="dropped" id="dropped" style="display:none;"></div>
+  <!-- 個別の指導計画の評価の文を1文ずつ選ぶ（SN v1.7〜。中身は kkRenderPick が作る） -->
+  <div class="kkpick" id="kkPick" style="display:none;"></div>
   <div class="tools">
     <button id="copyBtn">コピー</button>
     <button id="regenBtn">別の言い方にする</button>
@@ -683,6 +719,8 @@ details.cat>summary{font-size:15px;}
     <button type="button" class="btn primary" id="addStuBtn">＋ 児童を追加</button>
   </div>
   <p class="hint">「全員分コピー」は、番号・名前・各欄の所見をタブで区切ってコピーします（1行目は欄の名前）。Excelに貼り付けると表になります。行を押すと、その児童の欄ごとの所見を開きます。</p>
+  <!-- 個別の指導計画から作ったとき、要確認の文が残っている児童だけに絞る（SN v1.7〜。APP.secFlag があるときだけ出す） -->
+  <div class="listfilter" id="listFilter" style="display:none;"></div>
   <div class="listtable" id="listTable"></div>
   <details class="fold">
     <summary>くわしい設定（作業ファイル・学級の消去）</summary>
@@ -722,9 +760,14 @@ details.cat>summary{font-size:15px;}
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "SN v1.6";
+const APP_VERSION = "SN v1.7";
 const APP_DATE    = "2026-11-06";
 const APP_HISTORY = [
+  "SN v1.7 一人ずつの確認画面（第3段階）。文章の画面の下に「評価の文から選ぶ」の一覧を追加。",
+  "　　　　評価の文を計画の順に並べ、所見での形と元の文を上下に表示。チェックで使う文を選ぶと、その場で文章を作り直す。",
+  "　　　　要確認の文（健康・家庭／固有の名前／様子を述べただけ／書き癖）には印。チェックを変えるか「このままでよい」で確認済みになる。",
+  "　　　　はじめは「要確認の文だけ」を表示し、印のない文は見なくてよい作りにした。欄の「OK」で、残った要確認の文はいまの選び方で確定する。",
+  "　　　　児童のまとめに欄ごとの「要確認 n」、所見一覧に「！」の印と「要確認が残っている児童」の絞り込みを追加。",
   "SN v1.6 個別の指導計画の評価の文から、欄ごとの所見の下書きを作る（第2段階：文の見分け・言い換え・組み立て）。",
   "　　　　評価の文を1文ずつに分け、できたこと／様子／課題／教師の手立て・今後の方針／メモを見分ける。できたこと・様子の文だけを使い、",
   "　　　　「〜が、〜」の文は肯定の側を使う。文末を敬体にし、「本児」「〜してあげる」を直す。健康・家庭に関わる文は既定で外し、固有の名前は要確認とする。",
@@ -2178,6 +2221,7 @@ function generate(){
     .filter(i=>st.sel.has(i.id))
     .map(i=>({it:i, lvl:st.sel.get(i.id)}));
   if(chosen.length===0 && kkUse()){ kkGenerate(); return; }
+  kkHidePick();   // 項目から作るときは、評価の文の一覧を出さない
   if(chosen.length===0){
     setOut("この欄の項目を1つ以上選んでから「この欄の所見文をつくる」を押してください。", true);
     return;
@@ -2212,10 +2256,11 @@ function kkGenerate(){
   st.out = r.text;
   if(r.text){ setOut(r.text, false); updateMeta(r.text, st.len); } else setOut(KK_EMPTY, true);
   kkShowNote(r);
+  kkRenderPick(r);
   showLint(r.text);
   renderAll(); buildTabs(); save();
 }
-/* 外した文・要確認の文を知らせる（文ごとに選び直す画面は次の版） */
+/* 外した文・要確認の文を知らせる（文ごとに選ぶのは、下の「評価の文から選ぶ」の一覧） */
 function kkShowNote(r){
   const box = document.getElementById('dropped');
   const n = r.n, out = [];
@@ -2226,8 +2271,96 @@ function kkShowNote(r){
   if(n.cut)     out.push(`字数のめやすで外した文 ${n.cut}`);
   let h = `個別の指導計画の評価の文から作りました（${n.all}文のうち ${n.use}文を使用）。`;
   if(out.length) h += `<br>使わなかった文：${out.join('・')}。`;
-  if(n.chk) h += `<br><b>要確認</b>：学級名・人名などの固有の名前や、様子を述べただけの文が ${n.chk}文 入っています。元の評価の文と見比べてください。`;
+  if(n.pend) h += `<br><b class="kkpend">要確認 ${n.pend}文</b>：下の一覧で、所見に載せてよいか確かめてください。`;
   box.innerHTML = h; box.style.display = 'block';
+}
+
+/* ---------- 評価の文を1文ずつ選ぶ（SN v1.7〜） ----------
+   文章の画面の下に、この欄の評価の文を計画の順に並べる。
+     ・チェック＝所見に使う。変えると rec.kk.pick に保存し、文章をその場で作り直す
+     ・変換後の文（所見での形）と、個別の指導計画の元の文を上下に並べる
+     ・要確認の文（健康・家庭／固有の名前／様子だけの文／書き癖）には印。担任が
+       チェックを変えるか「このままでよい」を押すまで「要確認」として残る
+     ・課題・方針・メモの文はチェックなしで表示だけ（「すべての文」のとき）
+   欄の「OK」を押すと、残っている要確認の文は、いまの選び方で確定する（APP.onConfirm → kkResolve）。 */
+const KK_CHK_LABEL  = { health:'健康・家庭に関わる', name:'固有の名前', act:'様子を述べただけ', kuse:'書き癖が残る' };
+const KK_KIND_LABEL = { issue:'課題の文', teacher:'教師の手立て・今後の方針', memo:'メモ' };
+let kkView = { at:'', mode:'' };   // mode：'chk'（要確認の文だけ）／'all'（すべての文）。児童・欄が変わると自動で決め直す
+const kkEsc = s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function kkHidePick(){ const b = document.getElementById('kkPick'); if(b){ b.style.display = 'none'; b.innerHTML = ''; } }
+function kkRowHtml(s){
+  const usable = s.kind === 'pos' || s.kind === 'act';
+  const pend = s.chk.length && !s.fixed;
+  const tags = s.chk.map(c=>`<span class="kktag${c==='health'?' warn':''}">要確認：${KK_CHK_LABEL[c]}`
+    + `${c==='name' && s.names.length ? '（' + kkEsc(s.names.join('・')) + '）' : ''}</span>`);
+  if(!usable) tags.unshift(`<span class="kktag off">${KK_KIND_LABEL[s.kind] || ''}（使いません）</span>`);
+  if(s.cut) tags.push('<span class="kktag off">字数のめやすで外しました</span>');
+  if(s.part) tags.push(`<span class="kktag off">${s.part === 'after' ? '「〜が、」の後ろだけ使用' : '「〜が、」の前だけ使用'}</span>`);
+  if(s.chk.length && s.fixed) tags.push('<span class="kktag ok">確認済み</span>');
+  const box = usable ? `<input type="checkbox" data-k="${s.key}"${s.use ? ' checked' : ''} title="チェック＝所見に使う">` : '<span class="kkdash">－</span>';
+  const ok  = pend ? `<button type="button" class="kkok" data-k="${s.key}" data-v="${s.use?1:0}">このままでよい（${s.use ? '使う' : '使わない'}）</button>` : '';
+  return `<div class="kkrow${s.use?' use':''}${pend?' pend':''}${usable?'':' no'}">`
+    + `<label class="kkchk">${box}</label><div class="kkbody">`
+    + (usable ? `<div class="kknew">${kkEsc(s.text)}</div>` : '')
+    + `<div class="kksrc"><span>元の文</span>${kkEsc(s.src)}</div>`
+    + (tags.length || ok ? `<div class="kktags">${tags.join('')}${ok}</div>` : '')
+    + `</div></div>`;
+}
+function kkRenderPick(r){
+  const box = document.getElementById('kkPick'); if(!box) return;
+  const rec = SHELL.curRec(), at = rec.id + '/' + state.cur;
+  const pend = kkPending(r).length, chkAll = r.sents.filter(s=>s.chk.length).length;
+  if(kkView.at !== at) kkView = { at, mode: pend ? 'chk' : 'all' };
+  const mode = kkView.mode, blocks = rec.kk.blocks;
+  let html = `<div class="kkph"><span><b>評価の文から選ぶ</b>　${r.n.use} / ${r.n.all}文を使用`
+    + (pend ? `　<span class="kkpend">要確認 ${pend}文</span>` : chkAll ? '　要確認はすべて確認済み' : '') + `</span>`
+    + `<div class="seg"><button type="button" data-view="chk" class="${mode==='chk'?'on':''}">要確認の文だけ（${chkAll}）</button>`
+    + `<button type="button" data-view="all" class="${mode==='all'?'on':''}">すべての文（${r.n.all}）</button></div></div>`;
+  html += `<p class="hint">チェックを入れた文を所見に使います。上が所見での形、下が個別の指導計画の元の文です。`
+    + `<b>要確認</b>の文は、保護者に渡す通知表に載せてよいかを確かめ、チェックを変えるか「このままでよい」を押してください。</p>`;
+  const byB = new Map();
+  r.sents.forEach(s=>{ if(!byB.has(s.b)) byB.set(s.b, []); byB.get(s.b).push(s); });
+  let hidden = 0;
+  byB.forEach((list, bi)=>{
+    const rows = list.filter(s=>mode === 'all' || s.chk.length);
+    hidden += list.length - rows.length;
+    if(!rows.length) return;
+    const b = blocks[bi] || {};
+    const title = [b.subj, b.obs, b.content].filter(x=>String(x||'').trim()).map(kkEsc).join('　');
+    html += `<div class="kkblk"><div class="kkbh">${title || '（教科名なし）'}</div>${rows.map(kkRowHtml).join('')}</div>`;
+  });
+  if(mode === 'chk' && !chkAll) html += '<p class="hint">この欄には要確認の文はありません。</p>';
+  html += `<div class="kkfoot"><span>${mode === 'chk' && hidden ? `ほかの ${hidden}文 は、おすすめの選び方のままです（「すべての文」で見られます）。` : ''}</span>`
+    + `<button type="button" class="linkbtn" id="kkReset">この欄をおすすめの選び方に戻す</button></div>`;
+  box.innerHTML = html; box.style.display = 'block';
+}
+/* 一覧の操作。チェック・「このままでよい」は rec.kk.pick に書いて、文章を作り直す（元に戻すも効く） */
+function kkSetPick(key, v){
+  SHELL.snapUndo();
+  const rec = SHELL.curRec();
+  rec.kk.pick = rec.kk.pick || {};
+  rec.kk.pick[key] = v ? 1 : 0;
+  SHELL.afterEdit();
+}
+document.getElementById('kkPick').addEventListener('change', e=>{
+  const c = e.target.closest('input[data-k]'); if(c) kkSetPick(c.dataset.k, c.checked);
+});
+document.getElementById('kkPick').addEventListener('click', e=>{
+  const ok = e.target.closest('.kkok');
+  if(ok){ kkSetPick(ok.dataset.k, ok.dataset.v === '1'); return; }
+  const v = e.target.closest('[data-view]');
+  if(v){ kkView.mode = v.dataset.view; SHELL.afterEdit(); return; }
+  if(e.target.closest('#kkReset')){
+    if(!confirm('この欄で選んだ文をすべて取り消して、おすすめの選び方に戻します。よろしいですか。')) return;
+    SHELL.snapUndo(); kkResetPick(SHELL.curRec(), state.cur); SHELL.afterEdit();
+  }
+});
+/* 児童のまとめ・所見一覧に出す、欄ごとの「要確認が残っている文」の数（項目から作っている欄は0） */
+function kkPendingN(rec, k){
+  if(!rec || typeof kkHas !== 'function' || !kkHas(rec, k)) return 0;
+  const f = rec.secs && rec.secs[k];
+  if(f && f.sel && f.sel.length) return 0;
+  return kkPending(kkCompose(rec, k, kkOptOf(rec, k))).length;
 }
 
 function showLint(text){
@@ -2515,8 +2648,16 @@ const APP = {
   regen(){
     const st = cur();
     if(st.sel.size || kkUse()) generate();
-    else{ st.out = ""; setOut(SHELL_EMPTY(), true); showDropped([]); showLint(""); }
+    else{ st.out = ""; setOut(SHELL_EMPTY(), true); showDropped([]); showLint(""); kkHidePick(); }
   },
+  /* 欄の「OK」を押したとき：残っている要確認の文を、いまの選び方で確定する（SN v1.7〜） */
+  onConfirm(rec, k){
+    const f = rec.secs && rec.secs[k];
+    if(f && f.sel && f.sel.length) return;
+    kkResolve(rec, k, kkOptOf(rec, k));
+  },
+  /* 児童のまとめ・所見一覧の印：その欄に残っている要確認の文の数（SN v1.7〜） */
+  secFlag(rec, k){ return kkPendingN(rec, k); },
   curLen(){ return cur().len; },
   classCapture(){ return { variant:state.variant, join:state.join, closer:state.closer }; },
   classApply(d){
@@ -3533,6 +3674,7 @@ function draftHead(){
 }
 function confirmSec(){
   capture();
+  if(APP.onConfirm) APP.onConfirm(curRec(), SH.sec);   // 特別支援学級版：残っている要確認の文を、いまの選び方で確定
   const s = sec(curRec(), SH.sec);
   if(s.out) s.okOut = s.out;
   saveNow();
@@ -3570,8 +3712,9 @@ RENDER.scrChild = ()=>{
   let html = '';
   ks.forEach(k=>{
     const s = sec(r,k), st = secStatus(r,k);
+    const fl = APP.secFlag ? APP.secFlag(r, k) : 0;   // 要確認が残っている文の数（特別支援学級版）
     html += `<div class="crow" data-sec="${esc(k)}"><div class="chead"><b>${esc(APP.secName(k))}</b>`
-      + `<span>${s.out ? [...s.out].length + '字　' : ''}<span class="badge ${st}">${ST_LABEL[st]}</span></span></div>`
+      + `<span>${fl ? `<span class="kkflag">要確認 ${fl}</span>` : ''}${s.out ? [...s.out].length + '字　' : ''}<span class="badge ${st}">${ST_LABEL[st]}</span></span></div>`
       + `<div class="ctext${s.out?'':' none'}">${esc(s.out || 'まだ作っていません。押すと作ります。')}</div></div>`;
   });
   $('childList').innerHTML = html;
@@ -3602,12 +3745,25 @@ RENDER.scrList = ()=>{
   list.forEach(s=>c[recStatus(s)]++);
   $('rosterCount').innerHTML = `<b>${list.length}人</b>　確認済み <b>${c.ok}</b>・下書き <b>${c.draft}</b>・未作成 <b>${c.none}</b>`;
   $('listBanner').textContent = SH.banner; $('listBanner').style.display = SH.banner ? '' : 'none';
+  /* 要確認の文が残っている欄（特別支援学級版：APP.secFlag）。児童ごとに数えて、絞り込みに使う */
+  const flags = new Map();
+  if(APP.secFlag) list.forEach(s=>{ const m = {}; let t = 0; secsOf(s).forEach(k=>{ const n = APP.secFlag(s,k); if(n){ m[k] = n; t += n; } }); flags.set(s.id, { m, t }); });
+  const pendKids = list.filter(s=>flags.get(s.id) && flags.get(s.id).t).length;
+  const lf = $('listFilter');
+  if(!pendKids) SH.listFilter = 'all';
+  if(lf){
+    lf.style.display = APP.secFlag && pendKids ? '' : 'none';
+    lf.innerHTML = `<span>表示：</span><div class="seg"><button type="button" data-f="all" class="${SH.listFilter!=='chk'?'on':''}">全員</button>`
+      + `<button type="button" data-f="chk" class="${SH.listFilter==='chk'?'on':''}">要確認が残っている児童（${pendKids}人）</button></div>`;
+    lf.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ SH.listFilter = b.dataset.f; RENDER.scrList(); }));
+  }
+  const shown = SH.listFilter === 'chk' ? list.filter(s=>flags.get(s.id) && flags.get(s.id).t) : list;
   let html;
   if(APP.multi){
     html = '<table><thead><tr><th>番号</th><th>名前</th><th>欄</th><th>状態</th><th></th></tr></thead><tbody>';
-    list.forEach(s=>{
-      const ks = secsOf(s);
-      const chips = ks.map(k=>`<span class="sechip ${secStatus(s,k)}" title="${esc(APP.secName(k))}：${ST_LABEL[secStatus(s,k)]}">${esc(APP.secShort ? APP.secShort(k) : APP.secName(k))}</span>`).join('');
+    shown.forEach(s=>{
+      const ks = secsOf(s), fm = (flags.get(s.id) || {m:{}}).m;
+      const chips = ks.map(k=>`<span class="sechip ${secStatus(s,k)}${fm[k]?' pend':''}" title="${esc(APP.secName(k))}：${ST_LABEL[secStatus(s,k)]}${fm[k]?`（要確認 ${fm[k]}文）`:''}">${esc(APP.secShort ? APP.secShort(k) : APP.secName(k))}</span>`).join('');
       const st = recStatus(s);
       html += `<tr class="lrow" data-id="${esc(s.id)}"><td class="no">${esc((s.no||'').trim()||'—')}</td><td class="nm">${esc((s.name||'').trim()||'（名前なし）')}</td>`
         + `<td class="tx">${chips}</td><td><span class="badge ${st}">${ST_LABEL[st]}</span></td>`
@@ -3615,7 +3771,7 @@ RENDER.scrList = ()=>{
     });
   }else{
     html = '<table><thead><tr><th>番号</th><th>名前</th><th>所見（書き出し）</th><th>字数</th><th>状態</th><th></th></tr></thead><tbody>';
-    list.forEach(s=>{
+    shown.forEach(s=>{
       const k = secsOf(s)[0], o = sec(s,k).out || '', n = [...o].length;
       const bad = o && lenJudge(n, sec(s,k).len || APP.defLen).cls !== 'meter-ok';
       const st = recStatus(s);
@@ -3838,7 +3994,7 @@ $('tourSkip').addEventListener('click', closeTour);
 window.SHELL = { R, SH, save, saveNow, capture, curRec, sorted, show, secsOf, sec, recStatus, secStatus,
                  lenJudge, meter, afterEdit, setSec, switchStudent, startNewChild, openItems, readRoster,
                  rosterAnalyze, allTsv, recText, EMPTY, setSave, firstSec, startSeq, childStart, regenAll, nextChild,
-                 readSheets, blankRec, yobiOf, esc, renderStepbar };
+                 readSheets, blankRec, yobiOf, esc, renderStepbar, snapUndo };
 (function boot(){
   let data = null;
   try{ data = JSON.parse(localStorage.getItem(APP.storeKey) || "null"); }catch(e){}
@@ -4376,7 +4532,29 @@ function kkCompose(rec, k, opt){
   ['issue','teacher','memo'].forEach(x=>{ n[x] = sents.filter(s=>s.kind === x && !s.use).length; });
   n.health = sents.filter(s=>s.chk.includes('health') && !s.use).length;
   n.chk = sents.filter(s=>s.use && s.chk.length).length;
+  n.pend = sents.filter(s=>s.chk.length && !s.fixed).length;
   return { text: r.text, len: r.len, closer: r.closer || '', sents, n };
+}
+
+/* ---------- 要確認の文（SN v1.7〜） ----------
+   要確認の印（chk）があり、担任がまだ「使う・使わない」を決めていない文（pick に無い文）を「要確認が残っている」とする。
+   kkResolve … いまの選び方（use）を、そのまま担任の決定として pick に書く（欄の「OK」を押したとき）。 */
+function kkPending(r){ return r.sents.filter(s=>s.chk.length && !s.fixed); }
+function kkResolve(rec, k, opt){
+  if(!kkHas(rec, k)) return 0;
+  const r = kkCompose(rec, k, opt), list = kkPending(r);
+  if(!list.length) return 0;
+  rec.kk.pick = rec.kk.pick || {};
+  list.forEach(s=>{ rec.kk.pick[s.key] = s.use ? 1 : 0; });
+  return list.length;
+}
+/* この欄の pick（担任の選び方）を消して、おすすめの選び方に戻す */
+function kkResetPick(rec, k){
+  if(!rec.kk || !rec.kk.pick) return;
+  rec.kk.blocks.forEach((b, bi)=>{
+    if(b.sec !== k) return;
+    Object.keys(rec.kk.pick).forEach(key=>{ if(key.split('.')[0] === String(bi)) delete rec.kk.pick[key]; });
+  });
 }
 </script>
 <script>

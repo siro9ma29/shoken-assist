@@ -8,7 +8,7 @@ const core = html.slice(html.indexOf('/* ===TEXT-CORE-START==='), html.indexOf('
 const kkStart = html.indexOf('   個別の指導計画（様式3-1 .xlsx）の読み取り');
 const kk = html.slice(html.lastIndexOf('/* ====', kkStart), html.indexOf('</script>', kkStart));
 const ctx = {}; vm.createContext(ctx);
-vm.runInContext(core + '\n' + kk + '\nthis.API = { kkPutPhrase, kkSplit, kkKind, kkPart, kkPolite, kkFix, kkSentsOf, kkCompose, kkHas, SUB_BY_KEY };', ctx);
+vm.runInContext(core + '\n' + kk + '\nthis.API = { kkPutPhrase, kkSplit, kkKind, kkPart, kkPolite, kkFix, kkSentsOf, kkCompose, kkHas, kkPending, kkResolve, kkResetPick, SUB_BY_KEY };', ctx);
 const A = ctx.API;
 
 let ng = 0, n = 0;
@@ -102,6 +102,26 @@ const r5 = A.kkCompose({ kk:{ blocks:[{ sec:'sh', ev:'町たんけんで、お�
 eq(r5.text, '町たんけんで、読み方を一緒に確かめると、お店の人に質問することができました。', '場面の後ろに手立てを入れる');
 eq(A.kkHas(rec, 'sa'), true, 'kkHas');
 eq(A.kkHas(rec, 'on'), false, 'kkHas（計画にない欄）');
+
+/* 8. 要確認の文（SN v1.7〜） */
+const recC = { kk:{ blocks:[
+  { sec:'ko', ev:'さくら学級で、友達と音読することができた。給食を残さず食べることができた。進んで手を挙げた。', sup:{k:'none'} },
+  { sec:'sa', ev:'数を数えることができた。', sup:{k:'none'} },
+], pick:{} } };
+const c1 = A.kkCompose(recC, 'ko', { len:150 });
+eq(A.kkPending(c1).map(s=>s.key).join(), '0.0,0.1', '要確認が残っている文（固有の名前・健康）');
+eq(c1.n.pend, 2, 'n.pend');
+eq(c1.sents.find(s=>s.key==='0.1').use, false, '健康の文は既定で使わない');
+recC.kk.pick['0.0'] = 0;
+eq(A.kkPending(A.kkCompose(recC, 'ko', { len:150 })).length, 1, '担任が決めた文は要確認から外れる');
+eq(A.kkCompose(recC, 'ko', { len:150 }).text.includes('さくら学級'), false, '外した文は入らない');
+eq(A.kkResolve(recC, 'ko', { len:150 }), 1, 'OKで残りを確定した数');
+eq(recC.kk.pick['0.1'], 0, '確定はいまの選び方のまま（健康の文は使わない）');
+eq(A.kkPending(A.kkCompose(recC, 'ko', { len:150 })).length, 0, '確定後は要確認なし');
+eq(A.kkResolve(recC, 'sa', { len:150 }), 0, '要確認のない欄は何もしない');
+recC.kk.pick['1.0'] = 0;
+A.kkResetPick(recC, 'ko');
+eq(Object.keys(recC.kk.pick).join(), '1.0', 'おすすめに戻すのは、その欄の文だけ');
 
 console.log(`${n - ng} / ${n} OK`);
 process.exit(ng ? 1 : 0);
