@@ -8,7 +8,7 @@ const core = html.slice(html.indexOf('/* ===TEXT-CORE-START==='), html.indexOf('
 const kkStart = html.indexOf('   個別の指導計画（様式3-1 .xlsx）の読み取り');
 const kk = html.slice(html.lastIndexOf('/* ====', kkStart), html.indexOf('</script>', kkStart));
 const ctx = {}; vm.createContext(ctx);
-vm.runInContext(core + '\n' + kk + '\nthis.API = { kkPutPhrase, kkSplit, kkKind, kkPart, kkPolite, kkFix, kkSentsOf, kkCompose, kkHas, kkPending, kkResolve, kkResetPick, kkNameKey, kkMatch, kkDupTo, kkKeepSecs, kkRedoPlan, kkSubjKey, kkJoinItems, kkItemHits, kkItemTail, SUB_BY_KEY };', ctx);
+vm.runInContext(core + '\n' + kk + '\nthis.API = { kkPutPhrase, kkSplit, kkKind, kkPart, kkPolite, kkFix, kkSentsOf, kkCompose, kkHas, kkPending, kkResolve, kkResetPick, kkNameKey, kkMatch, kkDupTo, kkKeepSecs, kkRedoPlan, kkSubjKey, kkJoinItems, kkItemHits, kkItemTail, SUB_BY_KEY, scanMemo, lintDB };', ctx);
 const A = ctx.API;
 
 let ng = 0, n = 0;
@@ -248,6 +248,43 @@ eq(!!A.SUB_BY_KEY.gg && A.SUB_BY_KEY.gg.name, '外国語', '外国語の欄が�
   eq(ids([S('好きな食べ物を英語で伝えることができました。', true)], 'gg'), 'gg2', '計画の文にあり：項目の文の終わり（英語で伝え）');
   eq(A.kkItemTail('教師や友達の話を最後まで聞く'), '最後まで聞', '項目の文の終わり');
   eq(A.kkItemTail('整理整頓や掃除をする'), '', '項目の文の終わり：短いときは使わない');
+}
+
+/* 項目の追加（SN v1.14〜）。個別の指導計画10人分から足した項目に印が付くか（文はすべて架空） */
+{
+  const S = (text)=>({ text, src: text, use: true });
+  const has = (text, k, id)=>[...A.kkItemHits([S(text)], A.SUB_BY_KEY[k]).keys()].includes(id);
+  [
+    ['漢字を覚えて書くことができました。', 'ko', 'ko20'],
+    ['ひらがなを読めるようになりました。', 'ko', 'ko17'],
+    ['正しい持ち方で鉛筆を持って書けるようになりました。', 'ko', 'ko18'],
+    ['九九を使ってかけ算ができました。', 'sa', 'sa14'],
+    ['〇時、〇時半の時刻を読めるようになりました。', 'sa', 'sa7'],
+    ['リコーダーの指づかいに気を付けて練習しました。', 'on', 'on9'],
+    ['サーキット運動で３分間走り続けることができました。', 'ta', 'ta11'],
+    ['運動会の踊りの練習に意欲的に取り組みました。', 'ta', 'ta10'],
+    ['よい言葉を選択肢から選ぶ学習で、ぽかぽか言葉を選べました。', 'do', 'do10'],
+    ['畑で野菜の収穫に取り組みました。', 'se', 'se11'],
+    ['日直の仕事に喜んで取り組みました。', 'tk', 'tk8'],
+    ['課題の解決に向けて、友達と取り組みました。', 'so', 'so8'],
+    ['教師や友達と一緒にキャッチボールをして遊びました。', 'ji', 'ji7'],
+    // 交流学級・集団での学習（各教科に同じ4項目）
+    ['全体指示を聞いて、活動することができました。', 'sa', 'sa18'],
+    ['周りの児童の動きを参考にして活動しました。', 'zu', 'zu15'],
+    ['交流学級で、大勢の友達との活動を楽しみました。', 'on', 'on16'],
+    ['困っていることを教師に伝えようとしました。', 'gg', 'gg13'],
+  ].forEach(([t, k, id])=>eq(has(t, k, id), true, `項目の追加（v1.14）：${id} ← ${t}`));
+  // まちがって印が付かないこと
+  eq(has('音に合わせて正しく歌うことができました。', 'on', 'on15'), false, '項目の追加（v1.14）：「音に合わせて」は「友達の動きを見てまねる」に当てない');
+  eq(A.lintDB().join(' / '), '', '文例データの点検（ID の重複・KW の登録・act の文末）');
+}
+
+/* メモ読み取り：交流学級・集団での学習の項目は、文に教科名があるときだけ候補にする（SN v1.14〜） */
+{
+  const kou = (memo)=>A.scanMemo(memo, ['ko','sa','on','zu','ta','do']).filter(h=>h.cat === '交流学級・集団での学習').map(h=>h.id).sort().join(',');
+  eq(kou('大勢の友達と一緒に活動を楽しんだ。'), '', 'メモ：教科名がないと交流の項目は候補にしない');
+  eq(kou('音楽では、大勢の友達と一緒に活動を楽しんだ。'), 'on16', 'メモ：教科名がある欄の交流の項目だけ候補にする');
+  eq(kou('図工の時間に、友達の動きを見てまねた。'), 'zu15', 'メモ：図工（略した名前）でも見分ける');
 }
 
 console.log(`${n - ng} / ${n} OK`);
