@@ -8,7 +8,7 @@ const core = html.slice(html.indexOf('/* ===TEXT-CORE-START==='), html.indexOf('
 const kkStart = html.indexOf('   個別の指導計画（様式3-1 .xlsx）の読み取り');
 const kk = html.slice(html.lastIndexOf('/* ====', kkStart), html.indexOf('</script>', kkStart));
 const ctx = {}; vm.createContext(ctx);
-vm.runInContext(core + '\n' + kk + '\nthis.API = { kkPutPhrase, kkSplit, kkKind, kkPart, kkPolite, kkFix, kkSentsOf, kkCompose, kkHas, kkPending, kkResolve, kkResetPick, SUB_BY_KEY };', ctx);
+vm.runInContext(core + '\n' + kk + '\nthis.API = { kkPutPhrase, kkSplit, kkKind, kkPart, kkPolite, kkFix, kkSentsOf, kkCompose, kkHas, kkPending, kkResolve, kkResetPick, kkNameKey, kkMatch, kkDupTo, kkKeepSecs, kkRedoPlan, SUB_BY_KEY };', ctx);
 const A = ctx.API;
 
 let ng = 0, n = 0;
@@ -122,6 +122,45 @@ eq(A.kkResolve(recC, 'sa', { len:150 }), 0, '要確認のない欄は何もし�
 recC.kk.pick['1.0'] = 0;
 A.kkResetPick(recC, 'ko');
 eq(Object.keys(recC.kk.pick).join(), '1.0', 'おすすめに戻すのは、その欄の文だけ');
+
+/* 7. 計画と児童の照合（SN v1.9〜）。氏名はすべて架空 */
+eq(A.kkNameKey('髙橋　一郎さん'), '高橋一郎', '照合の名前：敬称・空白・異体字');
+{
+  const stu = [ { id:'a', no:'1', name:'青木 一郎さん' }, { id:'b', no:'2', name:'花子さん' }, { id:'c', no:'3', name:'' } ];
+  const plans = [
+    { name:'青木　一郎', noFromFile:'' },      // 氏名が一致
+    { name:'山田 花子', noFromFile:'' },       // 名だけ一致
+    { name:'', noFromFile:'3' },               // 番号
+    { name:'架空 太郎', noFromFile:'' },       // 見つからない
+    { name:'青木一郎', noFromFile:'' },        // 同じ児童がもう1つ
+  ];
+  const m = A.kkMatch(plans, stu, null);
+  eq(m.assign.map(a=>a.to + '/' + a.how + (a.check?'!':'')).join(' '), 'rec:a/name rec:b/part! rec:c/no new/ rec:a/name', '名簿なしの照合');
+  eq([...A.kkDupTo(m.assign)].join(), 'rec:a', '同じ児童に2つの計画');
+  const ros = [ { no:'1', name:'青木 一郎' }, { no:'4', name:'架空 太郎' }, { no:'5', name:'架空 次郎' } ];
+  const m2 = A.kkMatch([ { name:'架空 太郎', noFromFile:'' }, { name:'', noFromFile:'5' }, { name:'', noFromFile:'3' }, { name:'別の 名前', noFromFile:'' } ], stu, ros);
+  eq(m2.assign.map(a=>a.to + '/' + a.how + (a.check?'!':'')).join(' '), 'ros:4/name ros:5/no new/! new/!', '名簿ありの照合（名簿にない番号は使わない）');
+  eq(m2.targets.filter(t=>t.src === 'ros').map(t=>t.no).join(), '4,5', '名簿の児童のうち学級にいない人だけが行き先に増える');
+}
+{
+  /* 読み込み直し：手直し・OKの欄は残し、ほかは作り直す。評価がなくなった欄は消す */
+  const sec = (o)=>Object.assign({ sel:[], out:'', okOut:'', hand:false }, o);
+  const rec = { active:['ko','sa','on','gy','gk'], kk:{ blocks:[] }, secs:{
+    ko: sec({ out:'前の国語' }), sa: sec({ out:'手で直した算数', hand:true }), on: sec({ out:'OKの音楽', okOut:'OKの音楽' }),
+    zu: sec({}), gy: sec({ out:'項目の文', sel:[['x','a']] }), gk: sec({}), ta: sec({ out:'前の体育' }) } };
+  rec.active.push('ta');
+  eq(A.kkKeepSecs(rec).join(), 'sa,on', '残す欄（手直し・OK）');
+  const kk = { blocks:[ { sec:'ko', ev:'新しい国語。' }, { sec:'sa', ev:'新しい算数。' }, { sec:'zu', ev:'新しい図工。' } ], pick:{} };
+  const r = A.kkRedoPlan(rec, kk, (rc, k)=>'新:' + k);
+  eq([rec.secs.ko.out, rec.secs.sa.out, rec.secs.on.out, rec.secs.zu.out, rec.secs.gy.out, rec.secs.ta.out].join('|'),
+     '新:ko|手で直した算数|OKの音楽|新:zu|項目の文|', '読み込み直しの下書き');
+  eq(r.drafted + '/' + r.kept.join(), '2/sa,on', '作った欄と残した欄');
+  eq(rec.active.join(), 'ko,sa,on,zu,gy,gk', '使う欄（計画の欄＋作業のある欄）');
+  /* はじめての取り込み：文章がある欄はそのまま */
+  const rec2 = { active:['ko'], secs:{ ko: sec({ out:'先に書いた文' }), sa: sec({}), gy: sec({}), gk: sec({}) } };
+  A.kkRedoPlan(rec2, { blocks:[ { sec:'ko', ev:'国語。' }, { sec:'sa', ev:'算数。' } ], pick:{} }, (rc, k)=>'新:' + k);
+  eq(rec2.secs.ko.out + '|' + rec2.secs.sa.out, '先に書いた文|新:sa', 'はじめての取り込みは、文章のある欄を残す');
+}
 
 console.log(`${n - ng} / ${n} OK`);
 process.exit(ng ? 1 : 0);

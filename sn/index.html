@@ -347,6 +347,15 @@ details.cat>summary{font-size:15px;}
 .kk-tbl tr.need td{background:#fff6d6;}
 .kk-tbl tr.skip td{opacity:.45;}
 .kk-tbl tr.noev td.kk-ev{background:#faf9f5;}
+/* 児童との対応（SN v1.9） */
+.kk-h3{font-size:16px; margin:22px 0 4px;}
+.kk-map{max-height:none;}
+.kk-map td{vertical-align:top; font-size:13px;}
+.kk-map td select{font-family:inherit; font-size:13px; padding:4px; max-width:260px;}
+.kk-map tr.need td{background:#fff6d6;}
+.kk-map tr.skip td{opacity:.45;}
+.kk-ros{margin-top:10px; font-size:13px;}
+.kk-ros label{display:flex; gap:8px; align-items:flex-start; cursor:pointer;}
 .kk-need{background:#fff6d6; border-color:#e5cf7a; color:#5d4a00;}
 /* ---- 文章の手直し（SN v1.8） ---- */
 #outEdit{display:block; width:100%; box-sizing:border-box; resize:vertical; font-family:inherit; color:var(--ink, inherit);
@@ -500,6 +509,7 @@ details.cat>summary{font-size:15px;}
 <section class="screen" id="scrKkIn">
   <h2 class="scrtitle">個別の指導計画を読み込む</h2>
   <p class="lead">児童の「個別の指導計画」（様式3-1・Excel）を、ここに入れてください。学級の全員分をまとめて選べます。</p>
+  <p class="hint">C4thから出した<b>学級名簿</b>も一緒に入れると、計画を名簿の児童に合わせ、出席番号と名前を名簿どおりにします（入れなくても進めます）。</p>
   <div class="field">
     <label>どの学期の評価を使いますか</label>
     <div class="seg big" id="kkTermSeg" style="max-width:360px;">
@@ -519,6 +529,7 @@ details.cat>summary{font-size:15px;}
     <p class="hint">様式3-1「個別の指導計画」の .xlsx です。学年（A7）・氏名（D7）・学期（K4）と、教科ごとの「課題と支援」「評価」を読み取ります。前期と後期が別のシートのときは、選んだ学期のシートを使います。<br>
     支援の文は、同じブックの「支援の程度表」のシートと照らし合わせ、どの観点の何番の支援かを調べます。<br>
     氏名が空の計画は、ファイル名の先頭の番号（例：05_〜.xlsx）を出席番号として使います。<br>
+    学級名簿（出席番号と氏名の一覧。.xlsx／.xls／CSV）は、計画と一緒に入れれば自動で見分けます。<br>
     読み取りはこのパソコンの中だけで行い、どこにも送りません。保存するのは評価の文と、どの欄に入れるかだけです。</p>
   </details>
   <div class="navrow">
@@ -526,7 +537,7 @@ details.cat>summary{font-size:15px;}
     <button type="button" class="btn ghost" id="kkClear">選んだファイルを外す</button>
     <button type="button" class="btn primary" id="kkGoOk" style="display:none;">読み取りの確認へ →</button>
   </div>
-  <input type="file" id="kkFile" multiple accept=".xlsx,.xlsm,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none;">
+  <input type="file" id="kkFile" multiple accept=".xlsx,.xlsm,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv" style="display:none;">
 </section>
 
 <!-- ===== 読み取りの確認 ===== -->
@@ -542,6 +553,11 @@ details.cat>summary{font-size:15px;}
     </div>
   </div>
   <div class="errbox kk-need" id="kkNeed" style="display:none;"></div>
+  <!-- 計画と児童の対応（SN v1.9〜。中身は renderMap が作る） -->
+  <h3 class="kk-h3">児童との対応</h3>
+  <p class="hint">計画ごとに、どの児童に取り込むかを確かめてください。<b>黄色の行</b>は、自動で決めきれなかった行です。</p>
+  <div id="kkMap"></div>
+  <h3 class="kk-h3">計画の行と欄</h3>
   <p class="hint">児童ごとに、計画の行をどの欄の所見に使うかを確かめてください。<b>欄は、学年に合わせて自動で選んであります。</b>「使わない」にした行は取り込みません。</p>
   <div id="kkList"></div>
   <div class="navrow">
@@ -775,9 +791,13 @@ details.cat>summary{font-size:15px;}
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "SN v1.8";
+const APP_VERSION = "SN v1.9";
 const APP_DATE    = "2026-11-06";
 const APP_HISTORY = [
+  "SN v1.9 学級分のまとめ読み込みと名簿の照合。読み取りの確認に「児童との対応」を追加（氏名・氏名の一部・ファイル名の番号で照合し、",
+  "　　　　決めきれない行は黄色。取り込む先は選び直せる。同じ児童に2つの計画が行くときは取り込めない）。学級名簿を計画と一緒に入れると",
+  "　　　　自動で見分け、名簿の出席番号・氏名で児童を足す。名簿にいて計画がない児童も足せる。読み込み直しでは、",
+  "　　　　手で直した欄・OKを押した欄を残し、ほかの下書きを新しい評価の文で作り直す。",
   "SN v1.8 文章の手直し。文章の画面に「文章を手で直す」を追加。直した文章は「✎ 手で直した文章です」の印が付き、",
   "　　　　項目・文のチェック・呼び方・字数を変えても作り直さない。チェックの変更・「別の言い方にする」・「おすすめの選び方に戻す」では",
   "　　　　「手直しを消して作り直しますか」と聞く（キャンセルなら文章はそのまま）。「手直しを消して作り直す」でいまの選び方から作り直す。",
@@ -4369,6 +4389,104 @@ function kkAnalyze(fileName, sheets, term){
 }
 
 /* ==================================================================
+   計画と児童の照合（学級分のまとめ読み込み）   SN v1.9〜
+   ------------------------------------------------------------------
+   計画ごとに「どの児童に取り込むか」を決める。行き先（to）は次のどれか：
+     'rec:ID' … いまの学級の児童　　'ros:番号' … 名簿の児童（学級にはまだいない）
+     'new'    … 新しく足す　　　　　'skip'     … 取り込まない
+   照合の順：①氏名が同じ（敬称・空白・全角半角・一部の異体字の違いは無視）
+             ②氏名の一部が一致（姓だけ・名だけ）… 1人に決まるときだけ。要確認
+             ③ファイル名の先頭の番号＝出席番号（名簿があれば名簿の番号）。氏名があるのに番号で決めたときは要確認
+   画面には触らない。テスト：sn/test/kk_bun_test.js
+   ================================================================== */
+/* 異体字のうち、名簿と計画で書き分けられやすいもの（照合のときだけ同じとみなす） */
+const KK_ITAI = { '髙':'高', '﨑':'崎', '嵜':'崎', '德':'徳', '濵':'浜', '濱':'浜', '邉':'辺', '邊':'辺', '齋':'斎', '齊':'斎', '櫻':'桜', '澤':'沢', '廣':'広', '藪':'薮', '冨':'富', '眞':'真' };
+function kkNameKey(s){
+  return kkN(s).replace(/(さん|くん|君|ちゃん)$/,'').replace(/[^\x00-\x7F]/g, c=>KK_ITAI[c] || c);
+}
+/* 姓・名の一部が一致するか（短いほうが2文字以上で、長いほうの頭か終わりに一致） */
+function kkNamePart(a, b){
+  if(!a || !b || a === b) return false;
+  const [s, l] = a.length < b.length ? [a, b] : [b, a];
+  return s.length >= 2 && (l.startsWith(s) || l.endsWith(s));
+}
+/* plans … [{name, noFromFile}]、students … いまの学級 [{id, no, name}]、roster … 名簿 [{no, name}] か null
+   戻り値 { targets:[{to, no, name, src:'rec'|'ros'}], assign:[{to, how, check}] }
+     how … 'name'（氏名が一致）／'part'（一部が一致）／'no'（番号）／''（見つからない）
+     check … 担任に確かめてほしいとき true */
+function kkMatch(plans, students, roster){
+  const targets = students.map(s=>({ to:'rec:' + s.id, no:String(s.no||''), name:s.name||'', key:kkNameKey(s.name), src:'rec' }));
+  (roster || []).forEach(r=>{
+    const k = kkNameKey(r.name);
+    const t = k && targets.find(x=>x.src === 'rec' && x.key === k);
+    if(t){ t.ros = true; if(!t.no) t.no = String(r.no||''); return; }   // 名簿の児童がすでに学級にいる
+    targets.push({ to:'ros:' + r.no, no:String(r.no||''), name:r.name, key:k, src:'ros', ros:true });
+  });
+  const hasRos = !!(roster && roster.length);
+  const byNo = no => {
+    if(!no) return null;
+    /* 名簿があるときは名簿の番号を信じる（名簿にない「いまの学級」の番号は使わない） */
+    const c = targets.filter(t=>t.no === no && (!hasRos || t.ros));
+    return c.length === 1 ? c[0] : null;
+  };
+  const assign = plans.map(p=>{
+    const k = kkNameKey(p.name);
+    if(k){
+      const ex = targets.filter(t=>t.key === k);
+      if(ex.length) return { to:ex[0].to, how:'name', check: ex.length > 1 };
+      const pa = targets.filter(t=>kkNamePart(t.key, k));
+      if(pa.length === 1) return { to:pa[0].to, how:'part', check:true };
+    }
+    const t = byNo(p.noFromFile);
+    if(t) return { to:t.to, how:'no', check: !!k };
+    return { to:'new', how:'', check: hasRos };   // 名簿があるのに見つからないときは確かめてもらう
+  });
+  return { targets: targets.map(({key, ...t})=>t), assign };
+}
+/* 同じ児童に2つ以上の計画が行くとき、その行き先の一覧 */
+function kkDupTo(assign){
+  const n = {};
+  assign.forEach(a=>{ if(/^(rec|ros):/.test(a.to)) n[a.to] = (n[a.to]||0) + 1; });
+  return new Set(Object.keys(n).filter(k=>n[k] > 1));
+}
+
+/* 読み込み直しで、前の計画から作った下書きを「残す」欄（手で直した欄・OKを押した欄）。
+   項目を選んで作った欄（sel あり）は計画と関係がないので数えない */
+function kkKeepSecs(rec){
+  if(!rec || !rec.kk) return [];
+  return Object.keys(rec.secs||{}).filter(k=>{
+    const f = rec.secs[k];
+    return f && !(f.sel||[]).length && f.out && (f.hand || f.okOut === f.out);
+  });
+}
+/* 計画（kk）を児童に取り込み、評価の文がある欄の下書きを作る。compose(rec, k) → 文章
+   ・使う欄：計画にある欄＋行動のようす・学校から＋前から作業のある欄
+   ・はじめて取り込む児童：文章がすでにある欄・項目を選んである欄はそのまま
+   ・読み込み直し：手で直した欄・OKを押した欄・項目の欄は残し、ほかは新しい評価の文で作り直す
+     （新しい計画に評価の文がなければ、前の計画から作った文章は消す）
+   戻り値 { drafted:作った欄の数, kept:[残した欄] } */
+function kkRedoPlan(rec, kk, compose){
+  const redo = !!rec.kk;
+  const kept = kkKeepSecs(rec);
+  rec.kk = kk;
+  /* 前からの作業：項目を選んだ欄と、残す欄（はじめての取り込みなら文章のある欄も） */
+  const work = k => { const f = rec.secs[k]; return f && ((f.sel||[]).length || kept.includes(k) || (!redo && f.out)); };
+  const ks = new Set(kk.blocks.map(b=>b.sec).concat(['gy','gk']).concat((rec.active||[]).filter(work)));
+  rec.active = SUBJECTS.map(s=>s.key).filter(k=>ks.has(k));
+  let drafted = 0;
+  /* 読み込み直しのときは、使わなくなった欄に残る前の計画の文章も消す */
+  (redo ? Object.keys(rec.secs) : rec.active).forEach(k=>{
+    const f = rec.secs[k];
+    if(!f || (f.sel||[]).length || kept.includes(k)) return;
+    if(f.out && !redo) return;
+    f.out = rec.active.includes(k) && kkHas(rec, k) ? compose(rec, k) : '';
+    f.hand = false;
+    if(f.out) drafted++;
+  });
+  return { drafted, kept: kept.filter(k=>rec.active.includes(k)) };
+}
+
+/* ==================================================================
    評価の文の分類・言い換えと、欄ごとの組み立て   SN v1.6〜
    ------------------------------------------------------------------
    方針（調査メモ「6. 改修方針」）：所見を一から「生成」するのではなく、
@@ -4691,7 +4809,10 @@ function kkResetPick(rec, k){
 (function(){
 const $ = id => document.getElementById(id);
 const S = window.SHELL, esc = S.esc;
-const KKS = { files:[], term:'', res:[] };   // files … [{name, sheets}]。読み直さずに学期を切り替えられるよう、読んだシートを持っておく
+const KKS = { files:[], term:'', res:[],   // files … [{name, sheets}]。読み直さずに学期を切り替えられるよう、読んだシートを持っておく
+              roster:null,     // 学級名簿 {file, students:[{no, name}]}（SN v1.9〜。計画と一緒に入れたとき）
+              manual:{},       // 担任が選び直した取り込み先（ファイル名 → to）
+              addRos:true };   // 名簿にいて計画がない児童を学級に足すか
 /* 学期の初期値：前期の通知表は10月ごろなので、10月までは前期 */
 const defTerm = () => { const m = new Date().getMonth()+1; return (m >= 4 && m <= 10) ? '前期' : '後期'; };
 const SEC_OPTS = () => SUBJECTS.map(s=>`<option value="${s.key}">${esc(s.name)}</option>`).join('');
@@ -4711,13 +4832,18 @@ async function readFiles(list){
     if(KKS.files.some(x=>x.name === f.name)) KKS.files = KKS.files.filter(x=>x.name !== f.name);   // 同じ名前は入れ替え
     try{
       const sheets = await S.readSheets(f);
+      /* 計画の見出しの行がないファイルは、学級名簿として読めるか試す（SN v1.9〜） */
+      if(!sheets.some(s=>s.grid && kkHeaderRow(s.grid) >= 0)){
+        const ros = sheets.map(s=>S.rosterAnalyze(s.rows || [])).find(Boolean);
+        if(ros){ KKS.roster = { file:f.name, students:ros.students }; continue; }
+      }
       if(!sheets.some(s=>s.grid)) throw new Error('not xlsx');
       KKS.files.push({ name:f.name, sheets });
     }catch(e){ bad.push(f.name); }
   }
   KKS.files.sort((a,b)=>a.name.localeCompare(b.name, 'ja', {numeric:true}));
   analyzeAll();
-  if(bad.length) kkErr(`<b>読み込めなかったファイルがあります。</b><br>${bad.map(esc).join('<br>')}<br>個別の指導計画は、Excelの .xlsx 形式のまま選んでください（.xls の場合は、Excelで .xlsx に保存し直してください）。`);
+  if(bad.length) kkErr(`<b>読み込めなかったファイルがあります。</b><br>${bad.map(esc).join('<br>')}<br>個別の指導計画は、Excelの .xlsx 形式のまま選んでください（.xls の場合は、Excelで .xlsx に保存し直してください）。学級名簿は、出席番号と氏名の見出しがある一覧が必要です。`);
   renderIn();
   if(KKS.files.length && !bad.length) S.show('scrKkOk');
 }
@@ -4729,9 +4855,10 @@ function renderTermSeg(id){
 function renderIn(){
   if(!KKS.term) KKS.term = defTerm();
   renderTermSeg('kkTermSeg');
-  $('kkFiles').innerHTML = KKS.files.length
-    ? '<b>読み込んだファイル（' + KKS.files.length + '）</b><br>' + KKS.files.map(f=>'・' + esc(f.name)).join('<br>')
-    : '';
+  $('kkFiles').innerHTML = (KKS.files.length
+    ? '<b>読み込んだ計画（' + KKS.files.length + '）</b><br>' + KKS.files.map(f=>'・' + esc(f.name)).join('<br>')
+    : '')
+    + (KKS.roster ? `${KKS.files.length ? '<br>' : ''}<b>学級名簿</b>：${esc(KKS.roster.file)}（${KKS.roster.students.length}人）` : '');
   $('kkGoOk').style.display = KKS.files.length ? '' : 'none';
 }
 APP.render.scrKkIn = renderIn;
@@ -4744,6 +4871,69 @@ const SUP_LABEL = b => {
   if(s.k === 'free')  return `<span class="kk-tag warn">自由記述</span><span class="kk-sub">${esc(s.t.slice(0,40))}${s.t.length>40?'…':''}</span>`;
   return '<span class="kk-sub">—</span>';
 };
+/* ---------- 児童との対応（SN v1.9〜） ----------
+   照合は kkMatch（画面に触らない処理）。担任が選び直した先（KKS.manual）があれば、そちらを使う */
+const isBlankRec = s => !String(s.name||'').trim() && !APP.hasWork(s);
+function mapNow(){
+  const students = S.R.students.filter(s=>!isBlankRec(s));
+  const plans = KKS.res.map(r=>({ name: r.ok ? r.name : '', noFromFile: r.noFromFile || '' }));
+  const m = kkMatch(plans, students, KKS.roster ? KKS.roster.students : null);
+  const valid = new Set(m.targets.map(t=>t.to).concat(['new','skip']));
+  m.assign = m.assign.map((a, i)=>{
+    if(!KKS.res[i].ok) return null;
+    const mt = KKS.manual[KKS.res[i].file];
+    return mt && valid.has(mt) ? { to:mt, how:'manual', check:false } : a;
+  });
+  m.byTo = Object.fromEntries(m.targets.map(t=>[t.to, t]));
+  return m;
+}
+function toLabel(M, to){
+  if(to === 'new') return '新しく足す';
+  if(to === 'skip') return '取り込まない';
+  const t = M.byTo[to]; if(!t) return '';
+  return `${t.no ? t.no + '番　' : ''}${t.name || '（名前なし）'}${t.src === 'ros' ? '（名簿）' : ''}`;
+}
+const HOW_LABEL = { name:'氏名が一致', part:'氏名の一部が一致（確かめてください）', manual:'選び直しました' };
+function renderMap(M, dup){
+  const opts = M.targets.map(t=>`<option value="${esc(t.to)}">${esc(toLabel(M, t.to))}${t.src === 'rec' ? '（いまの学級）' : ''}</option>`).join('')
+    + '<option value="new">新しく足す</option><option value="skip">取り込まない</option>';
+  const rows = KKS.res.map((r, i)=>{
+    const a = M.assign[i]; if(!a) return '';
+    let how = HOW_LABEL[a.how] || '';
+    if(a.how === 'no') how = r.name ? `ファイル名の番号（${r.noFromFile}番）で合わせました。氏名が違うので確かめてください` : `ファイル名の番号（${r.noFromFile}番）で合わせました`;
+    if(!a.how) how = KKS.roster ? '名簿に見つかりません。新しく足します（名簿の児童なら選んでください）' : 'いまの学級にいないので、新しく足します';
+    if(dup.has(a.to)) how = '<b>ほかの計画と同じ児童です。</b>選び直してください';
+    /* 読み込み直しのとき：前の計画から作った下書きの扱い */
+    const rec = a.to.startsWith('rec:') ? S.R.students.find(s=>'rec:' + s.id === a.to) : null;
+    let redo = '';
+    if(rec && rec.kk){
+      const kp = kkKeepSecs(rec).map(k=>SUB_BY_KEY[k] ? SUB_BY_KEY[k].name : k);
+      redo = `<div class="kk-sub">前の計画（${esc(rec.kk.term || '')}）から作った下書きは作り直します。`
+        + (kp.length ? `手で直した欄・OKを押した欄（${kp.map(esc).join('・')}）は残します。` : '') + '</div>';
+    }
+    const cls = a.to === 'skip' ? 'skip' : (a.check || dup.has(a.to)) ? 'need' : '';
+    const plan = `<b>${esc(r.name || '（氏名なし）')}</b><div class="kk-sub">${r.grade ? r.grade + '年　' : ''}${esc(r.file)}</div>`;
+    return `<tr class="${cls}"><td>${plan}</td><td><select class="kk-to" data-f="${i}">${opts}</select></td><td>${how}${redo}</td></tr>`;
+  }).join('');
+  let ros = '';
+  if(KKS.roster){
+    const used = new Set(M.assign.filter(Boolean).map(a=>a.to));
+    const left = M.targets.filter(t=>t.src === 'ros' && !used.has(t.to));
+    ros = `<div class="kk-ros">学級名簿：${esc(KKS.roster.file)}（${KKS.roster.students.length}人）`
+      + (left.length ? `<label><input type="checkbox" id="kkAddRos" ${KKS.addRos ? 'checked' : ''}>
+           <span>名簿にいて計画がない児童 ${left.length}人（${left.map(t=>esc(toLabel(M, t.to).replace('（名簿）',''))).join('、')}）も学級に足す<br>
+           <span class="kk-sub">足した児童は、項目を選んで所見を作ります。</span></span></label>` : '<div class="kk-sub">名簿の児童は全員、計画か、いまの学級にいます。</div>')
+      + '</div>';
+  }else ros = '<div class="kk-ros kk-sub">学級名簿は読み込んでいません。名簿も入れると、出席番号と名前を名簿に合わせます（「ファイルを足す」から入れられます）。</div>';
+  $('kkMap').innerHTML = `<div class="csvprev kk-map"><table><thead><tr><th>計画</th><th>取り込む先</th><th>照合</th></tr></thead><tbody>${rows}</tbody></table></div>${ros}`;
+  document.querySelectorAll('#kkMap select.kk-to').forEach(s=>{ s.value = M.assign[+s.dataset.f].to; });
+}
+document.addEventListener('change', e=>{
+  const s = e.target.closest && e.target.closest('#kkMap select.kk-to');
+  if(s){ KKS.manual[KKS.res[+s.dataset.f].file] = s.value; const y = window.scrollY; renderOk(); window.scrollTo(0, y); return; }
+  if(e.target.id === 'kkAddRos') KKS.addRos = e.target.checked;
+});
+
 function unresolved(){ return KKS.res.reduce((n,r)=>n + (r.ok ? r.blocks.filter(b=>!b.dest).length : 0), 0); }
 function renderOk(){
   if(!KKS.files.length){ S.show('scrKkIn'); return; }
@@ -4753,11 +4943,17 @@ function renderOk(){
   $('kkSummary').textContent = `${ok.length}人分の計画を読み取りました（${KKS.term}）`;
   $('kkInfo').textContent = `評価の文が入っている欄：${nev}` + (KKS.res.length > ok.length ? `　／　読み取れなかったファイル：${KKS.res.length - ok.length}` : '');
   const un = unresolved();
-  $('kkNeed').innerHTML = un ? `<b>入れる欄を選んでいない行が ${un}つ あります。</b>黄色の行で、欄を選んでください（所見に使わない行は「使わない」）。` : '';
-  $('kkNeed').style.display = un ? '' : 'none';
+  const M = mapNow(), dup = kkDupTo(M.assign.filter(Boolean));
+  const need = [];
+  if(dup.size) need.push(`<b>同じ児童に2つ以上の計画が取り込まれます（${dup.size}人）。</b>「児童との対応」の黄色の行で、取り込む先を選び直すか「取り込まない」にしてください。`);
+  if(un) need.push(`<b>入れる欄を選んでいない行が ${un}つ あります。</b>黄色の行で、欄を選んでください（所見に使わない行は「使わない」）。`);
+  $('kkNeed').innerHTML = need.join('<br>');
+  $('kkNeed').style.display = need.length ? '' : 'none';
+  renderMap(M, dup);
   $('kkList').innerHTML = KKS.res.map((r, i)=>{
     if(!r.ok) return `<div class="kk-card ng"><div class="kk-head"><b>${esc(r.file)}</b></div><div class="errbox" style="margin-top:6px;">${esc(r.err)}</div></div>`;
-    const who = `${r.noFromFile && !r.name ? r.noFromFile + '番　' : ''}${esc(r.name || '（氏名なし）')}`;
+    const who = `${r.noFromFile && !r.name ? r.noFromFile + '番　' : ''}${esc(r.name || '（氏名なし）')}`
+      + `<span class="kk-sub">　→ ${esc(toLabel(M, M.assign[i].to))}</span>`;
     const nUn = r.blocks.filter(b=>!b.dest).length;
     const rows = r.blocks.map((b, j)=>{
       const cls = !b.dest ? 'need' : b.dest === 'skip' ? 'skip' : !b.ev ? 'noev' : '';
@@ -4790,9 +4986,9 @@ document.addEventListener('change', e=>{
 });
 
 /* ---------- 取り込み ----------
-   氏名（敬称・空白を除いて同じ）か、氏名がないときは出席番号で、いまの学級の児童に重ねる。
-   見つからなければ児童を足す。所見文がすでにある欄はそのまま残る（生成は次の段階）。 */
-const bare = s => kkN(s).replace(/(さん|くん|君|ちゃん)$/,'');
+   取り込む先は「児童との対応」（mapNow）のとおり。
+   名簿の児童は、名簿の出席番号・氏名で学級に足す。
+   読み込み直しの児童は、手で直した欄・OKを押した欄を残し、ほかの下書きを作り直す（kkRedoPlan）。 */
 function toKk(r){
   return { file:r.file, sheet:r.sheet, term:r.term || KKS.term, grade:r.grade, at:new Date().toISOString(),
     blocks: r.blocks.filter(b=>b.dest && b.dest !== 'skip').map(b=>({
@@ -4801,47 +4997,60 @@ function toKk(r){
       ev:b.ev })), pick:{} };
 }
 function applyKk(){
-  const ok = KKS.res.filter(r=>r.ok);
   const un = unresolved();
   if(un){ alert(`入れる欄を選んでいない行が ${un}つ あります。\n黄色の行で欄を選んでください（所見に使わない行は「使わない」）。`); return; }
+  const M = mapNow(), dup = kkDupTo(M.assign.filter(Boolean));
+  if(dup.size){ alert(`同じ児童に2つ以上の計画が取り込まれます。\n「児童との対応」の黄色の行で、取り込む先を選び直してください。`); return; }
+  const go = KKS.res.map((r, i)=>({ r, a:M.assign[i] })).filter(x=>x.r.ok && x.a.to !== 'skip');
+  if(!go.length){ alert('取り込む計画がありません（すべて「取り込まない」になっています）。'); return; }
   S.capture();
   const R = S.R;
-  if(R.students.length === 1 && !R.students[0].name && !APP.hasWork(R.students[0])) R.students = [];   // 空の1人目は使わない
+  if(R.students.length === 1 && isBlankRec(R.students[0])) R.students = [];   // 空の1人目は使わない
+  const nextNo = want => {
+    if(want && !R.students.some(s=>s.no === want)) return want;
+    const nums = R.students.map(s=>parseInt(s.no,10)).filter(n=>!isNaN(n));
+    return String(nums.length ? Math.max(...nums)+1 : 1);
+  };
+  const fromRos = t => { const rec = S.blankRec(); rec.no = nextNo(t.no); rec.name = S.yobiOf(t.name, 'full', 'さん'); R.students.push(rec); return rec; };
+  const compose = (rc, k) => kkCompose(rc, k, kkOptOf(rc, k)).text;
   let added = 0, merged = 0, drafted = 0;
-  const used = new Set();
-  ok.forEach(r=>{
-    let rec = r.name ? R.students.find(s=>!used.has(s.id) && s.name && bare(s.name) === bare(r.name)) : null;
-    if(!rec && !r.name && r.noFromFile) rec = R.students.find(s=>!used.has(s.id) && s.no === r.noFromFile);
-    if(rec) merged++;
-    else{
+  const kept = [];
+  go.forEach(({ r, a })=>{
+    let rec;
+    if(a.to.startsWith('rec:')){ rec = R.students.find(s=>'rec:' + s.id === a.to); merged++; }
+    if(!rec && a.to.startsWith('ros:')){ rec = fromRos(M.byTo[a.to]); added++; }
+    if(!rec){
       rec = S.blankRec(); added++;
-      const nums = R.students.map(s=>parseInt(s.no,10)).filter(n=>!isNaN(n));
-      rec.no = r.noFromFile && !R.students.some(s=>s.no === r.noFromFile) ? r.noFromFile : String(nums.length ? Math.max(...nums)+1 : 1);
+      rec.no = nextNo(r.noFromFile);
       rec.name = r.name ? S.yobiOf(r.name, 'full', 'さん') : '';
       R.students.push(rec);
     }
-    used.add(rec.id);
-    rec.kk = toKk(r);
-    /* 使う欄：計画にある欄＋「行動のようす」「学校から」（この2つは計画にないので項目を選んで作る） */
-    const ks = new Set(rec.kk.blocks.map(b=>b.sec).concat(['gy','gk']));
-    rec.active = SUBJECTS.map(s=>s.key).filter(k=>ks.has(k));
-    /* 評価の文がある欄は、下書きを作っておく（項目を選んである欄・文章がすでにある欄はそのまま） */
-    rec.active.forEach(k=>{
-      const f = rec.secs[k];
-      if(!f || f.out || (f.sel||[]).length || !kkHas(rec, k)) return;
-      f.out = kkCompose(rec, k, kkOptOf(rec, k)).text;
-      if(f.out) drafted++;
-    });
+    if(!String(rec.name||'').trim() && r.name) rec.name = S.yobiOf(r.name, 'full', 'さん');
+    const x = kkRedoPlan(rec, toKk(r), compose);
+    drafted += x.drafted;
+    if(x.kept.length) kept.push(`${rec.name || rec.no + '番'}（${x.kept.map(k=>SUB_BY_KEY[k] ? SUB_BY_KEY[k].name : k).join('・')}）`);
   });
+  /* 名簿にいて計画がない児童 */
+  let rosAdded = 0;
+  if(KKS.roster && KKS.addRos){
+    const used = new Set(M.assign.filter(Boolean).map(a=>a.to));
+    M.targets.filter(t=>t.src === 'ros' && !used.has(t.to)).forEach(t=>{ fromRos(t); rosAdded++; });
+  }
+  /* 学級名が空なら、名簿の学年・組から入れる（名簿の読み込みと同じ） */
+  const ci = document.getElementById('clsInput'), f0 = KKS.roster && KKS.roster.students[0];
+  if(ci && !ci.value.trim() && f0 && f0.year){ ci.value = `${f0.year}年${f0.kumi ? f0.kumi + '組' : ''}`; R.cls = ci.value; }
   R.curId = S.sorted()[0].id;
   S.SH.sec = S.secsOf(S.curRec())[0] || '';
   APP.apply(S.curRec(), S.SH.sec);
   S.saveNow();
-  S.setSave(`個別の指導計画から${ok.length}人分を取り込みました`, true);
+  S.setSave(`個別の指導計画から${go.length}人分を取り込みました`, true);
   S.SH.flow = 'keikaku'; S.SH.mode = 'seq';
-  KKS.files = []; KKS.res = [];
-  S.SH.banner = `個別の指導計画から ${ok.length}人分 を取り込みました（新しく足した児童 ${added}人・いまの児童に重ねた ${merged}人）。`
-    + `評価の文から ${drafted}欄 の下書きを作りました。児童を開いて、欄ごとに確かめてください（文ごとに選び直す画面は次の版で追加します）。`;
+  KKS.files = []; KKS.res = []; KKS.roster = null; KKS.manual = {}; KKS.addRos = true;
+  S.SH.banner = `個別の指導計画から ${go.length}人分 を取り込みました（新しく足した児童 ${added}人・いまの児童に重ねた ${merged}人）。`
+    + (rosAdded ? `名簿にいて計画がない ${rosAdded}人 も足しました（項目を選んで作ります）。` : '')
+    + `評価の文から ${drafted}欄 の下書きを作りました。`
+    + (kept.length ? `手で直した欄・OKを押した欄は、前の文章のまま残しました：${kept.join('、')}。` : '')
+    + '児童を開いて、欄ごとに確かめてください。';
   S.show('scrList');
 }
 
@@ -4860,7 +5069,7 @@ $('kkFile').addEventListener('change', e=>{ const fs = [...e.target.files]; e.ta
   if(S.SH.scr === 'scrKkOk'){ const y = window.scrollY; renderOk(); window.scrollTo(0, y); } else renderIn();
 })));
 $('kkGoOk').addEventListener('click', ()=>S.show('scrKkOk'));
-$('kkClear').addEventListener('click', ()=>{ KKS.files = []; KKS.res = []; kkErr(''); renderIn(); });
+$('kkClear').addEventListener('click', ()=>{ KKS.files = []; KKS.res = []; KKS.roster = null; KKS.manual = {}; kkErr(''); renderIn(); });
 $('kkAddMore').addEventListener('click', ()=>$('kkFile').click());
 $('kkBack').addEventListener('click', ()=>S.show('scrKkIn'));
 $('kkApply').addEventListener('click', applyKk);
