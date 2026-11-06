@@ -8,7 +8,7 @@ const core = html.slice(html.indexOf('/* ===TEXT-CORE-START==='), html.indexOf('
 const kkStart = html.indexOf('   個別の指導計画（様式3-1 .xlsx）の読み取り');
 const kk = html.slice(html.lastIndexOf('/* ====', kkStart), html.indexOf('</script>', kkStart));
 const ctx = {}; vm.createContext(ctx);
-vm.runInContext(core + '\n' + kk + '\nthis.API = { kkPutPhrase, kkSplit, kkKind, kkPart, kkPolite, kkFix, kkSentsOf, kkCompose, kkHas, kkPending, kkResolve, kkResetPick, kkNameKey, kkMatch, kkDupTo, kkKeepSecs, kkRedoPlan, kkSubjKey, kkJoinItems, SUB_BY_KEY };', ctx);
+vm.runInContext(core + '\n' + kk + '\nthis.API = { kkPutPhrase, kkSplit, kkKind, kkPart, kkPolite, kkFix, kkSentsOf, kkCompose, kkHas, kkPending, kkResolve, kkResetPick, kkNameKey, kkMatch, kkDupTo, kkKeepSecs, kkRedoPlan, kkSubjKey, kkJoinItems, kkItemHits, kkItemTail, SUB_BY_KEY };', ctx);
 const A = ctx.API;
 
 let ng = 0, n = 0;
@@ -234,6 +234,21 @@ eq(A.kkNameKey('髙橋　一郎さん'), '高橋一郎', '照合の名前：敬�
   ['外国語活動', 3, 'ga'], ['外国語活動', 5, 'gg'], ['外国語活動', 0, 'ga'],
 ].forEach(([nm, g, want])=>eq(A.kkSubjKey(nm, g).key, want, `欄の振り分け：${nm}（${g}年）`));
 eq(!!A.SUB_BY_KEY.gg && A.SUB_BY_KEY.gg.name, '外国語', '外国語の欄がある');
+
+/* 計画の文に同じ内容がありそうな項目（SN v1.13〜）。use の文だけ・2文字以上の語だけで見る */
+{
+  const S = (text, use)=>({ text, src: text, use });
+  const ids = (sents, k)=>[...A.kkItemHits(sents, A.SUB_BY_KEY[k]).keys()].sort().join(',');
+  eq(ids([S('たし算の計算ができました。', true)], 'sa'), 'sa3', '計画の文にあり：算数のたし算');
+  eq(ids([S('たし算の計算ができました。', false)], 'sa'), '', '計画の文にあり：使わない文は見ない');
+  eq(ids([S('自分の名前を書くことができました。', true), S('友達の話を最後まで聞くことができました。', true)], 'ko').split(',').includes('ko9'), true, '計画の文にあり：名前を書く');
+  eq(ids([S('友達の話を最後まで聞くことができました。', true)], 'ko').split(',').includes('ko2'), true, '計画の文にあり：話を聞く');
+  eq(ids([S('楽しく過ごしました。', true)], 'sa'), '', '計画の文にあり：当たらない文');
+  eq(A.kkItemHits([S('たし算ができました。', true)], null).size, 0, '計画の文にあり：欄がないとき');
+  eq(ids([S('好きな食べ物を英語で伝えることができました。', true)], 'gg'), 'gg2', '計画の文にあり：項目の文の終わり（英語で伝え）');
+  eq(A.kkItemTail('教師や友達の話を最後まで聞く'), '最後まで聞', '項目の文の終わり');
+  eq(A.kkItemTail('整理整頓や掃除をする'), '', '項目の文の終わり：短いときは使わない');
+}
 
 console.log(`${n - ng} / ${n} OK`);
 process.exit(ng ? 1 : 0);

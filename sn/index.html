@@ -382,6 +382,14 @@ details.cat>summary{font-size:15px;}
 .kkplan{border:1px solid var(--line); border-radius:10px; background:var(--panel); padding:8px 12px; margin:6px 0 12px;}
 .kkplan > summary{cursor:pointer; font-weight:700; font-size:14px;}
 .kkplan .kkadd{font-size:13px; margin:6px 0 4px;}
+/* ---- 計画の文に同じ内容がありそうな項目の印（SN v1.13） ---- */
+.kkplan .kkdup{font-size:13px; margin:4px 0; padding:4px 8px; border-radius:6px; background:#e8f4ea; color:#245c2e;}
+#cats .item.inplan{background:#eef7ef; border-radius:6px; padding-left:8px; padding-right:6px;}
+#cats .item.inplan .txt{color:#245c2e;}
+.inplantag{flex:none; font-size:12px; font-weight:700; color:#2e7d3a; background:#fff; border:1px solid #9fcca6; border-radius:10px; padding:1px 8px; cursor:help;}
+#cats .item.inplan.sel{background:#fff8ea;}
+#cats .item.inplan.sel .inplantag{color:#7a5200; border-color:#e5b866;}
+#cats .item.inplan.sel .inplantag::after{content:'（選ぶと重なります）'; font-weight:400;}
 .kkplan dl{display:grid; grid-template-columns:auto 1fr; gap:3px 10px; margin:4px 0 0; font-size:13px;}
 .kkplan dt{color:var(--sub); white-space:nowrap;}
 .kkplan dd{margin:0; white-space:pre-wrap;}
@@ -801,9 +809,11 @@ details.cat>summary{font-size:15px;}
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "SN v1.12";
+const APP_VERSION = "SN v1.13";
 const APP_DATE    = "2026-11-06";
 const APP_HISTORY = [
+  "SN v1.13 項目の画面で、計画の評価の文（所見に使う文）に同じ内容がありそうな項目に「✓ 計画の文にあり」の印を付けるようにした。",
+  "　　　　印の項目は選ばれたように色が付くが、文章には足さない（担任が程度を選んだときだけ足す。そのときは「選ぶと重なります」と出す）。",
   "SN v1.12 計画の評価の文がある欄で項目を選ぶと、評価の文から作った文章のあとに項目の文を足すようにした（それまでは項目だけの文章に切り替わっていた）。項目の画面の上に、その欄の個別の指導計画の内容（教科・観点・学習の程度・学習内容・支援・評価）を表示。ボタンの名前は「項目を選んで足す」。",
   "SN v1.11 外国語（5・6年）の欄を追加（聞く・話す／読む・書く／かかわる の9項目）。既定では「使う欄」オフ。",
   "　　　　個別の指導計画の「外国語」「外国語活動」の行は学年で振り分ける（5・6年→外国語、3・4年→外国語活動）。",
@@ -2109,6 +2119,8 @@ function buildItems(){
     d.appendChild(box); catsEl.appendChild(d);
   });
   updateCounts();
+  // 計画の文に同じ内容がありそうな項目の印（SN v1.13〜）。作り直した行にも付け直す
+  if(window.SHELL && typeof kkHas === 'function' && SHELL.R.students.length) kkMarkItems(SHELL.curRec(), state.cur);
 }
 
 function updateCounts(){
@@ -2514,7 +2526,7 @@ function kkItemsPlan(rec, k){
   const box = document.getElementById('kkItemsPlan');
   if(!box) return;
   const blocks = rec && rec.kk ? rec.kk.blocks.filter(b=>b.sec === k) : [];
-  if(!blocks.length){ box.style.display = 'none'; box.innerHTML = ''; return; }
+  if(!blocks.length){ box.style.display = 'none'; box.innerHTML = ''; kkMarkItems(null, k); return; }
   const supTxt = u=>{
     if(!u) return '';
     if(u.k === 'table'){ const p = PLAN_BY_ID[u.id]; return p ? `${p.obs}（程度${p.n}）：${p.phrase}` : '支援の程度表の文'; }
@@ -2534,7 +2546,33 @@ function kkItemsPlan(rec, k){
       + row('学習の程度', b.level) + row('学習内容', b.content) + row('支援', supTxt(b.sup))
       + (String(b.ev||'').trim() ? row('評価', b.ev) : '<dt>評価</dt><dd>（空）</dd>') + '</dl></div>';
   });
+  const nDup = has ? kkMarkItems(rec, k) : (kkMarkItems(null, k), 0);
+  if(nDup) h = h.replace('</p>', `</p><p class="kkdup">緑の「✓ 計画の文にあり」の項目（${nDup}件）は、評価の文に同じ内容がありそうです。`
+    + 'そのままにしておけば、文章には足しません（重なりを防ぐため）。印は目安です。違う内容なら程度を選んでください。</p>');
   box.innerHTML = h; box.style.display = '';
+}
+/* 項目の画面で、計画の文に同じ内容がありそうな項目に印を付ける（SN v1.13〜）。
+   印は見た目だけ（state の sel は変えない）ので、印の項目は文章に足さない。
+   rec が null・評価の文がない欄では、印を消すだけ。戻り値は印を付けた数 */
+function kkMarkItems(rec, k){
+  document.querySelectorAll('#cats .item.inplan').forEach(row=>{
+    row.classList.remove('inplan');
+    const t = row.querySelector('.inplantag'); if(t) t.remove();
+  });
+  if(!rec || !kkHas(rec, k)) return 0;
+  const o = Object.assign(kkOptOf(rec, k), { closer:false });
+  if(k === state.cur){ o.name = state.name.trim(); o.len = cur().len; }   // 文章の画面と同じ字数で、使う文を決める
+  const hits = kkItemHits(kkCompose(rec, k, o).sents, SUB_BY_KEY[k]);
+  hits.forEach((h, id)=>{
+    const row = document.querySelector(`#cats .item[data-id="${id}"]`);
+    if(!row) return;
+    row.classList.add('inplan');
+    const tag = document.createElement('span');
+    tag.className = 'inplantag'; tag.textContent = '✓ 計画の文にあり';
+    tag.title = '計画の評価の文：' + h.src + '\n（当たった語：' + h.words.join('・') + '）';
+    row.querySelector('.txt').after(tag);
+  });
+  return hits.size;
 }
 function kkHidePick(){ const b = document.getElementById('kkPick'); if(b){ b.style.display = 'none'; b.innerHTML = ''; } }
 function kkRowHtml(s){
@@ -4968,6 +5006,38 @@ function kkCompose(rec, k, opt){
   n.chk = sents.filter(s=>s.use && s.chk.length).length;
   n.pend = sents.filter(s=>s.chk.length && !s.fixed).length;
   return { text: r.text, len: r.len, closer: r.closer || '', sents, n };
+}
+
+/* ---------- 計画の文に同じ内容がありそうな項目（SN v1.13〜） ----------
+   項目を選んで足すとき、計画の文と同じことを2回書かないように、項目の画面で印を付けるために使う。
+   sents … kkCompose の sents（use＝所見に入れる文だけを見る。担任が外した文は見ない）
+   sub   … 欄（SUBJECTS の1つ）
+   見分け方（どちらかに当たれば印）：所見に入る形の文（s.text）を見る
+     ①メモ読み取りと同じキーワード辞書（KW）の語。1文字の語（「春」「歌」など）は誤りが多いので、2文字以上だけ
+     ②項目の文の終わりの言い方（kkItemTail）。例：「自分のことを英語で伝える」→「英語で伝え」
+   戻り値 Map：項目ID → { words（当たった語）, src（計画の元の文） }。印は目安なので、担任が見て判断する */
+/* 項目の文の終わりの言い方（最後の「を」より後ろ、終わりの1文字を除く）。
+   「教師や友達の話を最後まで聞く」→「最後まで聞」。4文字に満たないとき（「〜をする」→「す」、「読み取」「まとめ」など）は、
+   ほかの項目の文にも当たりやすいので使わない */
+function kkItemTail(t){
+  t = String(t||'').replace(/\s+/g,'');
+  const tail = [...t.slice(t.lastIndexOf('を') + 1)].slice(0, -1).join('');
+  return [...tail].length >= 4 ? tail : '';
+}
+function kkItemHits(sents, sub){
+  const hits = new Map();
+  if(!sub || !sents) return hits;
+  const used = sents.filter(s=>s.use);
+  if(!used.length) return hits;
+  sub.groups.forEach(g=>g.items.forEach(it=>{
+    const kws = (KW[it.id] || []).map(w=>String(w).replace(/\s+/g,'')).filter(w=>[...w].length >= 2)
+      .concat(kkItemTail(it.act), kkItemTail(it.txt)).filter((w, i, a)=>w && a.indexOf(w) === i);
+    for(const s of used){
+      const words = kws.filter(w=>String(s.text||'').includes(w));
+      if(words.length){ hits.set(it.id, { words, src: s.src || s.text }); break; }
+    }
+  }));
+  return hits;
 }
 
 /* ---------- 計画の文章に、項目から作った文章を足す（SN v1.12〜） ----------
