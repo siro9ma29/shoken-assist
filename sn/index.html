@@ -729,6 +729,8 @@ const APP_HISTORY = [
   "　　　　様式3-1の .xlsx を何人分でも読み込み、学期のシート・学年・氏名・教科ごとの観点・支援・評価を読み取る。",
   "　　　　支援の文はブックごとの「支援の程度表」と照らし合わせる。教科名から入れる欄を学年に合わせて選び、決まらない行は担任が選ぶ。",
   "　　　　取り込むと、評価の文を児童ごとに保存する（所見文の生成は次の版）。",
+  "　　　　実物の計画で確認：教科名だけの空の行は出さない／自立活動の項目（程度表の右側）は手立てと区別／",
+  "　　　　程度表で同じ文が2つの観点にあるときは計画の観点（D列）で選ぶ／「⑥コミュニケーション」の行を読めるようにした。",
   "SN v1.4 通常版 v1.33 と同じ、1画面ずつ進む画面構成にした（生成の処理は SN v1.3 のまま）。",
   "　　　　学級全員分を持てるようにし、C4thから出した学級名簿（.xlsx／.xls／CSV）を読み込めるようにした。",
   "　　　　1人分は 名前→使う欄→支援の手立て→欄ごとに 項目→文章→その児童のまとめ の順。所見一覧・確認済みの印・全員分コピー・CSVを追加。",
@@ -3828,7 +3830,8 @@ const KK_COL = { A:0, B:1, C:2, D:3, F:5, H:7, I:8, J:9, K:10 };
 const KK_LEVELS = ["当該学年","下学年","特別支援学級","当該学年と下学年","下学年と特別支援学校"];
 /* 大グループ（C列1行目）と、自立活動の区分 */
 const KK_GROUP_RE = /^(学習|運動|認知|感覚|認知・感覚|コミュニケーション|自立活動)$/;
-const KK_JIRITSU_RE = /^[①-⑥]|健康の保持|心理的な安定|人間関係の形成|環境の把握|身体の動き/;
+/* 比べる前に kkN（NFKC）を通すと「⑥」は「6」になるので、数字1〜6で始まる区分名も自立活動の区分とみなす */
+const KK_JIRITSU_RE = /^[①-⑥]|^[1-6](健康|心理|人間関係|環境|身体|コミュニケーション)|健康の保持|心理的な安定|人間関係の形成|環境の把握|身体の動き/;
 const KK_ITEM_RE = /^[（(][0-9０-９一二三四五六七八九十]+[)）]/;   // 自立活動の項目「（１）〜」
 
 /* 教科名 → 欄のキー。grade は学年（1〜6）。
@@ -3864,7 +3867,10 @@ function kkSubjKey(name, grade){
    シート名に「支援の程度」を含むシートを読む。
    A列に程度の番号（1〜）がある行を「程度の行」とし、そのすぐ上の行を観点の見出しとみなす。
    A列に番号がない表は、観点の名前（PLAN の観点名）の見出しを探し、その下を上から1,2,3…とする。
-   戻り値：Map（正規化した支援の文 → {obs, n}） */
+   戻り値：Map（正規化した支援の文 → [{obs, n, item}, …]）
+   ※実物の表では、同じ文が2つの観点に入っている（推論する1＝視覚認知1、多動性1＝衝動性1）。
+     そのため文1つに候補を複数持たせ、計画のD列の観点で選ぶ。
+   ※表の右側（①健康の保持〜⑥コミュニケーション）は自立活動の項目の一覧なので、item:true にする。 */
 function kkSupportTable(sheets){
   const map = new Map();
   const sh = sheets.find(s=>/支援の程度/.test(kkN(s.name)));
@@ -3882,7 +3888,7 @@ function kkSupportTable(sheets){
       for(let c=1; c<row.length; c++){
         const t = kkN(row[c]); if(!t) continue;
         const obs = kkT(hd[c]) || kkT((g[head-1]||[])[c]);
-        if(obs && !map.has(t)) map.set(t, { obs, n: +kkN(row[0]) });
+        if(obs) kkAdd(map, t, { obs, n: +kkN(row[0]), item: KK_JIRITSU_RE.test(kkN(obs)) });
       }
     });
   }else{
@@ -3893,12 +3899,13 @@ function kkSupportTable(sheets){
       for(let rr=r+1; rr<g.length; rr++){
         const t = kkN((g[rr]||[])[c]); if(!t) continue;
         if(names.has(t)) break;
-        n++; if(!map.has(t)) map.set(t, { obs:kkT(v), n });
+        n++; kkAdd(map, t, { obs:kkT(v), n, item:false });
       }
     }));
   }
   return map;
 }
+function kkAdd(map, t, o){ if(!map.has(t)) map.set(t, []); map.get(t).push(o); }
 const KK_PLAN_KEY = {}; PLAN.forEach(p=>{ KK_PLAN_KEY[kkN(p.name)] = p.key; });
 
 /* ---------- 計画のシートを探す ---------- */
@@ -3940,7 +3947,7 @@ function kkBlocks(g, head, grade, table){
   const cell = (r,c) => kkT((g[r]||[])[c]);
   const isGroup = t => KK_GROUP_RE.test(kkN(t)) || KK_JIRITSU_RE.test(kkN(t));
   const isStart = r => !!cell(r, KK_COL.B) || isGroup(cell(r, KK_COL.C));
-  let kubun = '', subj = '', cur = { key:'', cands:[] }, prevKey = '';
+  let kubun = '', subj = '', cur = { key:'', cands:[] }, prevKey = '', prevCands = [];
   for(let r = head+1; r < g.length; r++){
     const row = g[r] || [];
     /* 評価の欄（I〜K）より右に文がある：所見には使わず知らせる */
@@ -3958,8 +3965,8 @@ function kkBlocks(g, head, grade, table){
     const b = cell(r, KK_COL.B);
     if(b){
       const k = kkSubjKey(b, grade);
-      if(k.key === 'prev'){ cur = { key: prevKey, cands:[], note:'交流及び共同学習：前の教科に含めます', kouryu:true }; }
-      else{ subj = b; cur = k; }
+      if(k.key === 'prev'){ cur = { key: prevKey, cands: prevCands.slice(), note:'交流及び共同学習：前の教科に含めます', kouryu:true }; }
+      else{ subj = b; cur = k; prevKey = k.key; prevCands = k.cands; }
     }
     const c1 = cell(r, KK_COL.C), c2 = r2>=0 ? cell(r2, KK_COL.C) : '';
     const f1 = cell(r, KK_COL.F), f2 = r2>=0 ? cell(r2, KK_COL.F) : '';
@@ -3970,22 +3977,27 @@ function kkBlocks(g, head, grade, table){
     /* 支援の文 */
     let sup = { k:'none', t:'' };
     if(c2){
-      const hit = table.get(kkN(c2));
-      if(hit){
+      const hits = table.get(kkN(c2)) || [];
+      const d1 = kkN(cell(r, KK_COL.D));
+      const hit = hits.find(h=>kkN(h.obs) === d1) || hits[0];
+      if(hit && hit.item) sup = { k:'item', t:c2 };
+      else if(hit){
         const key = KK_PLAN_KEY[kkN(hit.obs)];
         sup = { k:'table', obs:hit.obs, n:hit.n, id: key && PLAN_BY_ID[key+hit.n] ? key+hit.n : '', t:c2 };
       }else if(KK_ITEM_RE.test(kkN(c2))) sup = { k:'item', t:c2 };
       else sup = { k:'free', t:c2 };
     }
     const jiritsu = cur.key === 'ji' || KK_JIRITSU_RE.test(kkN(c1));
+    /* 教科名だけで中身のないブロック（その児童が学ばない教科・空の交流の行）は出さない */
+    const empty = !c1 && !cell(r, KK_COL.D) && !f1 && !c2 && !f2 && !ev;
+    if(empty){ if(r2 >= 0) r = r2; continue; }
     blocks.push({
-      row: r+1, kubun, subj: cur.kouryu ? b : subj,
+      row: r+1, kubun, subj: kkT(cur.kouryu ? b : subj).replace(/\s*\n\s*/g,''),
       key: cur.key, cands: cur.cands.slice(), multi: !!cur.multi, note: cur.note || '',
       group: jiritsu ? '' : c1, obs: jiritsu ? (cell(r, KK_COL.D) || c1) : cell(r, KK_COL.D),
       level: isLv ? f1 : '', content: [isLv ? '' : f1, f2].filter(Boolean).join('／'),
       sup, ev,
     });
-    if(cur.key) prevKey = cur.key;
     if(r2 >= 0) r = r2;
   }
   return { blocks, warns };

@@ -20,21 +20,33 @@ OBS = [("学習", ["聞く", "話す", "読む", "書く", "計算"]),
 def stext(obs, n):
     return f"【架空】{obs}の支援（程度{n}）の文"
 
+# 自立活動の区分と項目（表の右側）。実物と同じく「⑥」で始まる区分も入れる
+JIRITSU = [("③人間関係の形成", ["（１）他者とのかかわりの基礎", "（４）集団への参加の基礎"]),
+           ("⑥コミュニケーション", ["（１）コミュニケーションの基礎的能力"])]
+
 def support_sheet(wb, changed=None):
+    """実物と同じ並び：1行目＝観点の見出し（B列〜）、A列＝程度の番号（2行目から1,2,…）、
+    右側に自立活動の区分ごとの項目。同じ文が2つの観点に入っている例（注意集中1＝物の管理1）も作る"""
     ws = wb.create_sheet("支援の程度表")
-    ws["A1"] = "支援の程度表（架空）"
     col = 2
+    for n in range(1, 6):
+        ws.cell(row=1 + n, column=1, value=n)
     for grp, names in OBS:
-        ws.cell(row=2, column=col, value=grp)
         for nm in names:
-            ws.cell(row=3, column=col, value=nm)
+            ws.cell(row=1, column=col, value=nm)
             for n in range(1, 6):
-                ws.cell(row=3 + n, column=1, value=n)
                 t = stext(nm, n)
+                if (nm, n) == ("物の管理", 1):
+                    t = stext("注意集中", 1)        # 実物の「多動性1＝衝動性1」と同じ重なり
                 if changed and (nm, n) in changed:
                     t = changed[(nm, n)]
-                ws.cell(row=3 + n, column=col, value=t)
+                ws.cell(row=1 + n, column=col, value=t)
             col += 1
+    for kubun, items in JIRITSU:
+        ws.cell(row=1, column=col, value=kubun)
+        for i, it in enumerate(items):
+            ws.cell(row=2 + i, column=col, value=it)
+        col += 1
 
 def plan_sheet(wb, title, term, grade, name, sex, blocks, stray=None):
     ws = wb.create_sheet(title)
@@ -106,8 +118,14 @@ b2 = [
   "10までの数を数えることができた。"),
  (N, "社会・生活科", "認知・感覚", "注意集中", "特別支援学級", stext("注意集中", 2), "学校たんけん",
   "学校たんけんで、保健室の場所を覚えた。"),
- (N, "日常生活の指導", "認知・感覚", "物の管理", "特別支援学級", stext("物の管理", 1), "朝の支度",
+ (N, "日常生活の指導", "認知・感覚", "物の管理", "特別支援学級", stext("注意集中", 1), "朝の支度",
   "朝の支度を一人でできるようになった。"),
+ (N, "理科", N, N, N, N, N, ""),                       # 中身のない教科（確認画面に出さない）
+ (N, "交流及び\n共同学習", N, N, N, N, N, ""),
+ ("各教科", "\n音楽", "自立活動", "⑥コミュニケーション", "特別支援学級", "（１）コミュニケーションの基礎的能力", "歌",
+  "友達と一緒に歌った。"),
+ ("領域", "特別\n活動", "⑥コミュニケーション", N, "あいさつ", "（１）コミュニケーションの基礎的能力", N,
+  "朝の会であいさつをした。"),
 ]
 b2_late = [tuple(list(x[:7]) + [""]) for x in b2]
 book("02_テスト計画_1年.xlsx",
