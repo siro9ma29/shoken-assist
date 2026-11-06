@@ -412,6 +412,32 @@ details.cat>summary{font-size:15px;}
 .kktag.ok{background:#dff3e3; color:#1b6b34;}
 .kkok{font-family:inherit; font-size:11.5px; border:1px solid var(--warn); color:var(--warn); background:#fff; border-radius:9px; padding:1px 8px; margin-top:2px; cursor:pointer;}
 .kkok:hover{background:var(--warn-soft);}
+/* ---- 評価の文から選ぶ：見やすさの改善（SN v1.17） ----
+   教科のまとまりを枠で囲み、見出しを帯にする。各文は左に「所見」「元の文」の札をそろえ、
+   元の文は灰色の帯に入れる。使う文は左に青い線、外した文・使わない文は灰色の背景 */
+.kkpick .kkblk{margin-top:14px; border:1px solid var(--line); border-radius:9px; overflow:hidden; background:#fff;}
+.kkpick .kkbh{display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 10px; margin:0; padding:7px 12px;
+  background:var(--accent-soft); border-bottom:1px solid #cfd7e6; color:var(--ink); font-size:13px;}
+.kkbh .kkbsub{flex:none; font-size:12.5px; font-weight:700; color:#fff; background:var(--accent); border-radius:5px; padding:1px 9px;}
+.kkbh .kkbobs{font-weight:700; color:var(--accent);}
+.kkbh .kkbcon{font-weight:400; color:var(--sub); font-size:12.5px;}
+.kkpick .kkrow{padding:10px 12px 10px 9px; border-radius:0; border-left:4px solid transparent; gap:10px;}
+.kkpick .kkrow + .kkrow{border-top:1px solid #ece9e1;}
+.kkpick .kkrow.use{border-left-color:var(--accent);}
+.kkpick .kkrow:not(.use){background:#f8f7f3;}
+.kkpick .kkrow.pend{background:#fff8ea; border-left-color:var(--warn);}
+.kkpick .kkrow.no{opacity:1;}
+.kkpick .kkbody{display:grid; grid-template-columns:3.6em 1fr; gap:5px 8px; align-items:start;}
+.kklab{font-size:11px; line-height:1; text-align:center; border-radius:4px; padding:4px 0; margin-top:3px; white-space:nowrap;}
+.kklab.new{background:var(--accent); color:#fff; font-weight:700;}
+.kklab.src{background:#e9e6dd; color:#5b5a53;}
+.kkrow:not(.use) .kklab.new{background:#c9c7bf;}
+.kkpick .kknew{font-size:15px; line-height:1.75; color:var(--ink);}
+.kkpick .kksrc{margin:0; font-size:12.5px; line-height:1.65; color:#5b5a53; background:#f1efe9; border-radius:5px; padding:3px 8px;}
+.kkrow.no .kksrc{background:transparent; padding-left:0; color:var(--sub);}
+.kkpick .kktags{grid-column:2; margin-top:0;}
+.kklegend{display:inline-flex; align-items:center; gap:4px; margin:0 2px;}
+.kklegend .kklab{display:inline-block; width:3.6em; margin-top:0;}
 .kkfoot{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-top:8px; font-size:12px; color:var(--sub);}
 .kkflag{display:inline-block; font-size:11.5px; font-weight:700; padding:1px 8px; border-radius:10px; background:var(--warn-soft); color:var(--warn); margin-right:6px;}
 .sechip.pend{box-shadow:inset 0 0 0 1px var(--warn);}
@@ -809,9 +835,10 @@ details.cat>summary{font-size:15px;}
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "SN v1.16";
-const APP_DATE    = "2026-11-06";
+const APP_VERSION = "SN v1.17";
+const APP_DATE    = "2026-11-07";
 const APP_HISTORY = [
+  "SN v1.17 「評価の文から選ぶ」を見やすくした（教科のまとまりを枠と見出しの帯で分け、各文に「所見」「元の文」の札を付け、元の文は灰色の帯に。使う文は左に青い線、外した文・使わない文は灰色の背景）。",
   "SN v1.16 過去の個別の指導計画（令和3〜7年度・15人分）の評価の文から、項目を23件足し、印の見分けの語（KW）を足した。",
   "　　　　（促音・拗音／書き写す／物語の内容／パズル／カレンダー／手遊び歌／発表会／用具を安全に／見立て／縄跳び／水泳・スケート／集合・整列／",
   "　　　　校外学習／学校探検／みんなの前で発表／話の内容をつかむ／自分の考え／朝の会の呼びかけ／バランス／下級生の世話／ノートにまとめる・記録／タブレット）",
@@ -2909,8 +2936,8 @@ function kkRowHtml(s){
   const ok  = pend ? `<button type="button" class="kkok" data-k="${s.key}" data-v="${s.use?1:0}">このままでよい（${s.use ? '使う' : '使わない'}）</button>` : '';
   return `<div class="kkrow${s.use?' use':''}${pend?' pend':''}${usable?'':' no'}">`
     + `<label class="kkchk">${box}</label><div class="kkbody">`
-    + (usable ? `<div class="kknew">${kkEsc(s.text)}</div>` : '')
-    + `<div class="kksrc"><span>元の文</span>${kkEsc(s.src)}</div>`
+    + (usable ? `<span class="kklab new">所見</span><div class="kknew">${kkEsc(s.text)}</div>` : '')
+    + `<span class="kklab src">元の文</span><div class="kksrc">${kkEsc(s.src)}</div>`
     + (tags.length || ok ? `<div class="kktags">${tags.join('')}${ok}</div>` : '')
     + `</div></div>`;
 }
@@ -2924,7 +2951,9 @@ function kkRenderPick(r){
     + (pend ? `　<span class="kkpend">要確認 ${pend}文</span>` : chkAll ? '　要確認はすべて確認済み' : '') + `</span>`
     + `<div class="seg"><button type="button" data-view="chk" class="${mode==='chk'?'on':''}">要確認の文だけ（${chkAll}）</button>`
     + `<button type="button" data-view="all" class="${mode==='all'?'on':''}">すべての文（${r.n.all}）</button></div></div>`;
-  html += `<p class="hint">チェックを入れた文を所見に使います。上が所見での形、下が個別の指導計画の元の文です。`
+  html += `<p class="hint">チェックを入れた文を所見に使います。`
+    + `<span class="kklegend"><span class="kklab new">所見</span></span>が通知表に載る形、`
+    + `<span class="kklegend"><span class="kklab src">元の文</span></span>が個別の指導計画の文です。`
     + `<b>要確認</b>の文は、保護者に渡す通知表に載せてよいかを確かめ、チェックを変えるか「このままでよい」を押してください。</p>`;
   const byB = new Map();
   r.sents.forEach(s=>{ if(!byB.has(s.b)) byB.set(s.b, []); byB.get(s.b).push(s); });
@@ -2934,8 +2963,10 @@ function kkRenderPick(r){
     hidden += list.length - rows.length;
     if(!rows.length) return;
     const b = blocks[bi] || {};
-    const title = [b.subj, b.obs, b.content].filter(x=>String(x||'').trim()).map(kkEsc).join('　');
-    html += `<div class="kkblk"><div class="kkbh">${title || '（教科名なし）'}</div>${rows.map(kkRowHtml).join('')}</div>`;
+    /* 見出しの帯：教科名（色のラベル）・観点（太字）・学習内容（灰色）。SN v1.17〜 */
+    const part = (v, c)=> String(v||'').trim() ? `<span class="${c}">${kkEsc(v)}</span>` : '';
+    const title = part(b.subj || '（教科名なし）', 'kkbsub') + part(b.obs, 'kkbobs') + part(b.content, 'kkbcon');
+    html += `<div class="kkblk"><div class="kkbh">${title}</div>${rows.map(kkRowHtml).join('')}</div>`;
   });
   if(mode === 'chk' && !chkAll) html += '<p class="hint">この欄には要確認の文はありません。</p>';
   html += `<div class="kkfoot"><span>${mode === 'chk' && hidden ? `ほかの ${hidden}文 は、おすすめの選び方のままです（「すべての文」で見られます）。` : ''}</span>`
