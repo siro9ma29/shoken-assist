@@ -103,6 +103,8 @@
 
   .dropped{font-size:12px; color:var(--sub); background:#faf9f5; border:1px dashed var(--line);
     border-radius:8px; padding:8px 10px; margin-top:10px; line-height:1.6;}
+  .checknote{font-size:12px; color:var(--warn); background:var(--warn-soft); border:1px solid #e8cdb6;
+    border-radius:8px; padding:8px 10px; margin-top:10px; line-height:1.6;}
   .nglint{font-size:12px; color:#8a3b3b; background:#fdf1f1; border:1px solid #e6c9c9;
     border-radius:8px; padding:8px 10px; margin-top:10px; line-height:1.6;}
   .chips{display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;}
@@ -782,6 +784,7 @@ details.cat>summary{font-size:15px;}
     <span id="tip"></span>
   </div>
   <div class="nglint" id="nglint" style="display:none;"></div>
+  <div class="checknote" id="checkNote" style="display:none;"></div>
   <div class="dropped" id="dropped" style="display:none;"></div>
   <!-- 個別の指導計画の評価の文を1文ずつ選ぶ（SN v1.7〜。中身は kkRenderPick が作る） -->
   <div class="kkpick" id="kkPick" style="display:none;"></div>
@@ -976,9 +979,11 @@ details.cat>summary{font-size:15px;}
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "SN v1.21";
+const APP_VERSION = "SN v1.22";
 const APP_DATE    = "2026-11-07";
 const APP_HISTORY = [
+  "SN v1.22 「委員会」が入った文を確かめるようにした（通常版 v1.54 の CHECK_WORDS と同じ。委員会に入っていない児童もいるため）。",
+  "　　　　文章の画面に「確かめてください」を出す（手で直した文章も）。個別の指導計画の文では「要確認：確かめる語（委員会）」の印を付ける（文は使うまま）。",
   "SN v1.21 所見一覧に「C4th用Excelに書き込む」を追加（通常版 v1.38〜v1.41 と同じ、①出力→②書き込み→③読み取り の案内つき）。",
   "　　　　C4thの「通知表入力」→「エクセル出力」で出したExcelを選ぶと、番号で児童を照合して書き込み、元の名前_所見入り_日時.xlsx で保存する。",
   "　　　　見出しに欄の名前（国語・算数・図工・生活単元 など）の列があれば欄ごとにその列へ、「所見」の列には列のない欄を【欄の名前】付きでまとめて入れる。",
@@ -1900,6 +1905,14 @@ const NG_WORDS = [
 function lintText(text){
   return NG_WORDS.filter(w=>text.includes(w));
 }
+
+/* ============ 確かめてほしい語（SN v1.22。通常版 v1.54 の CHECK_WORDS と同じ） ============
+   文から消さずに、担任に確かめてもらう語。文章の画面に知らせ、個別の指導計画の文では「要確認」の印を付ける。
+   語を足すときは1行足す（label は印に出す短い名前） */
+const CHECK_WORDS = [
+  { re:/委員会/, label:"委員会", msg:"「委員会」…委員会に入っていない児童もいます。委員会の活動をしているか確かめてください。" },
+];
+function checksOf(text){ return text ? CHECK_WORDS.filter(w=>w.re.test(text)) : []; }
 
 /* ============ 文の組み立て ============ */
 /* 支援の程度の順に並べる（一人でできる → 言葉かけ → 一緒に）。
@@ -3033,7 +3046,7 @@ document.getElementById('handBar').addEventListener('click', e=>{
        チェックを変えるか「このままでよい」を押すまで「要確認」として残る
      ・課題・方針・メモの文はチェックなしで表示だけ（「すべての文」のとき）
    欄の「OK」を押すと、残っている要確認の文は、いまの選び方で確定する（APP.onConfirm → kkResolve）。 */
-const KK_CHK_LABEL  = { health:'健康・家庭に関わる', name:'固有の名前', act:'様子を述べただけ', kuse:'書き癖が残る' };
+const KK_CHK_LABEL  = { health:'健康・家庭に関わる', name:'固有の名前', act:'様子を述べただけ', kuse:'書き癖が残る', word:'確かめる語' };
 const KK_KIND_LABEL = { issue:'課題の文', teacher:'教師の手立て・今後の方針', memo:'メモ' };
 let kkView = { at:'', mode:'' };   // mode：'chk'（要確認の文だけ）／'all'（すべての文）。児童・欄が変わると自動で決め直す
 const kkEsc = s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -3097,7 +3110,8 @@ function kkRowHtml(s){
   const usable = s.kind === 'pos' || s.kind === 'act';
   const pend = s.chk.length && !s.fixed;
   const tags = s.chk.map(c=>`<span class="kktag${c==='health'?' warn':''}">要確認：${KK_CHK_LABEL[c]}`
-    + `${c==='name' && s.names.length ? '（' + kkEsc(s.names.join('・')) + '）' : ''}</span>`);
+    + `${c==='name' && s.names.length ? '（' + kkEsc(s.names.join('・')) + '）' : ''}`
+    + `${c==='word' && (s.words||[]).length ? '（' + kkEsc(s.words.join('・')) + '）' : ''}</span>`);
   if(!usable) tags.unshift(`<span class="kktag off">${KK_KIND_LABEL[s.kind] || ''}（使いません）</span>`);
   if(s.cut) tags.push('<span class="kktag off">字数のめやすで外しました</span>');
   if(s.part) tags.push(`<span class="kktag off">${s.part === 'after' ? '「〜が、」の後ろだけ使用' : '「〜が、」の前だけ使用'}</span>`);
@@ -3194,9 +3208,18 @@ function showDropped(dropped){
   box.style.display='block';
 }
 
+/* 文章に確かめてほしい語（CHECK_WORDS）があれば知らせる（SN v1.22） */
+function renderCheckNote(text){
+  const el = document.getElementById('checkNote');
+  if(!el) return;
+  const hits = checksOf(text);
+  el.innerHTML = hits.length ? '<b>確かめてください。</b>' + hits.map(w=>kkEsc(w.msg)).join('<br>') : '';
+  el.style.display = hits.length ? '' : 'none';
+}
 function setOut(t, empty){
   const o=document.getElementById('out');
   o.textContent=t; o.classList.toggle('empty', !!empty);
+  renderCheckNote(empty ? '' : t);
   if(empty){
     document.getElementById('lenMeta').textContent='— 字';
     document.getElementById('tip').textContent='';
@@ -6059,8 +6082,9 @@ function kkSentsOf(b, bi, yobi){
     const names = kkNames(p.t, yobi); if(names.length) chk.push('name');
     if(p.kind === 'act') chk.push('act');
     if(fx.kuse) chk.push('kuse');
+    const words = checksOf(p.t).map(w=>w.label); if(words.length) chk.push('word');   // 委員会など（SN v1.22）
     const usable = p.kind === 'pos' || p.kind === 'act';
-    return { key: bi + '.' + si, b:bi, si, src:x.t, kind:p.kind, part:p.part, names,
+    return { key: bi + '.' + si, b:bi, si, src:x.t, kind:p.kind, part:p.part, names, words,
              text: usable ? kkPolite(fx.t) : fx.t,
              chk: usable ? chk : chk.filter(c=>c==='health'),
              on: usable && !chk.includes('health') };
