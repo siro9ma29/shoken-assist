@@ -348,6 +348,17 @@ details.cat>summary{font-size:15px;}
 .filerow button{padding:7px 10px; border:1px solid var(--line); border-radius:8px; background:var(--panel); font-size:12px; cursor:pointer; font-family:inherit; color:var(--ink);}
 .filerow button.danger{color:var(--warn, #b06a3a);}
 .savestate{font-size:12px;}
+/* 作業ファイルへの保存（SN v1.20。通常版 v1.50 と同じ） */
+.filebox{display:inline-flex; gap:6px; margin-left:8px;}
+.filebtn{font:inherit; font-size:13.5px; padding:5px 14px; border-radius:8px; border:1px solid var(--line); background:var(--panel); color:var(--ink); cursor:pointer;}
+.filebtn.save{border-color:var(--accent); color:var(--accent); font-weight:700;}
+.filebtn.save.dirty{background:var(--accent); color:#fff;}
+.filebtn.save.dirty::after{content:"●"; font-size:9px; margin-left:5px; vertical-align:2px;}
+.filestate{display:block; font-size:12px; color:var(--sub); margin-top:10px;}
+.filestate.dirty{color:var(--warn); font-weight:700;}
+.filetoast{position:fixed; left:50%; bottom:18px; transform:translateX(-50%); z-index:50; display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  width:max-content; max-width:92vw; padding:10px 14px; border-radius:10px; background:var(--panel); border:2px solid var(--warn); box-shadow:0 6px 24px rgba(0,0,0,.15); font-size:14px;}
+.filetoast .btn{padding:6px 14px; font-size:13.5px; white-space:nowrap;}
 .savestate.ok{color:var(--accent);}
 .savestate.ng{color:var(--warn, #b06a3a); font-weight:700;}
 .note.small{margin-top:16px;}
@@ -490,6 +501,10 @@ details.cat>summary{font-size:15px;}
     <nav class="headnav">
       <button type="button" class="linkbtn" id="navHome">はじめの画面</button>
       <button type="button" class="linkbtn" id="navList">所見一覧</button>
+      <span class="filebox">
+        <button type="button" class="filebtn" id="fileOpenBtn" title="作業ファイル（.json）を開いて続きをする">開く</button>
+        <button type="button" class="filebtn save" id="fileSaveBtn" title="作業ファイルに保存する（Ctrl＋S）">保存</button>
+      </span>
     </nav>
   </div>
   <ol class="stepbar" id="stepbar" style="display:none;"></ol>
@@ -516,9 +531,10 @@ details.cat>summary{font-size:15px;}
     <button type="button" class="linkbtn" id="goListFromStart" style="display:none;">作った所見を見る</button>
     <button type="button" class="linkbtn" id="goTour">使い方を見る</button>
     <button type="button" class="linkbtn" id="goExamples">文例を見る</button>
+    <button type="button" class="linkbtn" id="goOpenFile">作業ファイルを開く</button>
   </div>
   <div class="note small">
-    入力した内容は、このパソコンのブラウザの中だけに自動で保存されます（通信はしません）。<b>共有のパソコンでは、作業のあと「所見一覧」の「くわしい設定」から「学級をすべて消す」を押してください。</b>
+    入力した内容は、このパソコンのブラウザの中に自動で保存されます（通信はしません）。上の「保存」を押すと作業ファイル（.json）にも保存でき、一度保存したファイルには、そのあとの変更も自動で上書きされます。<b>共有のパソコンでは、作業のあと「所見一覧」の「くわしい設定」から「学級をすべて消す」を押してください。</b>
   </div>
 </section>
 
@@ -838,11 +854,11 @@ details.cat>summary{font-size:15px;}
   <details class="fold">
     <summary>くわしい設定（作業ファイル・学級の消去）</summary>
     <div class="filerow">
-      <button id="expWorkBtn">作業ファイルを書き出す</button>
-      <button id="impWorkBtn">作業ファイルを読み込む</button>
+      <button id="expWorkBtn">名前を付けて保存</button>
+      <button id="impWorkBtn">作業ファイルを開く</button>
       <button id="wipeBtn2" class="danger">学級をすべて消す</button>
     </div>
-    <p class="hint">別のパソコンで続けるとき、バックアップを残すときは「作業ファイルを書き出す」を使います。</p>
+    <p class="hint">別のパソコンで続けるとき、控えを残すときは作業ファイルを使います。ふだんは画面上の「保存」で、決めたファイルに上書き保存できます。「名前を付けて保存」は、別のファイルに分けて保存したいときに使います。</p>
   </details>
   <div class="note small">
     <b>共有のパソコンでは、作業が終わったら「学級をすべて消す」を押してください。</b>転記の前に、必ず担任が一人一人の文章を確かめてください。
@@ -852,7 +868,12 @@ details.cat>summary{font-size:15px;}
 
 </main>
 
-<footer class="appfoot"><span class="savestate ok" id="saveState">自動保存：オン</span></footer>
+<footer class="appfoot"><span class="filestate" id="fileState"></span><span class="savestate ok" id="saveState">自動保存：オン</span></footer>
+<div class="filetoast" id="fileToast" style="display:none;">
+  <span id="fileToastMsg"></span>
+  <button type="button" class="btn primary" id="fileToastSave">保存する</button>
+  <button type="button" class="btn ghost" id="fileToastLater">あとで</button>
+</div>
 
 <!-- 以前の画面にあった部品。各版の処理が参照するため残すが、画面には出さない -->
 <div id="legacy" hidden>
@@ -890,9 +911,13 @@ details.cat>summary{font-size:15px;}
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "SN v1.19";
+const APP_VERSION = "SN v1.20";
 const APP_DATE    = "2026-11-07";
 const APP_HISTORY = [
+  "SN v1.20 作業データの保存を使いやすくした（通常版 v1.50 と同じ）。画面上部に「開く」「保存」を置き、Ctrl＋S でも保存できる。はじめの画面にも「作業ファイルを開く」。",
+  "　　　　Chrome／Edge では一度選んだ作業ファイル（.json）に上書き保存し、そのあとの変更も自動で上書きする（保存先はブラウザに記憶）。",
+  "　　　　開き直したあとの最初の保存では、ほかのパソコンで保存されていないかを確かめる。保存していない変更があると「保存」に印、10分で知らせる。",
+  "　　　　「所見一覧」→「くわしい設定」は「名前を付けて保存」「作業ファイルを開く」に。ファイル保存の機能がないブラウザでは今までどおりダウンロード。",
   "SN v1.19 「文例を見る」画面を追加（通常版 v1.57 の機能を特別支援学級版に合わせたもの）。欄を選ぶと、小見出しごとに項目を並べ、",
   "　　　　一人で／言葉かけ／一緒に の3段階の文例と、その欄の結びの一文を、通知表に載る形で見られる。見るだけの画面で、文ごとにコピーできる。",
   "　　　　はじめの画面の「文例を見る」と、項目の画面の各小見出しの「この小見出しの文例を見る」から開く。",
@@ -3993,8 +4018,9 @@ function saveNow(){
     localStorage.setItem(APP.storeKey, JSON.stringify(serialize()));
     setSave("保存しました（このパソコンのブラウザ内）", true);
   }catch(e){
-    setSave("このブラウザには保存できません。「作業ファイルを書き出す」で控えを取ってください。", false);
+    setSave("このブラウザには保存できません。画面上の「保存」で作業ファイルに保存してください。", false);
   }
+  fileAfterChange();   // SN v1.20：作業ファイルへの上書き・未保存の印
 }
 let saveTimer = null;
 function save(){ clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 400); }
@@ -4057,26 +4083,35 @@ function exportWork(){
   download(`${APP.filePrefix}_作業_${safeName(R.cls)||'学級'}_${stamp()}.json`, JSON.stringify(serialize(), null, 1), 'application/json');
   setSave(`作業ファイルを書き出しました（${R.students.length}人分）`, true);
 }
-function importWork(file){
+function importWork(file, onLoaded){
   const reader = new FileReader();
-  reader.onload = ()=>{
-    let data = null;
-    try{ data = JSON.parse(reader.result); }catch(e){}
-    if(!data || !Array.isArray(data.students) || !data.students.length){
-      alert("作業ファイルの形式ではありません。\nこの画面で書き出した作業ファイル（.json）を選んでください。"); return;
-    }
-    if(data.app && data.app !== APP.appName){
-      alert(`このファイルは「${data.app}」の作業ファイルです。\nこのアプリでは読み込めません。`); return;
-    }
-    if(!confirm(`いまの学級（${R.students.length}人）を、読み込むファイルの内容（${data.students.length}人）で置き換えます。\nいまの内容は消えます。よろしいですか。`)) return;
-    if(loadData(data)){ saveNow(); setSave(`読み込みました（${R.students.length}人分）`, true); SH.flow = SH.savedFlow || SH.flow; show('scrList'); }
-  };
+  reader.onload = ()=>importText(reader.result, onLoaded);
   reader.readAsText(file);
+}
+/* 作業ファイルの中身（文字列）を読み込む。onLoaded … 読み込めたときに呼ぶ（「開く」で開いたファイルを保存先にする）。
+   onLoaded がない（ファイルを選ぶ古い方法で開いた）ときは、保存先を外す（SN v1.20） */
+function importText(text, onLoaded){
+  let data = null;
+  try{ data = JSON.parse(text); }catch(e){}
+  if(!data || !Array.isArray(data.students) || !data.students.length){
+    alert("作業ファイルの形式ではありません。\nこの画面で保存した作業ファイル（.json）を選んでください。"); return false;
+  }
+  if(data.app && data.app !== APP.appName){
+    alert(`このファイルは「${data.app}」の作業ファイルです。\nこのアプリでは読み込めません。`); return false;
+  }
+  if(!confirm(`いまの学級（${R.students.length}人）を、読み込むファイルの内容（${data.students.length}人）で置き換えます。\nいまの内容は消えます。よろしいですか。\n\n※ 残しておきたい場合は、いったん「キャンセル」して「名前を付けて保存」で控えを取ってください。`)) return false;
+  if(loadData(data)){
+    if(onLoaded) onLoaded(); else fileDisconnect();
+    saveNow(); setSave(`読み込みました（${R.students.length}人分）`, true); SH.flow = SH.savedFlow || SH.flow; show('scrList');
+    return true;
+  }
+  return false;
 }
 function wipeAll(){
   if(!confirm(`この学級の入力をすべて消します（${R.students.length}人分）。\n元に戻せません。よろしいですか。`)) return;
-  if(!confirm("本当に消してよろしいですか。\n必要なら先に「作業ファイルを書き出す」で控えを取ってください。")) return;
+  if(!confirm("本当に消してよろしいですか。\n必要なら先に「保存」で作業ファイルに控えを取ってください。")) return;
   try{ localStorage.removeItem(APP.storeKey); if(APP.oldKey) localStorage.removeItem(APP.oldKey); }catch(e){}
+  fileDisconnect();   // SN v1.20：消したあとの空の学級で、保存先のファイルを上書きしないように
   R.cls = ""; $('clsInput').value = '';
   R.students = [blankRec()]; R.students[0].no = "1"; R.curId = R.students[0].id;
   SH.sec = secsOf(curRec())[0] || ''; APP.apply(curRec(), SH.sec);
@@ -4799,13 +4834,218 @@ $('copyAllBtn').addEventListener('click', ()=>{
 });
 $('expCsvBtn').addEventListener('click', exportCsv);
 $('addStuBtn').addEventListener('click', ()=>{ if(!SH.flow) SH.flow = 'single'; startNewChild('add', false); });
-$('expWorkBtn').addEventListener('click', exportWork);
-$('impWorkBtn').addEventListener('click', ()=>$('importFile').click());
+$('expWorkBtn').addEventListener('click', ()=>fileSave(true));   // 名前を付けて保存（SN v1.20。使えないブラウザではダウンロード）
+$('impWorkBtn').addEventListener('click', fileOpen);
 $('importFile').addEventListener('change', e=>{ const f = e.target.files[0]; e.target.value = ''; if(f) importWork(f); });
 $('wipeBtn2').addEventListener('click', wipeAll);
 $('clsInput').addEventListener('input', save);
 $('tourNext').addEventListener('click', ()=>{ if(tourAt < APP.tour.length-1){ tourAt++; renderTour(); } else closeTour(); });
 $('tourSkip').addEventListener('click', closeTour);
+
+/* ==================================================================
+   作業ファイルへの保存（SN v1.20。通常版 v1.50 と同じ仕組み）
+   (1) 画面上部に「開く」「保存」を置き、どの画面からも保存できるようにする（Ctrl＋S も）。
+   (2) Chrome／Edge のファイル保存の機能（File System Access API）を使い、一度選んだ
+       ファイル（共有フォルダなども可）に上書き保存する。保存先はブラウザ（IndexedDB）に記憶し、
+       次に開いたときも同じファイルに保存する。使えないブラウザでは従来どおり日時入りのファイルをダウンロードする。
+   (3) 保存先が決まっていて書き込みが許可されている間は、変更のたびに（2秒待ってまとめて）自動で上書きする。
+   (4) 画面を開き直したあとの最初の保存では、ほかのパソコンでファイルが保存されていないかを確かめる。
+   (5) ファイルに保存していない変更があると「保存」に印を付け、10分たつと知らせ、画面を閉じるときにも確かめる。
+   (6) 「学級をすべて消す」と、ファイルを選ぶ古い方法で読み込んだときは、保存先を外す。
+   保存先の記憶は通常版（shoken_assist_file）と別の名前にする（同じサイトの中で取り違えないため）。
+   ================================================================== */
+const FS_OK = typeof window.showSaveFilePicker === 'function';
+const FILE_REMIND_MS = 10 * 60 * 1000;   // 保存していない変更を知らせるまでの時間
+const fileSt = { handle:null, name:'', granted:false, checked:false, fp:null, savedAt:0, dirtySince:0, remindedAt:0, timer:null, busy:false };
+const FILE_TYPES = [{ description: APP.appName + 'の作業ファイル', accept:{ 'application/json':['.json'] } }];
+const FILE_DB = APP.storeKey + '_file';
+
+/* 保存の中身の「指紋」（保存日時・更新日時は除く）。ファイルに保存したときの指紋と比べて未保存かを決める */
+function fpOf(d){
+  return JSON.stringify([d.cls, d.cfg, (d.students || []).map(x=>{ const y = Object.assign({}, x); delete y.updated; return y; })]);
+}
+function fileFingerprint(){ return fpOf(serialize()); }
+function fileDirty(){ return SH.ready && hasContent() && fileSt.fp !== fileFingerprint(); }
+function fpOfText(text){ try{ return fpOf(JSON.parse(text)); }catch(e){ return null; } }
+
+/* 保存先（ファイルの扱い）と、このパソコンで最後に保存したときの指紋をブラウザに記憶する */
+function fileIdb(mode, fn){
+  return new Promise(ok=>{
+    if(!window.indexedDB){ ok(null); return; }
+    let rq;
+    try{ rq = indexedDB.open(FILE_DB, 1); }catch(e){ ok(null); return; }
+    rq.onupgradeneeded = ()=>rq.result.createObjectStore('kv');
+    rq.onerror = ()=>ok(null);
+    rq.onsuccess = ()=>{
+      try{
+        const tx = rq.result.transaction('kv', mode), st = tx.objectStore('kv');
+        const r = fn(st);
+        tx.oncomplete = ()=>ok(r && 'result' in r ? r.result : null);
+        tx.onerror = ()=>ok(null);
+      }catch(e){ ok(null); }
+    };
+  });
+}
+function fileRemember(h){ return fileIdb('readwrite', st=>h ? st.put(h, 'handle') : st.delete('handle')); }
+function fileRecall(){ return fileIdb('readonly', st=>st.get('handle')); }
+function fileRememberFp(fp){ return fileIdb('readwrite', st=>st.put(fp, 'fp')); }
+function fileRecallFp(){ return fileIdb('readonly', st=>st.get('fp')); }
+
+function fileConnect(h){
+  fileSt.handle = h; fileSt.name = h ? h.name : ''; fileSt.granted = !!h;
+  fileRemember(h);
+}
+function fileDisconnect(){
+  fileSt.handle = null; fileSt.name = ''; fileSt.granted = false; fileSt.checked = false; fileSt.fp = null;
+  fileRemember(null); fileRememberFp(null);
+  fileRender();
+}
+async function filePermission(h, ask){
+  try{
+    const o = { mode:'readwrite' };
+    if(await h.queryPermission(o) === 'granted') return true;
+    return ask ? (await h.requestPermission(o)) === 'granted' : false;
+  }catch(e){ return false; }
+}
+async function fileWrite(h){
+  const data = serialize();
+  const json = JSON.stringify(data, null, 1), fp = fpOf(data);
+  const w = await h.createWritable();
+  await w.write(new Blob([json], { type:'application/json' }));
+  await w.close();
+  fileSt.fp = fp; fileSt.savedAt = Date.now(); fileSt.dirtySince = 0;
+  fileRememberFp(fp);
+}
+function fileSuggestName(){ return `${APP.filePrefix}_作業_${safeName(R.cls) || '学級'}.json`; }
+
+/* 「保存」。asNew＝名前を付けて保存 */
+async function fileSave(asNew){
+  if(fileSt.busy) return;
+  saveNow();
+  if(!FS_OK){
+    exportWork();   // ファイル保存の機能がないブラウザ：日時入りのファイルをダウンロードする
+    fileSt.fp = fileFingerprint(); fileSt.savedAt = Date.now(); fileSt.dirtySince = 0;
+    fileRender();
+    return;
+  }
+  fileSt.busy = true;
+  try{
+    let h = asNew ? null : fileSt.handle;
+    if(h && !(await filePermission(h, true))) h = null;
+    // この画面を開いてから初めて上書きするときは、ほかのパソコンでファイルが保存されていないかを確かめる
+    if(h && !fileSt.checked){
+      const known = await fileRecallFp();
+      let now = null;
+      try{ now = fpOfText(await (await h.getFile()).text()); }catch(e){}
+      if(now && known && now !== known && now !== fileFingerprint()){
+        if(!confirm(`作業ファイル「${h.name}」は、このパソコンで最後に保存したあとに、ほかで保存されています（別のパソコンで続きをした可能性があります）。\n\n`
+          + `このまま上書きすると、そちらの変更は消えます。\n上書きしてよろしいですか。\n\n`
+          + `※ そちらの内容を使うときは「キャンセル」して、「開く」でファイルを開いてください。`)){
+          fileSt.busy = false; return;
+        }
+      }
+    }
+    if(!h) h = await window.showSaveFilePicker({ suggestedName: fileSuggestName(), types: FILE_TYPES });
+    await fileWrite(h);
+    fileConnect(h);
+    fileSt.checked = true;
+    setSave(`作業ファイル「${h.name}」に保存しました（${R.students.length}人分）`, true);
+  }catch(e){
+    if(e && e.name === 'AbortError'){ /* 保存先を選ぶ画面でキャンセルした */ }
+    else{
+      alert("作業ファイルに保存できませんでした。\nファイルがほかのソフトで開かれていないか、保存先のフォルダに書き込めるかを確かめてください。\n\n" + (e && e.message || ''));
+      fileSt.granted = false;
+    }
+  }finally{
+    fileSt.busy = false;
+    fileRender();
+  }
+}
+
+/* 「開く」 */
+async function fileOpen(){
+  if(!FS_OK){ $('importFile').click(); return; }
+  if(fileDirty() && !confirm("いまの内容に、作業ファイルへ保存していない変更があります。\n先に「保存」しなくてよろしいですか。")) return;
+  try{
+    const [h] = await window.showOpenFilePicker({ types: FILE_TYPES, multiple:false });
+    const text = await (await h.getFile()).text();
+    importText(text, ()=>{
+      fileConnect(h);
+      fileSt.granted = false;   // 読み込みの許可だけなので、最初の保存で書き込みの許可を確かめる
+      fileSt.checked = true;    // 開いたばかりなので、ほかでの保存を確かめる必要はない
+      fileSt.fp = fileFingerprint(); fileSt.savedAt = Date.now(); fileSt.dirtySince = 0;
+      fileRememberFp(fpOfText(text));
+      filePermission(h, false).then(g=>{ fileSt.granted = g; fileRender(); });
+    });
+  }catch(e){
+    if(!(e && e.name === 'AbortError')) alert("作業ファイルを開けませんでした。\n" + (e && e.message || ''));
+  }
+  fileRender();
+}
+
+/* ブラウザ内の自動保存（saveNow）のたびに呼ばれる。保存先があり書き込みが許可されていれば、ファイルにも上書きする */
+function fileAfterChange(){
+  if(!SH.ready) return;
+  const dirty = fileDirty();
+  if(dirty && !fileSt.dirtySince) fileSt.dirtySince = Date.now();
+  if(!dirty) fileSt.dirtySince = 0;
+  if(dirty && FS_OK && fileSt.handle && fileSt.granted){
+    clearTimeout(fileSt.timer);
+    fileSt.timer = setTimeout(async ()=>{
+      if(fileSt.busy || !fileDirty()) return;
+      fileSt.busy = true;
+      try{ await fileWrite(fileSt.handle); }
+      catch(e){ fileSt.granted = false; }   // 書けなくなったら自動の上書きをやめ、「保存」を押してもらう
+      finally{ fileSt.busy = false; fileRender(); }
+    }, 2000);
+  }
+  fileRender();
+}
+
+function hhmm(t){ const d = new Date(t); return d.getHours() + ':' + String(d.getMinutes()).padStart(2,'0'); }
+function fileRender(){
+  const btn = $('fileSaveBtn'), el = $('fileState');
+  if(!btn || !el) return;
+  const dirty = fileDirty();
+  btn.classList.toggle('dirty', dirty);
+  btn.title = (dirty ? 'ファイルに保存していない変更があります。' : '') + '作業ファイルに保存する（Ctrl＋S）';
+  let msg = '';
+  if(fileSt.handle){
+    msg = `保存先：${fileSt.name}`;
+    if(fileSt.savedAt) msg += `（${hhmm(fileSt.savedAt)} 保存）`;
+    if(dirty) msg += fileSt.granted ? '　変更を保存しています…' : '　保存していない変更があります（「保存」を押してください）';
+    else if(fileSt.granted) msg += '　変更は自動で上書きされます';
+  }else if(dirty){
+    msg = '作業ファイルに保存していない変更があります（画面上の「保存」で保存できます）';
+  }
+  el.textContent = msg;
+  el.classList.toggle('dirty', dirty && !(fileSt.handle && fileSt.granted));
+}
+
+/* 保存し忘れの知らせ（10分ごと） */
+setInterval(()=>{
+  if(!SH.ready || !fileDirty() || (fileSt.handle && fileSt.granted)) return;
+  const now = Date.now();
+  if(!fileSt.dirtySince || now - fileSt.dirtySince < FILE_REMIND_MS) return;
+  if(fileSt.remindedAt && now - fileSt.remindedAt < FILE_REMIND_MS) return;
+  fileSt.remindedAt = now;
+  $('fileToastMsg').textContent = `作業ファイルに保存していない変更があります（${Math.round((now - fileSt.dirtySince)/60000)}分前から）。`;
+  $('fileToast').style.display = '';
+}, 30 * 1000);
+$('fileToastSave').addEventListener('click', ()=>{ $('fileToast').style.display = 'none'; fileSave(false); });
+$('fileToastLater').addEventListener('click', ()=>{ $('fileToast').style.display = 'none'; });
+$('fileSaveBtn').addEventListener('click', ()=>fileSave(false));
+$('fileOpenBtn').addEventListener('click', fileOpen);
+$('goOpenFile').addEventListener('click', fileOpen);
+document.addEventListener('keydown', e=>{
+  if((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && (e.key === 's' || e.key === 'S')){
+    e.preventDefault(); fileSave(false);
+  }
+});
+/* 画面を閉じる・再読み込みするとき、ファイルに保存していない変更があれば確かめる */
+window.addEventListener('beforeunload', e=>{
+  if(fileDirty() && !(fileSt.handle && fileSt.granted)){ e.preventDefault(); e.returnValue = ''; }
+});
 
 /* ---------- 起動 ---------- */
 window.SHELL = { R, SH, save, saveNow, capture, curRec, sorted, show, secsOf, sec, recStatus, secStatus,
@@ -4827,6 +5067,14 @@ window.SHELL = { R, SH, save, saveNow, capture, curRec, sorted, show, secsOf, se
   try{ history.replaceState(snap(), ''); }catch(e){}
   let seen = false; try{ seen = !!localStorage.getItem(TOUR_KEY); }catch(e){ seen = true; }
   if(!seen) showTour();
+  // SN v1.20：前回の保存先を思い出す。中身はブラウザ内の自動保存のほうが新しいことがあるので、
+  // 自動の上書きは、この画面で一度「保存」か「開く」をしてから（ほかのパソコンでの保存を確かめてから）にする
+  if(FS_OK) fileRecall().then(h=>{
+    if(!h){ fileRender(); return; }
+    fileSt.handle = h; fileSt.name = h.name; fileSt.granted = false;
+    fileAfterChange();
+  });
+  else fileRender();
 })();
 })();
 
