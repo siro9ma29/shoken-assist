@@ -8,7 +8,7 @@ const core = html.slice(html.indexOf('/* ===TEXT-CORE-START==='), html.indexOf('
 const kkStart = html.indexOf('   個別の指導計画（様式3-1 .xlsx）の読み取り');
 const kk = html.slice(html.lastIndexOf('/* ====', kkStart), html.indexOf('</script>', kkStart));
 const ctx = {}; vm.createContext(ctx);
-vm.runInContext(core + '\n' + kk + '\nthis.API = { kkPutPhrase, kkSplit, kkKind, kkPart, kkPolite, kkFix, kkSentsOf, kkCompose, kkHas, kkPending, kkResolve, kkResetPick, kkNameKey, kkMatch, kkDupTo, kkKeepSecs, kkRedoPlan, kkSubjKey, kkJoinItems, kkItemHits, kkItemTail, SUB_BY_KEY, scanMemo, lintDB };', ctx);
+vm.runInContext(core + '\n' + kk + '\nthis.API = { kkPutPhrase, kkSplit, kkKind, kkPart, kkPolite, kkFix, kkSentsOf, kkCompose, kkHas, kkPending, kkResolve, kkResetPick, kkNameKey, kkMatch, kkDupTo, kkKeepSecs, kkRedoPlan, kkSubjKey, kkJoinItems, kkItemHits, kkItemTail, SUB_BY_KEY, scanMemo, lintDB, exSentences, SUBJECTS };', ctx);
 const A = ctx.API;
 
 let ng = 0, n = 0;
@@ -339,6 +339,24 @@ eq(!!A.SUB_BY_KEY.gg && A.SUB_BY_KEY.gg.name, '外国語', '外国語の欄が�
   eq(sp('①数を数えることができ\nた。\n②形を見分けた。'), '数を数えることができた。|形を見分けた。', '折り返し：丸数字の行');
   eq(sp('前の段落\n\n次の段落'), '前の段落|次の段落', '折り返し：空の行をはさむときはつながない');
   eq(A.kkPart(A.kkSplit('・話を聞く意識が低く、内容を理解できてい\nないことが多かった。')[0].t).kind, 'issue', '折り返し：つないだ文で種類を見分ける');
+}
+
+/* 文例を見る（SN v1.19）：すべての項目の3段階の文例が、通知表に載る形になっているか */
+{
+  let bad = 0, cnt = 0;
+  const ex1 = A.exSentences(A.SUB_BY_KEY.ko.groups[0].items[0]);
+  eq(ex1.solo, '名前を呼ばれて返事をすることができました。', '文例：一人で');
+  eq(ex1.verbal, '言葉かけを受けて、名前を呼ばれて返事をすることができました。', '文例：言葉かけ');
+  eq(ex1.together, '教師と一緒に、名前を呼ばれて返事をすることができました。', '文例：一緒に');
+  A.SUBJECTS.forEach(sb=>sb.groups.forEach(g=>g.items.forEach(it=>{
+    const ex = A.exSentences(it);
+    ['solo','verbal','together'].forEach(l=>{
+      cnt++;
+      const t = ex[l];
+      if(!t || /undefined|。。|、、/.test(t) || !/ました。$/.test(t)) bad++;
+    });
+  })));
+  eq(bad, 0, `文例：全項目の文（${cnt}文）に undefined・「。。」がなく「ました。」で終わる`);
 }
 
 console.log(`${n - ng} / ${n} OK`);

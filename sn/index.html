@@ -218,6 +218,43 @@ details.fold.mini>summary{font-size:13px; font-weight:600;}
 .guidedl dt{font-weight:700; margin-top:6px;}
 .guidedl dd{margin:2px 0 0 1em; color:var(--sub);}
 .guidedl .lv-can{color:var(--accent);} .guidedl .lv-grow{color:var(--grow);} .guidedl .lv-issue{color:var(--warn);}
+/* ---- 文例を見る（SN v1.19。通常版 v1.57 の画面を、欄×支援の程度3段階に合わせたもの） ---- */
+.modalbox.exbox{width:min(860px,100%); max-height:92vh; padding:0;}   /* .modalbox の余白を打ち消す（上の帯を一番上に固定するため） */
+.exbox > *{margin-left:20px; margin-right:20px;}
+.extop{position:sticky; top:0; background:var(--panel); z-index:1; padding-top:14px; border-bottom:1px solid var(--line);}
+.exhead{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+.exhead h3{margin:0;}
+.exctl{display:flex; flex-wrap:wrap; align-items:center; gap:10px 16px; padding:8px 0 10px;}
+.excat{font-size:13px; font-weight:700; display:flex; align-items:center; gap:6px;}
+.excat select{font-family:inherit; font-size:14px; padding:6px 8px; border:1px solid var(--line);
+  border-radius:6px; background:var(--panel); color:var(--ink); max-width:300px;}
+.exnote{margin-top:8px;}
+#exBody{padding-bottom:20px;}
+.exsum{font-size:12.5px; color:var(--sub); margin:6px 0 8px;}
+.excathead{font-size:14px; font-weight:700; margin:16px 0 4px; padding-left:8px; border-left:4px solid var(--accent);}
+.exitem{border:1px solid var(--line); border-radius:8px; margin:8px 0; overflow:hidden;}
+.exitem .extxt{background:var(--bg); padding:8px 12px; font-weight:700; font-size:14px;}
+.exitem dl{margin:0; padding:4px 12px 8px; display:grid; grid-template-columns:7.5em 1fr; gap:4px 10px;}
+.exitem dt{font-size:12.5px; font-weight:700; padding-top:6px;}
+.exitem dt.lv-solo{color:#2c6042;} .exitem dt.lv-verbal{color:var(--accent);} .exitem dt.lv-together{color:var(--warn);}
+.exitem dd{margin:0;}
+.exitem ul{list-style:none; margin:0; padding:0;}
+.exitem li{display:flex; align-items:flex-start; gap:8px; padding:5px 0; border-bottom:1px dashed var(--line); font-size:14px;}
+.exitem li:last-child{border-bottom:none;}
+.exitem li .exs{flex:1;}
+.excopy{flex:0 0 auto; font:inherit; font-size:11.5px; padding:2px 8px; border:1px solid var(--line);
+  border-radius:6px; background:var(--panel); color:var(--sub); cursor:pointer;}
+.excopy:hover{border-color:var(--accent); color:var(--accent);}
+.exclose ul{list-style:none; margin:0; padding:4px 12px 8px;}
+.exclose li{display:flex; align-items:flex-start; gap:8px; padding:5px 0; border-bottom:1px dashed var(--line); font-size:14px;}
+.exclose li:last-child{border-bottom:none;} .exclose li .exs{flex:1;}
+.exlink{text-align:right; margin:-2px 0 4px;}
+.exlink .linkbtn{font-size:12.5px; padding:2px 6px;}
+@media (max-width:560px){
+  .exbox > *{margin-left:12px; margin-right:12px;}
+  .exitem dl{grid-template-columns:1fr;}
+  .exitem dt{padding-top:2px;}
+}
 .bignum{font-size:22px; font-weight:700; margin:6px 0 4px; color:var(--accent);}
 .bigselect{font-family:inherit; font-size:15px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; min-width:260px;}
 .seg.big button{padding:12px 8px; font-size:14.5px;}
@@ -478,6 +515,7 @@ details.cat>summary{font-size:15px;}
     <button type="button" class="linkbtn strong" id="goResume" style="display:none;"></button>
     <button type="button" class="linkbtn" id="goListFromStart" style="display:none;">作った所見を見る</button>
     <button type="button" class="linkbtn" id="goTour">使い方を見る</button>
+    <button type="button" class="linkbtn" id="goExamples">文例を見る</button>
   </div>
   <div class="note small">
     入力した内容は、このパソコンのブラウザの中だけに自動で保存されます（通信はしません）。<b>共有のパソコンでは、作業のあと「所見一覧」の「くわしい設定」から「学級をすべて消す」を押してください。</b>
@@ -821,6 +859,23 @@ details.cat>summary{font-size:15px;}
   <div id="subTabs"></div><b id="curName"></b><span id="selCount"></span><button id="genBtn"></button><span id="outSubName"></span><div id="allList"></div><span id="doneCount"></span><button id="wipeBtn"></button><button id="copyAllBtnOld"></button>
 </div>
 
+<!-- ===== 文例を見る（SN v1.19）：欄を選んで、項目ごとに支援の程度3段階の文例を並べる（見るだけ） ===== -->
+<div class="modal" id="exModal" style="display:none;" role="dialog" aria-labelledby="exTitle">
+  <div class="modalbox exbox">
+   <div class="extop">
+    <div class="exhead">
+      <h3 id="exTitle">文例を見る</h3>
+      <button type="button" class="btn ghost" id="exClose">閉じる</button>
+    </div>
+    <div class="exctl">
+      <label class="excat">欄 <select id="exSub"></select></label>
+    </div>
+   </div>
+    <p class="hint exnote">通知表に載る形の例です。実際の所見では、文末（〜ことができました／〜姿が見られました／〜ています／〜ようになりました）を文ごとに変えたり、2つの項目を1文にまとめたりします。「言葉かけ」「一緒に」の文の頭の言い回し（言葉かけを受けて、／促しを受けて、／教師と一緒に、／手を添えると、 など）も文ごとに変わり、個別の指導計画の手立てを登録したときは、その手立ての言い方（ふりがなを付けると、 など）を使います。文例はこの画面では選べません（項目の画面で選びます）。</p>
+    <div id="exBody"></div>
+  </div>
+</div>
+
 <div class="modal" id="tourModal" style="display:none;">
   <div class="modalbox tourbox">
     <div class="tourpage" id="tourPage"></div>
@@ -835,9 +890,12 @@ details.cat>summary{font-size:15px;}
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "SN v1.18";
+const APP_VERSION = "SN v1.19";
 const APP_DATE    = "2026-11-07";
 const APP_HISTORY = [
+  "SN v1.19 「文例を見る」画面を追加（通常版 v1.57 の機能を特別支援学級版に合わせたもの）。欄を選ぶと、小見出しごとに項目を並べ、",
+  "　　　　一人で／言葉かけ／一緒に の3段階の文例と、その欄の結びの一文を、通知表に載る形で見られる。見るだけの画面で、文ごとにコピーできる。",
+  "　　　　はじめの画面の「文例を見る」と、項目の画面の各小見出しの「この小見出しの文例を見る」から開く。",
   "SN v1.18 「評価の文から選ぶ」の「この欄をおすすめの選び方に戻す」を「この欄のチェックを読み込んだときに戻す」にし、確認の文で何が戻るか（使う文・使わない文・要確認の文）と何が消えるかを書いた。",
   "SN v1.17 「評価の文から選ぶ」を見やすくした（教科のまとまりを枠と見出しの帯で分け、各文に「所見」「元の文」の札を付け、元の文は灰色の帯に。使う文は左に青い線、外した文・使わない文は灰色の背景）。",
   "SN v1.16 過去の個別の指導計画（令和3〜7年度・15人分）の評価の文から、項目を23件足し、印の見分けの語（KW）を足した。",
@@ -2289,6 +2347,18 @@ function lintDB(){
   });
   return bad;
 }
+/* ============ 文例を見る（SN v1.19）：1項目の文例 ============
+   支援の程度ごとに、通知表に載る形の文を1つずつ返す。文末は ENDINGS の1つ目、
+   支援の言い回しは2文目以降で使う any の1つ目（buildText で文の頭に付く形と同じ）。
+   画面（openExamples）はこの結果を並べるだけ。 */
+function exSentences(it){
+  const out = {};
+  LEVEL_ORDER.forEach(l=>{
+    const sup = (SUPPORT[l] && SUPPORT[l].any[0]) || "";
+    out[l] = sup + ENDINGS[0](it.act);
+  });
+  return out;
+}
 /* ===TEXT-CORE-END=== */
 
 /* ============ 画面の状態 ============ */
@@ -2423,6 +2493,11 @@ function buildItems(){
     const d = document.createElement('details'); d.className='cat'; d.open=true;
     const n = group.items.length;
     d.innerHTML = `<summary>${group.cat}<span class="count" data-cat="${group.cat}">0/${n}</span></summary>`;
+    // この小見出しの文例を見る（SN v1.19）
+    const exl = document.createElement('div'); exl.className = 'exlink';
+    exl.innerHTML = `<button type="button" class="linkbtn">この小見出しの文例を見る</button>`;
+    exl.querySelector('button').addEventListener('click', ()=>openExamples(sub.key, group.cat));
+    d.appendChild(exl);
     const box = document.createElement('div'); box.className='items';
     group.items.forEach(it=>{
       const row=document.createElement('div'); row.className='item'; row.dataset.id=it.id;
@@ -4494,6 +4569,68 @@ function copyText(text, btn, label){
     document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); done(); }catch(e){} document.body.removeChild(ta); };
   if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fb); else fb();
 }
+/* ==================================================================
+   文例を見る（SN v1.19。通常版 v1.57 の「文例を見る」を特別支援学級版に合わせたもの）
+   欄（教科等）を選ぶと、小見出しごとに項目を並べ、支援の程度3段階（一人で／言葉かけ／一緒に）の
+   文例を通知表に載る形で見せる。最後にその欄の結びの一文も並べる。
+   見るだけの画面で、児童の選択（state.subj など）には触らない。文は exSentences()（TEXT-CORE）で作る。
+   ================================================================== */
+const exState = { key:'', cat:null };
+function exLi(text){
+  return `<li><span class="exs">${esc(text)}</span><button type="button" class="excopy" data-copy="${esc(text)}">コピー</button></li>`;
+}
+function renderExamples(){
+  const sub = SUB_BY_KEY[exState.key] || SUBJECTS[0];
+  exState.key = sub.key;
+  $('exSub').innerHTML = SUBJECTS.map(s=>`<option value="${s.key}"${s.key===sub.key?' selected':''}>${esc(s.name)}</option>`).join('');
+  let nItem = 0, nSent = 0;
+  const html = sub.groups.map((g, gi)=>{
+    const items = g.items.map(it=>{
+      const ex = exSentences(it);
+      nItem++; nSent += LEVELS.length;
+      const rows = LEVELS.map(l=>`<dt class="lv-${l.key}">${esc(l.short)}</dt><dd><ul>${exLi(ex[l.key])}</ul></dd>`).join('');
+      return `<div class="exitem"><div class="extxt">${esc(it.txt)}</div><dl>${rows}</dl></div>`;
+    }).join('');
+    return `<h4 class="excathead" data-gi="${gi}">${esc(g.cat)}</h4>` + items;
+  }).join('');
+  const cl = (sub.closers || []);
+  const closeHtml = cl.length
+    ? `<h4 class="excathead">結びの一文（「くわしい設定」で「付ける」にしたとき、最後に1つ付きます）</h4>`
+      + `<div class="exitem exclose"><ul>${cl.map(exLi).join('')}</ul></div>`
+    : '';
+  $('exBody').innerHTML = `<p class="exsum">${esc(sub.name)}：${nItem}項目・${nSent}文${cl.length ? `・結びの一文${cl.length}` : ''}</p>` + html + closeHtml;
+  $('exBody').querySelectorAll('.excopy').forEach(b=>b.addEventListener('click', ()=>copyText(b.dataset.copy, b, 'コピー')));
+}
+/* key：開いたときに見せる欄（省略時は先頭）。cat：その欄の中で見せる小見出し（そこまで送る） */
+function openExamples(key, cat){
+  exState.key = SUB_BY_KEY[key] ? key : SUBJECTS[0].key;
+  renderExamples();
+  $('exModal').style.display = 'flex';
+  const box = $('exModal').querySelector('.exbox');
+  box.scrollTop = 0;
+  if(cat){
+    const sub = SUB_BY_KEY[exState.key];
+    const gi = sub.groups.findIndex(g=>g.cat === cat);
+    const h = gi >= 0 ? $('exBody').querySelector(`.excathead[data-gi="${gi}"]`) : null;
+    if(h) box.scrollTop = h.getBoundingClientRect().top - box.getBoundingClientRect().top - $('exModal').querySelector('.extop').offsetHeight - 8;
+  }
+  $('exClose').focus();
+}
+function closeExamples(){ $('exModal').style.display = 'none'; }
+window.openExamples = openExamples;   // 項目の画面（buildItems。この囲みの外）から呼ぶため
+$('exSub').addEventListener('change', e=>{
+  exState.key = e.target.value;
+  renderExamples();
+  $('exModal').querySelector('.exbox').scrollTop = 0;
+});
+$('exClose').addEventListener('click', closeExamples);
+$('exModal').addEventListener('click', e=>{ if(e.target === $('exModal')) closeExamples(); });
+document.addEventListener('keydown', e=>{
+  if(e.key === 'Escape' && $('exModal').style.display !== 'none') closeExamples();
+});
+/* はじめの画面から：いまの児童の今の欄（なければ国語）で開く */
+$('goExamples').addEventListener('click', ()=>openExamples(state.cur || 'ko', null));
+
 function allTsv(){
   capture();
   const t = v => String(v||'').replace(/[\t\r\n]+/g,' ');
