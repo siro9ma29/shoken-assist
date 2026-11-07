@@ -378,6 +378,44 @@ details.cat>summary{font-size:15px;}
   width:max-content; max-width:92vw; padding:10px 14px; border-radius:10px; background:var(--panel); border:2px solid var(--warn); box-shadow:0 6px 24px rgba(0,0,0,.15); font-size:14px;}
 .filetoast .btn{padding:6px 14px; font-size:13.5px; white-space:nowrap;}
 .tourbox{width:min(520px,100%); padding:26px;}
+
+/* ---- 文例を見る（v1.57） ---- */
+.exbox{width:min(860px,100%); max-height:92vh; padding:0;}
+.exbox > *{margin-left:20px; margin-right:20px;}
+.extop{position:sticky; top:0; background:var(--panel); z-index:1; padding-top:14px; border-bottom:1px solid var(--line);}
+.exhead{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+.exhead h3{margin:0;}
+.exctl{display:flex; flex-wrap:wrap; align-items:center; gap:10px 16px; padding:8px 0 10px;}
+.exctl .seg{flex:0 0 auto; min-width:260px;}
+.excat{font-size:13px; font-weight:700; display:flex; align-items:center; gap:6px;}
+.excat select{font-family:inherit; font-size:14px; padding:6px 8px; border:1px solid var(--line);
+  border-radius:6px; background:var(--panel); color:var(--ink); max-width:300px;}
+.exnote{margin-top:8px;}
+#exBody{padding-bottom:20px;}
+.exsum{font-size:12.5px; color:var(--sub); margin:6px 0 8px;}
+.exitem{border:1px solid var(--line); border-radius:8px; margin:10px 0; overflow:hidden;}
+.exitem .extxt{background:var(--bg); padding:8px 12px; font-weight:700; font-size:14px;}
+.exitem dl{margin:0; padding:4px 12px 8px; display:grid; grid-template-columns:8.5em 1fr; gap:4px 10px;}
+.exitem dt{font-size:12.5px; font-weight:700; padding-top:6px;}
+.exitem dt.lv-can{color:var(--accent);} .exitem dt.lv-grow{color:var(--grow);} .exitem dt.lv-issue{color:var(--warn);}
+.exitem dt small{display:block; font-weight:400; color:var(--sub); font-size:11.5px; line-height:1.4;}
+.exitem dd{margin:0;}
+.exitem ul{list-style:none; margin:0; padding:0;}
+.exitem li{display:flex; align-items:flex-start; gap:8px; padding:5px 0; border-bottom:1px dashed var(--line); font-size:14px;}
+.exitem li:last-child{border-bottom:none;}
+.exitem li .exs{flex:1;}
+.exitem li .exu{display:inline-block; font-size:11.5px; color:var(--sub); background:var(--bg);
+  border-radius:4px; padding:0 6px; margin-right:6px;}
+.excopy{flex:0 0 auto; font:inherit; font-size:11.5px; padding:2px 8px; border:1px solid var(--line);
+  border-radius:6px; background:var(--panel); color:var(--sub); cursor:pointer;}
+.excopy:hover{border-color:var(--accent); color:var(--accent);}
+.exlink{text-align:right; margin:-2px 0 4px;}
+.exlink .linkbtn{font-size:12.5px; padding:2px 6px;}
+@media (max-width:560px){
+  .exbox > *{margin-left:12px; margin-right:12px;}
+  .exitem dl{grid-template-columns:1fr;}
+  .exitem dt{padding-top:4px;}
+}
 .tourpage h3{font-size:19px; margin:0 0 10px; color:var(--accent);}
 .tourpage p{font-size:15px; margin:0 0 8px;}
 .tourdots{display:flex; gap:6px; justify-content:center; margin-top:14px;}
@@ -426,6 +464,7 @@ details.cat>summary{font-size:15px;}
     <button type="button" class="linkbtn" id="goListFromStart" style="display:none;">作った所見を見る</button>
     <button type="button" class="linkbtn" id="goOpenFile">作業ファイルを開く</button>
     <button type="button" class="linkbtn" id="goTour">使い方を見る</button>
+    <button type="button" class="linkbtn" id="goExamples">文例を見る</button>
   </div>
   <div class="note small">
     入力した内容は、このパソコンのブラウザの中に自動で保存されます。上の「保存」を押すと作業ファイル（.json）にも保存でき、一度保存したファイルには、そのあとの変更も自動で上書きされます。<b>共有のパソコンでは、作業のあと「所見一覧」の「くわしい設定」から「学級をすべて消す」を押してください。</b>
@@ -799,6 +838,28 @@ details.cat>summary{font-size:15px;}
   </div>
 </div>
 
+<!-- ===== 文例を見る（v1.57）：学年帯とカテゴリを選んで、文例を通知表に載る形で並べる（見るだけ） ===== -->
+<div class="modal" id="exModal" style="display:none;" role="dialog" aria-labelledby="exTitle">
+  <div class="modalbox exbox">
+   <div class="extop">
+    <div class="exhead">
+      <h3 id="exTitle">文例を見る</h3>
+      <button type="button" class="btn ghost" id="exClose">閉じる</button>
+    </div>
+    <div class="exctl">
+      <div class="seg" id="exBand">
+        <button type="button" data-band="low">低学年</button>
+        <button type="button" data-band="mid">中学年</button>
+        <button type="button" data-band="high">高学年</button>
+      </div>
+      <label class="excat">カテゴリ <select id="exCat"></select></label>
+    </div>
+   </div>
+    <p class="hint exnote">通知表に載る形の例です。実際の所見では、教科名などの書き出し（「国語の学習では、」など）を付けたり、文末（〜ことができました／〜様子が見られました など）を児童ごとに変えたり、2つの観点を1文にまとめたりします。文例はこの画面では選べません（項目の画面で選びます）。</p>
+    <div id="exBody"></div>
+  </div>
+</div>
+
 <div class="modal" id="csvModal" style="display:none;">
   <div class="modalbox">
     <h3>名簿CSVの読み込み</h3>
@@ -846,9 +907,10 @@ details.cat>summary{font-size:15px;}
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "v1.56";
+const APP_VERSION = "v1.57";
 const APP_DATE    = "2026-11-07";
 const APP_HISTORY = [
+  {v:"v1.57", d:"2026-11-07", note:"「文例を見る」画面を追加した。学年帯（低・中・高）とカテゴリを選ぶと、項目ごとに「できる」「伸長中」「課題」の文例を、通知表に載る形（文末を付けた形）ですべての言い回しの候補とともに並べる。教科の「できる」は、学年が分かるときに使う学年・学習内容別の文も並べる。はじめの画面の「文例を見る」と、項目の画面の各カテゴリの「このカテゴリの文例を見る」から開く。見るだけの画面で、文ごとにコピーできる（児童の選択は変えない）。"},
   {v:"v1.56", d:"2026-11-07", note:"学習面の文（g1〜g9：挙手・発言／集中／考えを伝える／基礎の定着と活用／ノート／家庭学習・自主学習／粘り強さ／話し合い／資料やICTの活用）を、低・中・高の学年帯で書き分けた（BAND_ALT の low・mid・high に各3通り、計81文）。低学年は先生の問いかけに手を挙げる・ひらがなやたし算・マスに合わせて書く・音読カード・図鑑やタブレットのカメラなど身近で具体的な場面、中学年は理由を挙げる・予想を立てる・段落に分けて書く・自主学習ノート・辞典・社会科見学のメモ・新聞など、高学年は根拠を示す・時間配分・既習の考え方の活用・振り返り・司会や記録・複数の資料の比較・情報の出典など。学年帯の間で同じ文はなく、DB・ALT の旧文も使わない。課題の文と、2つの項目をまとめた文（JOIN_TEXT）は学年帯で分けていない（今までどおり）。"},
   {v:"v1.55", d:"2026-11-07", note:"生活面の文（生活・行動面・健康・体力面・特別活動・係活動・人とのかかわりの37項目）に、中学年（3・4年）専用の言い回しを作った（BAND_ALT の mid。自動で選ばれる13項目は5通り、ほかは3通り）。これで低・中・高の3つの学年帯がそれぞれ専用の文だけを使い、学年帯の間で同じ文にならない。中学年の文は、きまりの理由を考える・自分たちで決めて進める・グループで協力する・理科の観察や実験、社会科見学、異学年の集会など、3・4年らしい場面にした。特別活動・係活動の t8・t9 の場面は v1.54 と同じく具体的に（給食の片付け・理科の実験の準備・集会の準備 など）。あわせて、特別活動・係活動で文頭の場面と同じ語が続く文（「日直の仕事では、日直の仕事を〜」など）を、低・中・高学年とも直した（16文）。課題の文は学年帯で分けていない（今までどおり）。"},
   {v:"v1.54", d:"2026-11-07", note:"管理職の添削（1年・6年 各10人の所見）を反映した。(1) 課題の2文目を、学年末の評価に合わせて「今後は、〜ていきます」から手立ての過去形「〜てきました」にした（77項目。「こちらから」は「教師から」）。課題の1文目（〜ことがあります）は変えていない。(2) 教科の「知識・技能」「思考・判断・表現」と学習面の総括（sm0・smc・sms）の文には「姿が印象的でした」を使わず、「ことができました」にする（noImpress）。(3) 生活面の文（生活・行動面・健康・体力面・特別活動・係活動・人とのかかわりの37項目）を発達段階で分けた。低学年（1・2年）と高学年（5・6年）は専用の言い回し（BAND_ALT。自動で選ばれる13項目は5通り、ほかは3通り）だけを使い、1年と6年で同じ文にならないようにした。中学年は従来の言い回し。(4) 文章に「委員会」が入ったら、文章の確認画面と所見一覧に「要確認」を出す（CHECK_WORDS。委員会に入っていない児童もいるため）。(5) 3観点の文の2文目（〜こともできています）に「また、」を付ける。(6) 表現の直し：s1「地域の方にも」→「地域の方に」、h4「ハンカチを欠かさず持ち」、t8・t9 の場面を具体的に（給食・掃除・道具の準備など。「みんなで」「学級での準備や片付け」「分担」をやめた）、t8 の「声をかけ合い」（r1「声をかけて」と重なる）と r1 に似た言い方をやめた、h1 を休み時間・体力づくりの場面にして体育の教科の文と見分けられるようにした、生活科の知識・技能「身近な自然を観察したり、生活の仕組みを調べたりして」、低学年の国語「文字や言葉の決まり」→「句読点やかぎの使い方」、低学年の体育「きまり」→「ルール」、学習発表会「演じ切る」→「発表する」（低学年の「せりふ」も）。"},
@@ -2239,6 +2301,11 @@ DB.forEach((group, gidx)=>{
   const n = group.items.length;
   d.innerHTML = `<summary>${group.cat}<span class="count" data-gidx="${gidx}">0/${n}</span></summary>`;
   const box = document.createElement('div'); box.className='items';
+  // v1.57：このカテゴリの文例を、いまの学年帯で見る
+  const exl = document.createElement('div'); exl.className = 'exlink';
+  exl.innerHTML = `<button type="button" class="linkbtn">このカテゴリの文例を見る</button>`;
+  exl.querySelector('button').addEventListener('click', ()=>openExamples(state.grade, group.cat));
+  box.appendChild(exl);
   // v1.49：学年別の教科の文がある教科は、取り上げる学習内容を選べるようにする
   const gkey = group.items[0] && (subjCode(group.items[0].id) || {}).key;
   if(gkey){
@@ -6546,6 +6613,135 @@ function copyText(text, btn, label){
   if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback);
   else fallback();
 }
+/* ==================================================================
+   文例を見る（v1.57）
+   学年帯とカテゴリを選んで、そのカテゴリの項目ごとに、できる／伸長中／課題の文例を
+   通知表に載る形（文末を付けた形）で並べる。見るだけの画面で、児童の選択（state.sel など）には触らない。
+   言い回しの候補は altOf() と同じ決まり：その学年帯の BAND_ALT があればそれだけ、
+   なければ DB の文＋ALT の候補。文末は ENDINGS の1つ目（ことができました。／そのまま）に固定する。
+   教科の「できる」は、学年が分かるとき（成績一覧から作るときなど）は GRADE_TEXT の
+   学年・学習内容別の文を使うので、それも並べる（unitOf() と同じ）。
+   ================================================================== */
+const exState = { band:'low', gidx:-1 };
+/* その学年帯で見られるカテゴリ（DBの添字の一覧） */
+function exGroups(band){
+  return DB.map((g,i)=>i).filter(i=>{
+    const g = DB[i], gr = g.grade || 'all';
+    return (gr === 'all' || gr === band) && g.items.some(it=>itemInBand(it, band));
+  });
+}
+/* 言い回しの候補（altOf と同じ決まり）。同じ文は1つにまとめる */
+function exVariants(it, band){
+  const bl = BAND_ALT[band] && BAND_ALT[band][it.id];
+  const list = bl ? bl : [it].concat(ALT[it.id] || []);
+  const seen = { can:new Set(), grow:new Set() };
+  const out = { can:[], grow:[] };
+  list.forEach(v=>{
+    ['can','grow'].forEach(k=>{
+      if(v[k] && !seen[k].has(v[k])){ seen[k].add(v[k]); out[k].push(v[k]); }
+    });
+  });
+  return out;
+}
+/* 学年・学習内容別の「できる」の文（教科の項目だけ）。[{label, text}] */
+function exUnits(it, band){
+  const sc = subjCode(it.id); if(!sc) return [];
+  const g = GRADE_TEXT[sc.key]; if(!g) return [];
+  const out = [];
+  [1,2,3,4,5,6].filter(y=>bandOfYear(y) === band && g[y]).forEach(y=>{
+    g[y].forEach(u=>{ if(u[sc.code]) out.push({ label:`${y}年・${u.u}`, text:endCan(u[sc.code], 0, false, true) }); });
+  });
+  return out;
+}
+function exLi(text, label){
+  return `<li>${label ? `<span class="exs"><span class="exu">${esc(label)}</span>${esc(text)}</span>` : `<span class="exs">${esc(text)}</span>`}`
+    + `<button type="button" class="excopy" data-copy="${esc(text)}">コピー</button></li>`;
+}
+function renderExamples(){
+  const band = exState.band;
+  document.querySelectorAll('#exBand button').forEach(b=>b.classList.toggle('on', b.dataset.band === band));
+  // カテゴリの選択肢（学年共通の観点／各教科／特別活動・学校行事 に分ける）
+  const ids = exGroups(band);
+  if(!ids.includes(exState.gidx)) exState.gidx = ids[0];
+  const KIND = [['common','学年共通の観点'],['subject','各教科'],['event','特別活動・学校行事']];
+  $('exCat').innerHTML = KIND.map(([k,lab])=>{
+    const op = ids.filter(i=>groupKind(DB[i]) === k)
+      .map(i=>`<option value="${i}"${i===exState.gidx?' selected':''}>${esc(DB[i].cat)}</option>`).join('');
+    return op ? `<optgroup label="${lab}">${op}</optgroup>` : '';
+  }).join('');
+  // 文例
+  const g = DB[exState.gidx];
+  const kind = groupKind(g);
+  const canOnly = kind === 'event' || !!g.canOnly;   // 項目の画面と同じく「できる」だけ
+  const past = kind === 'event';
+  const S = sumSubjText(band);
+  let nSent = 0;
+  const items = g.items.filter(it=>itemInBand(it, band));
+  const html = items.map(it=>{
+    const v = exVariants(it, band);
+    const units = exUnits(it, band);
+    const fix = s=>s.replace(/\{S\}/g, S);
+    const rows = [];
+    const canL = v.can.map(f=>exLi(endCan(fix(f), 0, past, noImpress([it.id]))));
+    if(canL.length){
+      rows.push(`<dt class="lv-can">できる${units.length ? '<small>学年が分からないとき</small>' : ''}</dt><dd><ul>${canL.join('')}</ul></dd>`);
+      nSent += canL.length;
+    }
+    if(units.length){
+      rows.push(`<dt class="lv-can">できる<small>学年が分かるとき（学習内容は項目の画面で選べます）</small></dt>`
+        + `<dd><ul>${units.map(u=>exLi(u.text, u.label)).join('')}</ul></dd>`);
+      nSent += units.length;
+    }
+    if(!canOnly && v.grow.length){
+      rows.push(`<dt class="lv-grow">伸長中</dt><dd><ul>${v.grow.map(f=>exLi(endGrow(fix(f), 0, past))).join('')}</ul></dd>`);
+      nSent += v.grow.length;
+    }
+    if(!canOnly && it.issue){
+      rows.push(`<dt class="lv-issue">課題</dt><dd><ul>${exLi(issueState(it) + "。" + toPolite(it.issue.plan) + "。")}</ul></dd>`);
+      nSent += 1;
+    }
+    return `<div class="exitem"><div class="extxt">${esc(it.txt)}</div><dl>${rows.join('')}</dl></div>`;
+  }).join('');
+  const bandNote = (kind === 'common') ? `（学年共通のカテゴリ。言い回しは${gradeLabel(band)}のもの）` : '';
+  $('exBody').innerHTML = `<p class="exsum">${esc(g.cat)}：${items.length}項目・${nSent}文${bandNote}</p>` + html;
+  $('exBody').querySelectorAll('.excopy').forEach(b=>b.addEventListener('click', ()=>copyText(b.dataset.copy, b, 'コピー')));
+}
+/* band：学年帯（low／mid／high）。cat：開いたときに見せるカテゴリ名（省略時は先頭） */
+function openExamples(band, cat){
+  exState.band = ['low','mid','high'].includes(band) ? band : 'low';
+  const ids = exGroups(exState.band);
+  const hit = cat ? ids.find(i=>DB[i].cat === cat) : undefined;
+  exState.gidx = hit !== undefined ? hit : ids[0];
+  renderExamples();
+  $('exModal').style.display = 'flex';
+  $('exModal').querySelector('.exbox').scrollTop = 0;
+  $('exClose').focus();
+}
+function closeExamples(){
+  $('exModal').style.display = 'none';
+}
+$('exBand').querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{
+  // 学年帯を変えても、同じ名前のカテゴリがあればそれを見せる（例：低学年の国語→中学年の国語）
+  const cat = DB[exState.gidx] && DB[exState.gidx].cat;
+  exState.band = b.dataset.band;
+  const ids = exGroups(exState.band);
+  const hit = ids.find(i=>DB[i].cat === cat);
+  exState.gidx = hit !== undefined ? hit : ids[0];
+  renderExamples();
+  $('exModal').querySelector('.exbox').scrollTop = 0;
+}));
+$('exCat').addEventListener('change', e=>{
+  exState.gidx = +e.target.value;
+  renderExamples();
+  $('exModal').querySelector('.exbox').scrollTop = 0;
+});
+$('exClose').addEventListener('click', closeExamples);
+$('exModal').addEventListener('click', e=>{ if(e.target === $('exModal')) closeExamples(); });
+document.addEventListener('keydown', e=>{
+  if(e.key === 'Escape' && $('exModal').style.display !== 'none') closeExamples();
+});
+$('goExamples').addEventListener('click', ()=>openExamples(state.grade, null));
+
 function allTsv(){
   captureCurrent();
   return sortedStudents().map(s=>[s.no, s.name, s.out].map(v=>String(v||'').replace(/[\t\r\n]+/g,' ')).join('\t')).join('\r\n');
