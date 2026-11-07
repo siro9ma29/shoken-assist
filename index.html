@@ -105,6 +105,7 @@
   .star:hover{border-color:var(--warn);}
   .star.on{background:#fdf3dd; border-color:#c99a2e; color:#b8860b; font-weight:700;}
   .star:disabled{opacity:.35; cursor:not-allowed;}
+  .star.full{opacity:.45;}   /* v1.58：★が上限のとき。押すと警告が出る */
   .item.pri{background:#fffdf5;}
   .item.pri .txt{font-weight:700;}
   .prinote{font-size:12px; color:var(--sub); margin:8px 0 0;}
@@ -321,6 +322,19 @@ details.fold.mini>summary{font-size:13px; font-weight:600;}
 .meter-over{color:var(--warn); font-weight:700;}
 #scrDraft .out{font-size:17px; line-height:2; min-height:170px; padding:18px 20px;}
 #scrDraft .tools{flex-wrap:wrap;}
+/* v1.59：文章の手直し */
+#outEdit{display:none; width:100%; box-sizing:border-box; font-size:17px; line-height:2; padding:18px 20px; font-family:inherit;
+  border:2px solid var(--accent); border-radius:8px; background:#fff; resize:vertical;}
+.handbar{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;
+  margin-top:8px; padding:9px 12px; border:1px solid var(--line); border-radius:8px; background:#f3f6fb; font-size:13px; line-height:1.6;}
+.handbar b{color:var(--accent);}
+.handbar .hchg{color:var(--warn);}
+.handbar .hbtns{display:flex; gap:8px; flex-wrap:wrap;}
+.handbar button{padding:6px 12px; border:1px solid var(--line); border-radius:8px; background:var(--panel);
+  font-size:13px; cursor:pointer; font-family:inherit;}
+.handbar button.pri{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:700;}
+#scrDraft.editing .tools, #scrDraft.editing .navrow, #scrDraft.editing #draftFold{opacity:.35; pointer-events:none;}
+.handmark{display:inline-block; margin-left:4px; font-size:11px; color:var(--accent);}
 #scrDraft .tools button{padding:9px 14px; font-size:13.5px;}
 /* 項目の行（1ページ分）。ボタンを大きくし、「選ばない」を足す */
 #scrItems .cat-divider{display:none;}
@@ -669,6 +683,8 @@ details.cat>summary{font-size:15px;}
 <section class="screen" id="scrDraft" data-title="文章の確認">
   <div class="whobar" id="draftWho"></div>
   <div class="out empty" id="out">ここに所見文の下書きが表示されます。</div>
+  <textarea id="outEdit" rows="6" aria-label="所見文を手で直す"></textarea>
+  <div class="handbar" id="handBar" style="display:none;"></div>
   <div class="meterbar">
     <span id="lenMeta">— 字</span>
     <span id="tip"></span>
@@ -678,6 +694,7 @@ details.cat>summary{font-size:15px;}
   <div class="dupnote" id="dupNote" style="display:none;"></div>
   <div class="tools">
     <button id="copyBtn">コピー</button>
+    <button id="handBtn">文章を手で直す</button>
     <button id="regenBtn">別の言い方にする</button>
     <button id="editItems">項目を選び直す</button>
     <button id="undoDraft" disabled>元に戻す</button>
@@ -907,9 +924,11 @@ details.cat>summary{font-size:15px;}
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "v1.57";
+const APP_VERSION = "v1.59";
 const APP_DATE    = "2026-11-07";
 const APP_HISTORY = [
+  {v:"v1.59", d:"2026-11-07", note:"文章の画面に「文章を手で直す」を追加した。下書きを直接書き換え、「この文章にする」でその児童の文章にする（改行は消す）。手で直した文章は、項目・★・字数・学年帯などを変えても作り直さない（作り直すときは「手直しを消して作り直す」）。直したあとに項目などを変えて文章の画面を開いたときと、「別の言い方にする」を押したときは、手直しを消して作り直すか聞く。所見一覧に「✎手直し」の印を出す。元に戻す・作業ファイル・自動保存にも手直しの状態（hand）が入る。手直しの途中は、ほかのボタンとEnter・←→キーを使えなくし、画面が変わるときは直した文章を残す。"},
+  {v:"v1.58", d:"2026-11-07", note:"★が上限（5件）のときも★ボタンを押せるようにし、押すと「設定では★は5つまでです。追加したい場合は他の項目の★を外してください。」と知らせるようにした。それまでは上限でボタンが無効になり、押しても何も起きなかった。上限のときの★は薄く表示する。"},
   {v:"v1.57", d:"2026-11-07", note:"「文例を見る」画面を追加した。学年帯（低・中・高）とカテゴリを選ぶと、項目ごとに「できる」「伸長中」「課題」の文例を、通知表に載る形（文末を付けた形）ですべての言い回しの候補とともに並べる。教科の「できる」は、学年が分かるときに使う学年・学習内容別の文も並べる。はじめの画面の「文例を見る」と、項目の画面の各カテゴリの「このカテゴリの文例を見る」から開く。見るだけの画面で、文ごとにコピーできる（児童の選択は変えない）。"},
   {v:"v1.56", d:"2026-11-07", note:"学習面の文（g1〜g9：挙手・発言／集中／考えを伝える／基礎の定着と活用／ノート／家庭学習・自主学習／粘り強さ／話し合い／資料やICTの活用）を、低・中・高の学年帯で書き分けた（BAND_ALT の low・mid・high に各3通り、計81文）。低学年は先生の問いかけに手を挙げる・ひらがなやたし算・マスに合わせて書く・音読カード・図鑑やタブレットのカメラなど身近で具体的な場面、中学年は理由を挙げる・予想を立てる・段落に分けて書く・自主学習ノート・辞典・社会科見学のメモ・新聞など、高学年は根拠を示す・時間配分・既習の考え方の活用・振り返り・司会や記録・複数の資料の比較・情報の出典など。学年帯の間で同じ文はなく、DB・ALT の旧文も使わない。課題の文と、2つの項目をまとめた文（JOIN_TEXT）は学年帯で分けていない（今までどおり）。"},
   {v:"v1.55", d:"2026-11-07", note:"生活面の文（生活・行動面・健康・体力面・特別活動・係活動・人とのかかわりの37項目）に、中学年（3・4年）専用の言い回しを作った（BAND_ALT の mid。自動で選ばれる13項目は5通り、ほかは3通り）。これで低・中・高の3つの学年帯がそれぞれ専用の文だけを使い、学年帯の間で同じ文にならない。中学年の文は、きまりの理由を考える・自分たちで決めて進める・グループで協力する・理科の観察や実験、社会科見学、異学年の集会など、3・4年らしい場面にした。特別活動・係活動の t8・t9 の場面は v1.54 と同じく具体的に（給食の片付け・理科の実験の準備・集会の準備 など）。あわせて、特別活動・係活動で文頭の場面と同じ語が続く文（「日直の仕事では、日直の仕事を〜」など）を、低・中・高学年とも直した（16文）。課題の文は学年帯で分けていない（今までどおり）。"},
@@ -2190,6 +2209,7 @@ const state = { len:175, sel:new Map(), pri:new Set(),
                 manual:false, mIn:new Set(),
                 no:"", name:"",   // v1.20：出席番号・呼び方の手入力欄を削除したため、DOM入力の代わりに保持する
                 grade:"low",
+                hand:false, handOut:"", handSig:"",   // v1.59：手で直した文章（hand）とその文章、直したときの選び方
                 join:false };   // v1.26：2観点を1文にまとめるか（学級で共通の設定）   // v1.13：学年帯（low/mid/high）。教科別・行事別の表示と生成に使う。
 
 /* v1.19：「全学年共通」／「教科別」の大分類切り替え。学年帯とは別のただの表示フィルタで、
@@ -2351,7 +2371,8 @@ DB.forEach((group, gidx)=>{
           return;
         }
         if(state.pri.size >= MAX_PRI){
-          alert("★重点は最大"+MAX_PRI+"件までです。他の★を外してから付けてください。");
+          // v1.58：上限のときもボタンは押せるようにして、ここで知らせる（無効にすると何も起きず、理由が分からないため）
+          alert("設定では★は"+MAX_PRI+"つまでです。追加したい場合は他の項目の★を外してください。");
           return;
         }
         state.pri.add(it.id);
@@ -2477,12 +2498,17 @@ function updateCounts(){
     const el = document.querySelector(`.count[data-gidx="${gidx}"]`);
     if(el) el.textContent = `${n}/${g.items.length}`;
   });
-  // ★ボタンの表示と、上限に達したときの無効化
+  // ★ボタンの表示。選んでいない項目は無効にする。
+  // v1.58：上限（MAX_PRI件）に達しても無効にはせず、薄く表示するだけにする。押すと警告を出す（★のクリック処理）
   const full = state.pri.size >= MAX_PRI;
   document.querySelectorAll('#cats .star').forEach(b=>{
     const on = state.pri.has(b.dataset.id);
     b.classList.toggle('on', on);
-    b.disabled = !on && (full || !state.sel.has(b.dataset.id));
+    b.disabled = !on && !state.sel.has(b.dataset.id);
+    b.classList.toggle('full', !on && full && state.sel.has(b.dataset.id));
+    b.title = b.classList.contains('full')
+      ? `★は${MAX_PRI}つまでです。追加したい場合は他の項目の★を外してください。`
+      : `★おすすめ：必ず所見に入れる（最大${MAX_PRI}件）`;
     b.closest('.item').classList.toggle('pri', on);
   });
   const pn = document.getElementById('priNote');
@@ -3996,6 +4022,8 @@ function generate(){
 /* 採用リストを決め直して画面に出す。
    「所見文をつくる」からも、一覧の「入れる」「外す」からも、必ずここを通る。 */
 function runAdoption(){
+  // v1.59：手で直した文章は作り直さない（「手直しを消して作り直す」で作り直す）
+  if(state.hand && state.handOut){ showHand(); renderRoster(); saveNow(); return; }
   // v1.13：教科別・行事別は学年帯ごとに項目が分かれている。選んだ学年帯（または
   // 学年共通＝grade:"all"）の観点だけを対象にする。他学年で選んだままの観点が
   // 残っていても、学年帯を切り替えている間は所見文に反映されない。
@@ -4050,6 +4078,7 @@ function runAdoption(){
    未採用の観点も実際に生成される文で見せ、入れたとき・外したときの字数も出す。 */
 
 function render(){
+  if(state.hand && state.handOut){ showHand(); return; }   // v1.59
   if(!state.adopted.length){
     // 担任がすべて外した状態。下書きは空だが、一覧は出したままにして戻せるようにする。
     setOut("下書きに入れる観点がありません。「くわしい設定」の「入っていない観点」から入れてください。", true);
@@ -4244,6 +4273,7 @@ function setOut(t, empty){
     // 一覧が残っていないと戻せなくなるため。片づけが要る経路では clearPicker() を明示的に呼ぶ。
   }
   syncEditBlink();
+  if(typeof handBar === 'function' && !(state.hand && state.handOut)) handBar();   // v1.59：手直しの知らせを消す
 }
 
 /* v1.40：項目の追加が必要な児童では「項目を選び直す」を点滅させる。
@@ -4279,7 +4309,109 @@ function updateMeta(text, target){
   syncEditBlink();
   if(j.cls === 'meter-short' && needMoreItems())
     tip.textContent = `あと${target - n}字ほどでめやすです（「項目を選び直す」で項目を足してください）`;
+  // v1.59：手で直した文章は項目を変えても変わらないので、字数だけを知らせる
+  if(state.hand && state.handOut && j.cls !== 'meter-ok'){
+    tip.textContent = j.cls === 'meter-short' ? `めやすより${target - n}字少ないです` : `めやすより${n - target}字多いです`;
+    const eb = document.getElementById('editItems'); if(eb){ eb.classList.remove('needadd'); eb.title = ''; }
+  }
 }
+
+/* ==================================================================
+   文章の手直し（v1.59）
+   「文章を手で直す」で、下書きを直接書き換えられる。「この文章にする」で、その児童の文章（rec.out）を
+   置き換え、hand（手直しあり）の印を付ける。
+     ・hand の児童は、項目・★・字数・学年帯などを変えても文章を作り直さない（runAdoption／render／regenCurrent）
+     ・手で直したあとに項目などを変えて文章の画面を開くと、作り直すか聞く（renderDraft。handSig で比べる）
+     ・「別の言い方にする」では、手直しを消して作り直すか聞く
+     ・「手直しを消して作り直す」で、いまの項目から作り直す（元に戻すで戻せる）
+   データ：rec.hand（true／false）・rec.handSig（直したときの選び方）。文章そのものは rec.out。
+   特別支援学級版（sn）の SN v1.8 と同じ考え方。
+   ================================================================== */
+function handEditing(){ const d = document.getElementById('scrDraft'); return !!d && d.classList.contains('editing'); }
+/* 作り直すかどうかに関わる選び方（項目と評価・★・字数・学年帯・学習内容） */
+function handSigNow(){
+  return JSON.stringify([[...state.sel].sort(), [...state.pri].sort(), state.len, state.grade,
+    Object.entries(state.units || {}).sort()]);
+}
+/* 手で直した文章を表示する（作り直さない） */
+function showHand(){
+  // 「入っていない観点」の一覧は、手直しの文章とは合わないので隠す（clearPicker は言い回し seed を消すので使わない）
+  const pk = document.getElementById('picker'); if(pk){ pk.style.display='none'; pk.innerHTML=''; }
+  setOut(state.handOut, false);
+  updateMeta(state.handOut, state.len);
+  const oi = document.getElementById('onlyIssue'); if(oi){ oi.style.display='none'; oi.innerHTML=''; }
+  handBar();
+}
+/* 文章の下の帯：手直し中は「この文章にする／やめる」、手直しありの児童はその知らせと「作り直す」 */
+function handBar(){
+  const bar = document.getElementById('handBar');
+  if(!bar) return;
+  if(handEditing()){
+    const n = [...handClean(document.getElementById('outEdit').value)].length;
+    bar.innerHTML = `<span><b>手直し中</b>　${n}字（めやす ${state.len}字）　直し終わったら「この文章にする」を押してください。改行は消えます。</span>`
+      + `<span class="hbtns"><button type="button" class="pri" id="handSave">この文章にする</button><button type="button" id="handCancel">やめる</button></span>`;
+    bar.style.display = 'flex'; return;
+  }
+  if(state.hand && state.handOut){
+    const chg = state.handSig !== handSigNow()
+      ? '<br><span class="hchg">直したあとに、項目や字数などを変えています。新しい項目で作るときは「手直しを消して作り直す」を押してください。</span>' : '';
+    bar.innerHTML = `<span><b>✎ 手で直した文章です。</b>項目や★・字数などを変えても、この文章は変わりません。${chg}</span>`
+      + `<span class="hbtns"><button type="button" id="handDrop">手直しを消して作り直す</button></span>`;
+    bar.style.display = 'flex'; return;
+  }
+  bar.innerHTML = ''; bar.style.display = 'none';
+}
+/* 改行と前後の空白を取る（通知表の所見は1つのまとまりのため） */
+function handClean(t){ return String(t || '').replace(/\r/g, '').replace(/[ \t　]*\n[ \t　]*/g, '').trim(); }
+function handEditStart(){
+  const o = document.getElementById('out');
+  if(o.classList.contains('empty')){
+    alert('文章がまだありません。先に項目を選んで下書きを作ってから、手で直してください。');
+    return;
+  }
+  const ta = document.getElementById('outEdit');
+  ta.value = o.textContent;
+  ta.style.height = Math.max(o.offsetHeight, 170) + 'px';
+  o.style.display = 'none'; ta.style.display = 'block';
+  document.getElementById('scrDraft').classList.add('editing');
+  handBar(); ta.focus();
+}
+/* 手直しを終える。save：直した文章を使う。quiet：画面が変わるとき（空なら知らせずにやめる） */
+function handEditEnd(save, quiet){
+  if(!handEditing()) return;
+  const ta = document.getElementById('outEdit'), o = document.getElementById('out');
+  const t = handClean(ta.value);
+  if(save && !t){
+    if(!quiet){ alert('文章が空です。消したいときは「やめる」を押してから、「項目を選び直す」で項目を外してください。'); return; }
+    save = false;
+  }
+  ta.style.display = 'none'; o.style.display = '';
+  document.getElementById('scrDraft').classList.remove('editing');
+  if(save && t !== o.textContent){
+    snapUndo();
+    state.hand = true; state.handOut = t; state.handSig = handSigNow();
+    showHand();
+    renderRoster(); saveNow();
+    if(nav.scr === 'scrDraft'){ renderDraftHead(); syncUndoBtns(); }
+  }else handBar();
+}
+/* 手直しを消して、いまの項目から作り直す */
+function handDrop(){
+  snapUndo();
+  state.hand = false; state.handOut = ""; state.handSig = "";
+  regenCurrent();
+  handBar();
+  if(nav.scr === 'scrDraft'){ renderDraftHead(); syncUndoBtns(); }
+}
+document.getElementById('handBtn').addEventListener('click', handEditStart);
+document.getElementById('outEdit').addEventListener('input', handBar);
+document.getElementById('handBar').addEventListener('click', e=>{
+  if(e.target.closest('#handSave')) handEditEnd(true);
+  else if(e.target.closest('#handCancel')) handEditEnd(false);
+  else if(e.target.closest('#handDrop')){
+    if(confirm('手で直した文章を消して、いまの項目から作り直します。よろしいですか。\n（すぐあとなら「元に戻す」で戻せます）')) handDrop();
+  }
+});
 
 document.getElementById('genBtn').addEventListener('click', generate);
 
@@ -4287,6 +4419,11 @@ document.getElementById('genBtn').addEventListener('click', generate);
    まだ一度も生成していなければ、ふつうに生成する。
    変えられる言い回しが無いときはボタンを無効にしてあるので、ここには来ない。 */
 document.getElementById('regenBtn').addEventListener('click',()=>{
+  if(state.hand && state.handOut){   // v1.59
+    if(!confirm('この児童の文章は手で直してあります。\n「別の言い方にする」と、手直しした文章は消えて作り直します。\n\nOK：手直しを消して作り直す\nキャンセル：文章はそのまま')) return;
+    state.hand = false; state.handOut = ""; state.handSig = "";
+    generate(); return;
+  }
   if(!state.adopted.length){ generate(); return; }
   const s2 = otherSeed();
   if(s2 === null) return;
@@ -4294,6 +4431,7 @@ document.getElementById('regenBtn').addEventListener('click',()=>{
   render(); renderRoster(); saveNow();
 });
 document.getElementById('clearBtn').addEventListener('click',()=>{
+  state.hand = false; state.handOut = ""; state.handSig = "";   // v1.59
   state.sel.clear();
   state.pri.clear();
   document.querySelectorAll('#cats input[type=checkbox]').forEach(c=>c.checked=false);
@@ -4341,7 +4479,8 @@ function newId(){ return "s" + Date.now().toString(36) + Math.random().toString(
 function blankStudent(){
   return { id:newId(), no:"", name:"", len:state.len, grade:state.grade,
            sel:{}, pri:[], manual:false, mIn:[], out:"", updated:"",
-           seed:0, okOut:"", year:0 };   // v1.33：言い回し・確認した文章・学年
+           seed:0, okOut:"", year:0,      // v1.33：言い回し・確認した文章・学年
+           hand:false, handSig:"" };      // v1.59：手で直した文章か（文章は out）
 }
 
 /* ---- 画面 ⇄ レコード ---- */
@@ -4361,7 +4500,10 @@ function captureCurrent(){
   rec.manual  = state.manual;
   rec.mIn     = [...state.mIn];
   const o = document.getElementById('out');
-  rec.out     = o.classList.contains('empty') ? "" : o.textContent;
+  rec.out     = (state.hand && state.handOut) ? state.handOut
+              : (o.classList.contains('empty') ? "" : o.textContent);
+  rec.hand    = !!(state.hand && state.handOut);   // v1.59
+  rec.handSig = rec.hand ? state.handSig : "";
   rec.seed    = state.seed;   // v1.33：言い回しを保存し、開き直しても同じ文章にする
   rec.units   = Object.assign({}, state.units || {});   // v1.49
   rec.updated = new Date().toISOString();
@@ -4384,6 +4526,10 @@ function applyRecord(rec){
 
   state.no   = rec.no   || "";
   state.name = rec.name || "";
+  // v1.59：手で直した文章
+  state.hand    = !!rec.hand && !!rec.out;
+  state.handOut = state.hand ? rec.out : "";
+  state.handSig = state.hand ? String(rec.handSig || "") : "";
 
   document.getElementById('lenInput').value = state.len;
   document.querySelectorAll('#lenSeg button').forEach(b=>{
@@ -4409,6 +4555,7 @@ function applyRecord(rec){
   if(rec.out){
     setOut(rec.out, false);
     updateMeta(rec.out, state.len);
+    handBar();   // v1.59
   }else{
     setOut("ここに所見文の下書きが表示されます。", true);
   }
@@ -4551,6 +4698,7 @@ function normalizeStudent(s){
            out: String(s.out||""), updated: s.updated||"",
            seed: Math.min(SEED_CYCLE-1, Math.max(0, parseInt(s.seed,10) || 0)),
            okOut: String(s.okOut||""),
+           hand: !!s.hand && !!s.out, handSig: s.hand && s.out ? String(s.handSig||"") : "",   // v1.59
            year: [1,2,3,4,5,6].includes(+s.year) ? +s.year : 0,
            units: Object.fromEntries(Object.entries(s.units || {})
              .filter(([k,v])=>GRADE_TEXT[k] && Number.isInteger(v) && v >= 0 && v < 3)) };
@@ -6081,6 +6229,7 @@ function whoLabel(s){
 /* ---- 画面を出す ---- */
 function showScreen(id, opt){
   opt = opt || {};
+  if(handEditing()) handEditEnd(true, true);   // v1.59：手直しの途中で画面が変わるときは、直した文章を残す
   if(id === 'evalModal' && !evalState.ana) id = 'scrImport';   // 戻るボタンで読み取り前に戻ったとき
   // 隠れる画面のボタンにフォーカスが残ると、Enterキーでそのボタンが押されてしまう
   const a = document.activeElement;
@@ -6240,7 +6389,7 @@ function applyLen(L){
   if(nav.flow === 'import'){
     captureCurrent();
     roster.students.forEach(s=>{
-      if(s.len !== L){ s.len = L; s.manual = false; s.mIn = []; s.out = ''; s.okOut = ''; }
+      if(s.len !== L){ s.len = L; s.manual = false; s.mIn = []; s.out = ''; s.okOut = ''; s.hand = false; s.handSig = ''; }
     });
     applyRecord(curRec());
     renderRoster(); saveNow();
@@ -6384,6 +6533,7 @@ function openDraft(id, mode){
 }
 function regenCurrent(){
   const rec = curRec();
+  if(state.hand && state.handOut){ showHand(); renderRoster(); saveNow(); return; }   // v1.59：項目を全部外しても残す
   if(state.sel.size){
     state.seed = (rec && rec.seed) || 0;
     runAdoption();
@@ -6395,6 +6545,13 @@ function regenCurrent(){
   }
 }
 function renderDraft(){
+  // v1.59：手で直したあとに項目・★・字数・学年帯などを変えていたら、作り直すか聞く（キャンセルなら手直しのまま）
+  if(state.hand && state.handOut && state.handSig !== handSigNow()){
+    if(confirm('この児童の文章は手で直してあります。\n直したあとに、項目や★・字数などを変えました。\n\n'
+      + 'OK：手直しを消して、いまの項目で作り直す\nキャンセル：手で直した文章のまま')){
+      snapUndo(); state.hand = false; state.handOut = ""; state.handSig = "";
+    }else state.handSig = handSigNow();
+  }
   regenCurrent();
   renderDraftHead();
   syncUndoBtns();
@@ -6576,7 +6733,7 @@ function renderList(){
       + `<td class="nm">${esc((s.name||'').trim() || '（名前なし）')}</td>`
       + `<td class="tx">${esc(head)}</td>`
       + `<td class="len${bad?' bad':''}" title="${bad?'めやす（'+(s.len||175)+'字）から離れています':''}">${n ? n + '字' : ''}</td>`
-      + `<td><span class="badge ${st}">${STATUS_LABEL[st]}</span>${dmark}${cmark}</td>`
+      + `<td><span class="badge ${st}">${STATUS_LABEL[st]}</span>${s.hand && s.out ? '<span class="handmark" title="手で直した文章です">✎手直し</span>' : ''}${dmark}${cmark}</td>`
       + `<td class="ops">${s.out ? '<button type="button" class="cp">コピー</button>' : ''}<button type="button" class="del" title="この児童を削除">×</button></td></tr>`;
   });
   html += '</tbody></table>';
@@ -6598,7 +6755,7 @@ function renderList(){
 function openFromList(id){
   if(id !== roster.curId){ nav.undo = null; switchTo(id); }
   nav.mode = 'one';
-  if(!state.sel.size) openItems(0, 'draft');
+  if(!state.sel.size && !state.hand) openItems(0, 'draft');
   else openDraft(id, 'one');
 }
 function copyText(text, btn, label){
@@ -6771,7 +6928,8 @@ function snapUndo(){
   if(!navReady) return;
   nav.undo = { id:roster.curId, sel:[...state.sel], pri:[...state.pri], manual:state.manual,
                mIn:[...state.mIn], seed:state.seed, len:state.len, grade:state.grade,
-               draft: !$('out').classList.contains('empty') };
+               draft: !$('out').classList.contains('empty'),
+               hand: !!(state.hand && state.handOut), handOut: state.handOut, handSig: state.handSig };   // v1.59
   syncUndoBtns();
 }
 function syncUndoBtns(){
@@ -6784,8 +6942,9 @@ function doUndo(){
   nav.undo = null;
   const rec = curRec();
   applyRecord(Object.assign({}, rec, { sel:Object.fromEntries(u.sel), pri:u.pri, manual:u.manual,
-    mIn:u.mIn, len:u.len, grade:u.grade, out:'' }));
-  if(u.draft && state.sel.size){ state.seed = u.seed; runAdoption(); }
+    mIn:u.mIn, len:u.len, grade:u.grade, out: u.hand ? u.handOut : '', hand:u.hand, handSig:u.handSig }));
+  if(u.hand){ showHand(); renderRoster(); saveNow(); }   // v1.59：手直しした文章に戻す
+  else if(u.draft && state.sel.size){ state.seed = u.seed; runAdoption(); }
   else{ clearPicker(); setOut(EMPTY_DRAFT, true); renderRoster(); saveNow(); }
   if(nav.scr === 'scrItems') renderItems();
   if(nav.scr === 'scrDraft'){ renderDraftHead(); syncUndoBtns(); }
@@ -6839,6 +6998,7 @@ document.addEventListener('click', e=>{
    Enter：その画面の主なボタン。← →：前後の児童（文章の画面）／前後のページ（項目の画面）。 */
 document.addEventListener('keydown', e=>{
   if([...document.querySelectorAll('.modal')].some(m=>m.style.display !== 'none')) return;
+  if(handEditing()) return;   // v1.59：手直しの途中は、Enter・←→で画面を動かさない
   const a = document.activeElement, tag = a ? a.tagName : '';
   if(e.key === 'Enter'){
     if(a && a.id === 'nameIn'){ e.preventDefault(); if(!$('nameNext').disabled) $('nameNext').click(); return; }
