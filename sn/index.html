@@ -348,6 +348,25 @@ details.cat>summary{font-size:15px;}
 .filerow button{padding:7px 10px; border:1px solid var(--line); border-radius:8px; background:var(--panel); font-size:12px; cursor:pointer; font-family:inherit; color:var(--ink);}
 .filerow button.danger{color:var(--warn, #b06a3a);}
 .savestate{font-size:12px;}
+/* C4thに所見を取り込む手順（SN v1.21。通常版 v1.41 と同じ） */
+.c4thbox{width:min(760px,100%); padding:28px 30px;}
+.c4thtitle{margin:0 0 16px; font-size:22px; color:var(--accent, #3f6f5a);}
+.c4thflow{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:12px;}
+.c4thflow li{display:flex; gap:16px; padding:16px 18px; border:2px solid var(--line); border-radius:12px; background:var(--bg); opacity:.55;}
+.c4thflow li.cur{opacity:1; border-color:var(--accent, #3f6f5a); background:var(--panel); box-shadow:0 4px 18px rgba(0,0,0,.08);}
+.c4thflow li.done{opacity:.8;}
+.c4thflow li.done .c4num::after{content:"✓"; font-size:16px; margin-left:2px;}
+.c4num{font-size:30px; font-weight:700; line-height:1; color:var(--accent, #3f6f5a); flex:none; min-width:40px;}
+.c4body{flex:1;}
+.c4head{font-size:18px; font-weight:700; margin-bottom:6px;}
+.c4desc{font-size:15px; line-height:1.8;}
+.c4act{display:none; gap:10px; margin-top:12px; flex-wrap:wrap; justify-content:flex-end;}
+.c4thflow li.cur .c4act{display:flex;}
+.c4act .btn{flex:none; padding:12px 20px; font-size:15px;}
+.c4msg{font-size:13.5px; margin-top:8px; color:var(--grow);}
+.c4msg:empty{display:none;}
+.c4file{display:inline-block; margin:4px 0; padding:4px 10px; background:var(--accent-soft); border-radius:6px; font-weight:700; word-break:break-all;}
+
 /* 作業ファイルへの保存（SN v1.20。通常版 v1.50 と同じ） */
 .filebox{display:inline-flex; gap:6px; margin-left:8px;}
 .filebtn{font:inherit; font-size:13.5px; padding:5px 14px; border-radius:8px; border:1px solid var(--line); background:var(--panel); color:var(--ink); cursor:pointer;}
@@ -843,11 +862,13 @@ details.cat>summary{font-size:15px;}
     <div class="listcount" id="rosterCount">—</div>
   </div>
   <div class="listtools">
+    <button type="button" class="btn ghost" id="expC4thBtn">C4th用Excelに書き込む</button>
     <button type="button" class="btn ghost" id="copyAllBtn">全員分コピー</button>
     <button type="button" class="btn ghost" id="expCsvBtn">CSVで保存</button>
     <button type="button" class="btn primary" id="addStuBtn">＋ 児童を追加</button>
   </div>
   <p class="hint">「全員分コピー」は、番号・名前・各欄の所見をタブで区切ってコピーします（1行目は欄の名前）。Excelに貼り付けると表になります。行を押すと、その児童の欄ごとの所見を開きます。</p>
+  <p class="hint">「C4th用Excelに書き込む」を押すと、C4thに所見を取り込む手順を1つずつ案内します。</p>
   <!-- 個別の指導計画から作ったとき、要確認の文が残っている児童だけに絞る（SN v1.7〜。APP.secFlag があるときだけ出す） -->
   <div class="listfilter" id="listFilter" style="display:none;"></div>
   <div class="listtable" id="listTable"></div>
@@ -864,6 +885,7 @@ details.cat>summary{font-size:15px;}
     <b>共有のパソコンでは、作業が終わったら「学級をすべて消す」を押してください。</b>転記の前に、必ず担任が一人一人の文章を確かめてください。
   </div>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none;">
+  <input type="file" id="c4thFile" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none;">
 </section>
 
 </main>
@@ -878,6 +900,49 @@ details.cat>summary{font-size:15px;}
 <!-- 以前の画面にあった部品。各版の処理が参照するため残すが、画面には出さない -->
 <div id="legacy" hidden>
   <div id="subTabs"></div><b id="curName"></b><span id="selCount"></span><button id="genBtn"></button><span id="outSubName"></span><div id="allList"></div><span id="doneCount"></span><button id="wipeBtn"></button><button id="copyAllBtnOld"></button>
+</div>
+
+<!-- C4thに所見を取り込む手順（SN v1.21。通常版 v1.41 と同じ流れ） -->
+<div class="modal" id="c4thModal" style="display:none;" role="dialog" aria-labelledby="c4thTitle">
+  <div class="modalbox c4thbox">
+    <h2 class="c4thtitle" id="c4thTitle">C4thに所見を取り込む</h2>
+    <ol class="c4thflow">
+      <li data-step="0">
+        <div class="c4num">①</div>
+        <div class="c4body">
+          <div class="c4head">C4thで、通知表入力用のExcelを出す</div>
+          <div class="c4desc">C4thの<b>「通知表入力」→「エクセル出力」</b>で、通知表入力用のExcelシートを出力します。</div>
+          <div class="c4act"><button type="button" class="btn primary" id="c4Next0">出力できた → 次へ</button></div>
+        </div>
+      </li>
+      <li data-step="1">
+        <div class="c4num">②</div>
+        <div class="c4body">
+          <div class="c4head">そのExcelに所見を書き込む</div>
+          <div class="c4desc">「Excelを選ぶ」を押して、①で出したファイルを選びます。番号で児童を照合し、欄（国語・算数 など）の列があれば欄ごとに、「所見」の列だけなら全部の欄をまとめて書き込んだ新しいファイルが保存されます。</div>
+          <div class="c4act">
+            <button type="button" class="btn ghost" id="c4Back1">← ①へ戻る</button>
+            <button type="button" class="btn primary" id="c4Pick">Excelを選ぶ</button>
+          </div>
+          <div class="c4msg" id="c4Msg1"></div>
+        </div>
+      </li>
+      <li data-step="2">
+        <div class="c4num">③</div>
+        <div class="c4body">
+          <div class="c4head">書き込んだファイルを、C4thで読み取らせる</div>
+          <div class="c4desc" id="c4Desc2">②で保存されたファイルを、C4thで読み取らせます。</div>
+          <div class="c4act">
+            <button type="button" class="btn ghost" id="c4Back2">← もう一度書き込む</button>
+            <button type="button" class="btn primary" id="c4Done">読み取らせた（終わる）</button>
+          </div>
+        </div>
+      </li>
+    </ol>
+    <div class="navrow" style="margin-top:6px;">
+      <button type="button" class="btn ghost" id="c4Close">閉じる</button>
+    </div>
+  </div>
 </div>
 
 <!-- ===== 文例を見る（SN v1.19）：欄を選んで、項目ごとに支援の程度3段階の文例を並べる（見るだけ） ===== -->
@@ -911,9 +976,13 @@ details.cat>summary{font-size:15px;}
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "SN v1.20";
+const APP_VERSION = "SN v1.21";
 const APP_DATE    = "2026-11-07";
 const APP_HISTORY = [
+  "SN v1.21 所見一覧に「C4th用Excelに書き込む」を追加（通常版 v1.38〜v1.41 と同じ、①出力→②書き込み→③読み取り の案内つき）。",
+  "　　　　C4thの「通知表入力」→「エクセル出力」で出したExcelを選ぶと、番号で児童を照合して書き込み、元の名前_所見入り_日時.xlsx で保存する。",
+  "　　　　見出しに欄の名前（国語・算数・図工・生活単元 など）の列があれば欄ごとにその列へ、「所見」の列には列のない欄を【欄の名前】付きでまとめて入れる。",
+  "　　　　書き出す前に、下書きの欄・所見のない児童・アプリにいない番号・氏名の食い違い・列がなく書き込めない欄を知らせる。",
   "SN v1.20 作業データの保存を使いやすくした（通常版 v1.50 と同じ）。画面上部に「開く」「保存」を置き、Ctrl＋S でも保存できる。はじめの画面にも「作業ファイルを開く」。",
   "　　　　Chrome／Edge では一度選んだ作業ファイル（.json）に上書き保存し、そのあとの変更も自動で上書きする（保存先はブラウザに記憶）。",
   "　　　　開き直したあとの最初の保存では、ほかのパソコンで保存されていないかを確かめる。保存していない変更があると「保存」に印、10分で知らせる。",
@@ -4841,6 +4910,316 @@ $('wipeBtn2').addEventListener('click', wipeAll);
 $('clsInput').addEventListener('input', save);
 $('tourNext').addEventListener('click', ()=>{ if(tourAt < APP.tour.length-1){ tourAt++; renderTour(); } else closeTour(); });
 $('tourSkip').addEventListener('click', closeTour);
+
+/* ==================================================================
+   C4th へ取り込む Excel（.xlsx）に所見を書き込む（SN v1.21。通常版 v1.38〜v1.41 の移植）
+   ------------------------------------------------------------------
+   C4th の「通知表入力」→「エクセル出力」で出した Excel を読み込み、所見を書き込んで、
+   同じ形式のまま新しいファイル（元の名前_所見入り_日時.xlsx）として保存する。
+   生徒管理コード・年度・学期などは C4th が出した値をそのまま残す（作り直すと照合がずれるおそれがあるため）。
+   特別支援学級版は所見が欄（教科等）ごとにあるので、書き込み先を見出しで決める：
+     ・見出しに欄の名前（国語・算数・図工・生活単元学習 など）の列があれば、欄ごとにその列へ
+     ・「所見」の列には、自分の列がない欄を【欄の名前】を付けてまとめて入れる（全員分コピーの1人分と同じ形）
+   児童は「番号」で照合し、氏名が食い違う児童がいれば書き出す前に知らせる。
+   .xlsx は ZIP なので、ブラウザ標準の DecompressionStream で展開し、無圧縮の ZIP として組み直す（外部ライブラリなし）。
+   ================================================================== */
+/* ---- ZIP の読み書き（最小限） ---- */
+async function zipRead(buf){
+  const b = new Uint8Array(buf), dv = new DataView(buf);
+  let eocd = -1;
+  for(let i=b.length-22; i>=Math.max(0, b.length-65557); i--){
+    if(dv.getUint32(i, true) === 0x06054b50){ eocd = i; break; }
+  }
+  if(eocd < 0) throw new Error('zip');
+  const n = dv.getUint16(eocd+10, true);
+  let p = dv.getUint32(eocd+16, true);
+  const dec = new TextDecoder('utf-8'), out = [];
+  for(let k=0; k<n; k++){
+    if(dv.getUint32(p, true) !== 0x02014b50) throw new Error('zip');
+    const method = dv.getUint16(p+10, true);
+    const csize  = dv.getUint32(p+20, true);
+    const nlen = dv.getUint16(p+28, true), xlen = dv.getUint16(p+30, true), clen = dv.getUint16(p+32, true);
+    const loc  = dv.getUint32(p+42, true);
+    const name = dec.decode(b.subarray(p+46, p+46+nlen));
+    p += 46 + nlen + xlen + clen;
+    const lstart = loc + 30 + dv.getUint16(loc+26, true) + dv.getUint16(loc+28, true);
+    const raw = b.subarray(lstart, lstart + csize);
+    let data;
+    if(method === 0) data = raw.slice();
+    else if(method === 8){
+      const ds = new Blob([raw]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+      data = new Uint8Array(await new Response(ds).arrayBuffer());
+    }else throw new Error('zip');
+    out.push({ name, data });
+  }
+  return out;
+}
+const CRC_TABLE = (()=>{ const t = new Uint32Array(256);
+  for(let n=0;n<256;n++){ let c=n; for(let k=0;k<8;k++) c = c&1 ? 0xEDB88320^(c>>>1) : c>>>1; t[n]=c>>>0; }
+  return t; })();
+function crc32(u8){ let c = 0xFFFFFFFF; for(let i=0;i<u8.length;i++) c = CRC_TABLE[(c^u8[i])&0xFF]^(c>>>8); return (c^0xFFFFFFFF)>>>0; }
+function zipWrite(entries){
+  const enc = new TextEncoder(), parts = [], cent = [];
+  let off = 0;
+  const d = new Date();
+  const dtime = (d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1);
+  const ddate = ((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate();
+  entries.forEach(e=>{
+    const nm = enc.encode(e.name), crc = crc32(e.data), sz = e.data.length;
+    const h = new DataView(new ArrayBuffer(30));
+    h.setUint32(0,0x04034b50,true); h.setUint16(4,20,true); h.setUint16(6,0x0800,true);
+    h.setUint16(8,0,true); h.setUint16(10,dtime,true); h.setUint16(12,ddate,true);
+    h.setUint32(14,crc,true); h.setUint32(18,sz,true); h.setUint32(22,sz,true);
+    h.setUint16(26,nm.length,true); h.setUint16(28,0,true);
+    parts.push(new Uint8Array(h.buffer), nm, e.data);
+    const c = new DataView(new ArrayBuffer(46));
+    c.setUint32(0,0x02014b50,true); c.setUint16(4,20,true); c.setUint16(6,20,true); c.setUint16(8,0x0800,true);
+    c.setUint16(10,0,true); c.setUint16(12,dtime,true); c.setUint16(14,ddate,true);
+    c.setUint32(16,crc,true); c.setUint32(20,sz,true); c.setUint32(24,sz,true);
+    c.setUint16(28,nm.length,true); c.setUint32(42,off,true);
+    cent.push(new Uint8Array(c.buffer), nm);
+    off += 30 + nm.length + sz;
+  });
+  const csz = cent.reduce((a,x)=>a+x.length, 0);
+  const z = new DataView(new ArrayBuffer(22));
+  z.setUint32(0,0x06054b50,true); z.setUint16(8,entries.length,true); z.setUint16(10,entries.length,true);
+  z.setUint32(12,csz,true); z.setUint32(16,off,true);
+  return new Blob([...parts, ...cent, new Uint8Array(z.buffer)], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+}
+
+
+/* ---- シートの読み取り ---- */
+const SS_NS = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
+const colNum = ref => { const m = /^([A-Z]+)/.exec(ref); let n = 0; for(const ch of m[1]) n = n*26 + ch.charCodeAt(0)-64; return n; };
+const colName = n => { let s = ''; while(n>0){ const r = (n-1)%26; s = String.fromCharCode(65+r) + s; n = Math.floor((n-1)/26); } return s; };
+const normName = s => String(s||'').replace(/[\s　]+/g,'').replace(/(さん|くん|ちゃん|君)$/,'');
+/* 見出しの文字 → 欄のキー。長い名前から先に見る（「外国語活動」を「外国語」に、「生活単元」を「生活」にしないため）。
+   C4th の見出しの書き方が分からないため、略した書き方も受ける。合わなければここに1行足す */
+const C4_SEC_WORDS = [
+  ['生活単元','se'], ['外国語活動','ga'], ['自立活動','ji'], ['総合的な学習','so'], ['総合','so'],
+  ['特別活動','tk'], ['行動のようす','gy'], ['学校から','gk'], ['図画工作','zu'], ['図工','zu'], ['家庭','kt'],
+  ['外国語','gg'], ['国語','ko'], ['算数','sa'], ['社会','sh'], ['理科','ri'], ['生活','sk'],
+  ['音楽','on'], ['体育','ta'], ['道徳','do'],
+];
+const C4_FIXED = /^(生徒管理コード|児童管理コード|管理コード|学年|組|番号|出席番号|氏名|ふりがな|かな|性別|入力年度|年度|入力学期|学期)$/;
+function c4SecOf(head){
+  const h = String(head||'').replace(/[\s　]+/g,'');
+  if(!h || C4_FIXED.test(h) || h === '所見') return null;
+  const w = C4_SEC_WORDS.find(([w])=>h.includes(w));
+  return w && SUB_BY_KEY[w[1]] ? w[1] : null;
+}
+
+async function c4thParse(buf){
+  const files = await zipRead(buf);
+  const get = nm => files.find(f=>f.name === nm);
+  const dec = new TextDecoder('utf-8'), xml = s => new DOMParser().parseFromString(s, 'application/xml');
+  // 1枚目のシートの場所を workbook.xml と rels から求める
+  const wb = xml(dec.decode(get('xl/workbook.xml').data));
+  const sh = wb.getElementsByTagNameNS(SS_NS, 'sheet')[0];
+  const rid = sh.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id');
+  const rels = xml(dec.decode(get('xl/_rels/workbook.xml.rels').data));
+  let target = [...rels.getElementsByTagName('Relationship')].find(r=>r.getAttribute('Id')===rid).getAttribute('Target');
+  target = target.replace(/^\//,'');
+  const sheetPath = target.startsWith('xl/') ? target : 'xl/' + target;
+  const ssFile = get('xl/sharedStrings.xml');
+  const sst = ssFile ? xml(dec.decode(ssFile.data)) : null;
+  const strs = sst ? [...sst.getElementsByTagNameNS(SS_NS, 'si')].map(si=>
+    [...si.getElementsByTagNameNS(SS_NS, 't')].map(t=>t.textContent).join('')) : [];
+  const doc = xml(dec.decode(get(sheetPath).data));
+  const val = c => {
+    const t = c.getAttribute('t'), v = c.getElementsByTagNameNS(SS_NS, 'v')[0];
+    if(t === 's') return v ? strs[+v.textContent] || '' : '';
+    if(t === 'inlineStr') return [...c.getElementsByTagNameNS(SS_NS, 't')].map(x=>x.textContent).join('');
+    return v ? v.textContent : '';
+  };
+  // 見出しの行（「番号」と、「所見」か欄の名前の列がある行）を探す
+  const rows = [...doc.getElementsByTagNameNS(SS_NS, 'row')];
+  let head = null, cols = {};
+  for(const r of rows.slice(0, 10)){
+    const m = {}, secCols = {};
+    [...r.getElementsByTagNameNS(SS_NS, 'c')].forEach(c=>{
+      const t = val(c).trim().replace(/[\s　]+/g,''), n = colNum(c.getAttribute('r'));
+      if(t && !m[t]) m[t] = n;
+      const k = c4SecOf(t);
+      if(k && !secCols[k]) secCols[k] = n;
+    });
+    const no = m['番号'] || m['出席番号'];
+    if(no && (m['所見'] || Object.keys(secCols).length)){
+      head = r; cols = { no, name:m['氏名']||0, shoken:m['所見']||0, secs:secCols }; break;
+    }
+  }
+  if(!head) throw new Error('head');
+  const list = [];
+  rows.forEach(r=>{
+    if(r === head) return;
+    const cells = {};
+    [...r.getElementsByTagNameNS(SS_NS, 'c')].forEach(c=>{ cells[colNum(c.getAttribute('r'))] = c; });
+    const noC = cells[cols.no];
+    const no = noC ? parseInt(val(noC), 10) : NaN;
+    if(isNaN(no)) return;   // 見出しや空行
+    list.push({ row:r, no, name: cols.name && cells[cols.name] ? val(cells[cols.name]) : '',
+                style: (cells[cols.name] || noC).getAttribute('s') });
+  });
+  if(!list.length) throw new Error('rows');
+  return { files, sheetPath, sst, doc, cols, list, strCount: strs.length };
+}
+
+/* col 列のセルに文字列を書き込む（共有文字列に足す） */
+function c4thSetCell(p, row, col, text, style){
+  const ref = colName(col) + row.getAttribute('r');
+  let cell = [...row.getElementsByTagNameNS(SS_NS, 'c')].find(c=>c.getAttribute('r') === ref);
+  if(!cell){
+    cell = p.doc.createElementNS(SS_NS, 'c');
+    cell.setAttribute('r', ref);
+    if(style) cell.setAttribute('s', style);   // 同じ行の氏名の書式（文字列）にそろえる
+    const after = [...row.getElementsByTagNameNS(SS_NS, 'c')].find(c=>colNum(c.getAttribute('r')) > col);
+    row.insertBefore(cell, after || null);
+  }
+  while(cell.firstChild) cell.removeChild(cell.firstChild);
+  [...cell.attributes].map(a=>a.name).filter(n=>n!=='r' && n!=='s').forEach(n=>cell.removeAttribute(n));
+  if(!text) return;
+  const si = p.sst.createElementNS(SS_NS, 'si'), t = p.sst.createElementNS(SS_NS, 't');
+  t.setAttributeNS('http://www.w3.org/XML/1998/namespace', 'xml:space', 'preserve');
+  t.textContent = text; si.appendChild(t); p.sst.documentElement.appendChild(si);
+  cell.setAttribute('t', 's');
+  const v = p.doc.createElementNS(SS_NS, 'v'); v.textContent = String(p.strCount++); cell.appendChild(v);
+}
+
+/* 1人分の書き込み内容 [{col, text, keys}]。欄の列があればその列へ、残りの欄は「所見」の列へまとめる */
+function c4Plan(p, s){
+  const out = [], rest = [];
+  secsOf(s).filter(k=>sec(s,k).out).forEach(k=>{
+    if(p.cols.secs[k]) out.push({ col:p.cols.secs[k], text:sec(s,k).out, keys:[k] });
+    else rest.push(k);
+  });
+  if(rest.length && p.cols.shoken){
+    // 欄の列が1つもなく、使う欄も1つだけなら見出しを付けない
+    const one = rest.length === 1 && !Object.keys(p.cols.secs).length && secsOf(s).length === 1;
+    out.push({ col:p.cols.shoken, keys:rest,
+               text: one ? sec(s,rest[0]).out : rest.map(k=>`【${APP.secName(k)}】\n${sec(s,k).out}`).join('\n\n') });
+  }
+  return { out, lost: p.cols.shoken ? [] : rest };
+}
+
+async function exportC4th(file){
+  saveNow();
+  let p;
+  try{ p = await c4thParse(await file.arrayBuffer()); }
+  catch(e){
+    alert("このファイルは読み込めませんでした。\nC4thの「通知表入力」→「エクセル出力」で出したExcel（.xlsx。見出しに「番号」「氏名」と、「所見」か欄の名前（国語・算数 など）がある一覧）を選んでください。"
+      + (/\.xls$/i.test(file.name) ? "\n\n.xls 形式のときは、Excelで開いて「Excel ブック（.xlsx）」で保存し直してください。" : ""));
+    return null;
+  }
+  if(!p.sst){   // 共有文字列が無いファイルには作って足す
+    p.sst = new DOMParser().parseFromString(`<?xml version="1.0" encoding="UTF-8"?><sst xmlns="${SS_NS}" count="0" uniqueCount="0"></sst>`, 'application/xml');
+    p.newSst = true;
+  }
+  capture();
+  const byNo = new Map();
+  R.students.forEach(s=>{ const n = parseInt(s.no,10); if(!isNaN(n) && !byNo.has(n)) byNo.set(n, s); });
+  let filled = 0, draft = 0, cellsN = 0; const empty = [], noStu = [], diff = [], lost = new Set();
+  const plans = new Map();
+  p.list.forEach(x=>{
+    const s = byNo.get(x.no);
+    if(!s){ noStu.push(x.no); return; }
+    if(x.name && normName(s.name) && !normName(x.name).includes(normName(s.name)) && !normName(s.name).includes(normName(x.name)))
+      diff.push(`${x.no}番：一覧「${x.name}」／アプリ「${s.name}」`);
+    const pl = c4Plan(p, s);
+    pl.lost.forEach(k=>lost.add(k));
+    if(!pl.out.length){ empty.push(x.no); return; }
+    plans.set(x, pl.out);
+    filled++; cellsN += pl.out.length;
+    if(pl.out.some(o=>o.keys.some(k=>!secOk(s,k)))) draft++;
+  });
+  const used = new Set(p.list.map(x=>x.no));
+  const extra = sorted().filter(s=>recStatus(s)!=='none' && !used.has(parseInt(s.no,10)));
+  if(!filled){
+    alert(lost.size
+      ? `書き込める列がありません。\nこのExcelには「所見」の列がなく、${[...lost].map(k=>APP.secName(k)).join('・')}の列もありません。`
+      : "書き込める所見がありません。\nファイルの「番号」と、所見一覧の番号が合っているか確かめてください。");
+    return null;
+  }
+  const where = [];
+  Object.keys(p.cols.secs).forEach(k=>where.push(`${APP.secName(k)}の列`));
+  if(p.cols.shoken) where.push(Object.keys(p.cols.secs).length ? '「所見」の列（列がないほかの欄を【欄の名前】付きでまとめて）' : '「所見」の列（欄ごとに【欄の名前】を付けてまとめて）');
+  const msg = [`C4thの一覧（${p.list.length}人）に、${filled}人分の所見を書き込みます。`, `書き込む先：${where.join('、')}`];
+  if(draft) msg.push(`・まだ「確認済み」になっていない（下書きの）欄がある児童が ${draft}人 います。`);
+  if(empty.length) msg.push(`・所見ができていない児童（${empty.join('・')}番）は空欄のままにします。`);
+  if(noStu.length) msg.push(`・アプリにいない番号（${noStu.join('・')}番）は空欄のままにします。`);
+  if(extra.length) msg.push(`・一覧にない番号の児童（${extra.map(s=>s.no).join('・')}番）の所見は書き込まれません。`);
+  if(lost.size) msg.push(`・このExcelには列がないため、${[...lost].map(k=>APP.secName(k)).join('・')}の所見は書き込まれません。`);
+  if(diff.length) msg.push(`・氏名が一致しない児童がいます。番号がずれていないか確かめてください。\n  ` + diff.slice(0,8).join('\n  ') + (diff.length>8 ? `\n  ほか${diff.length-8}人` : ''));
+  msg.push('', '書き出しますか。');
+  if(!confirm(msg.join('\n'))) return null;
+
+  plans.forEach((out, x)=>out.forEach(o=>c4thSetCell(p, x.row, o.col, o.text, x.style)));
+  const root = p.sst.documentElement, n = root.getElementsByTagNameNS(SS_NS, 'si').length;
+  root.setAttribute('uniqueCount', n);
+  root.setAttribute('count', Math.max(n, parseInt(root.getAttribute('count')||'0',10) + cellsN));
+  const ser = d => { const s = new XMLSerializer().serializeToString(d);
+    return new TextEncoder().encode(s.startsWith('<?xml') ? s : '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' + s); };
+  const files = p.files.map(f=>({ name:f.name, data:f.data }));
+  files.find(f=>f.name === p.sheetPath).data = ser(p.doc);
+  if(p.newSst){
+    files.push({ name:'xl/sharedStrings.xml', data:ser(p.sst) });
+    const dec = new TextDecoder('utf-8');
+    const ct = files.find(f=>f.name === '[Content_Types].xml');
+    ct.data = new TextEncoder().encode(dec.decode(ct.data).replace('</Types>',
+      '<Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/></Types>'));
+    const rl = files.find(f=>f.name === 'xl/_rels/workbook.xml.rels');
+    rl.data = new TextEncoder().encode(dec.decode(rl.data).replace('</Relationships>',
+      '<Relationship Id="rIdShoken" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/></Relationships>'));
+  }else{
+    files.find(f=>f.name === 'xl/sharedStrings.xml').data = ser(p.sst);
+  }
+  files.sort((a,b)=>(a.name==='[Content_Types].xml' ? -1 : b.name==='[Content_Types].xml' ? 1 : 0));
+  const blob = zipWrite(files);
+  const base = file.name.replace(/\.xlsx$/i, '');
+  const url = URL.createObjectURL(blob), a = document.createElement('a');
+  const outName = `${base}_所見入り_${stamp()}.xlsx`;
+  a.href = url; a.download = outName;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  setSave(`C4th用のExcelに ${filled}人分の所見を書き込みました`, true);
+  return { name: outName, filled };
+}
+/* ---- 手順の案内（通常版 v1.41 と同じ）：①出力 → ②書き込み → ③読み取り を1つずつ進める ---- */
+let c4Step = 0;
+function c4Show(step){
+  c4Step = step;
+  document.querySelectorAll('#c4thModal .c4thflow li').forEach(li=>{
+    const k = +li.dataset.step;
+    li.classList.toggle('cur', k === step);
+    li.classList.toggle('done', k < step);
+  });
+  const btn = document.querySelector(`#c4thModal li[data-step="${step}"] .btn.primary`);
+  if(btn) setTimeout(()=>btn.focus(), 0);
+}
+function c4Open(){
+  $('c4Msg1').textContent = '';
+  $('c4thModal').style.display = 'flex';
+  c4Show(0);
+}
+function c4CloseModal(){ $('c4thModal').style.display = 'none'; }
+$('expC4thBtn').addEventListener('click', c4Open);
+$('c4Next0').addEventListener('click', ()=>c4Show(1));
+$('c4Back1').addEventListener('click', ()=>c4Show(0));
+$('c4Back2').addEventListener('click', ()=>{ $('c4Msg1').textContent=''; c4Show(1); });
+$('c4Pick').addEventListener('click', ()=>$('c4thFile').click());
+$('c4Done').addEventListener('click', c4CloseModal);
+$('c4Close').addEventListener('click', c4CloseModal);
+$('c4thModal').addEventListener('keydown', e=>{ if(e.key === 'Escape') c4CloseModal(); });
+$('c4thFile').addEventListener('change', async e=>{
+  const f = e.target.files[0]; e.target.value = '';
+  if(!f) return;
+  const r = await exportC4th(f);
+  if(!r){ $('c4Msg1').textContent = '書き込みは行っていません。もう一度「Excelを選ぶ」から選んでください。'; return; }
+  $('c4Msg1').textContent = '';
+  $('c4Desc2').innerHTML =
+    `${r.filled}人分の所見を書き込み、次の名前で保存しました（ふつうはブラウザの「ダウンロード」フォルダに入ります）。<br>`
+    + `<span class="c4file">${esc(r.name)}</span><br>このファイルを、C4thで読み取らせてください。`;
+  c4Show(2);
+});
 
 /* ==================================================================
    作業ファイルへの保存（SN v1.20。通常版 v1.50 と同じ仕組み）
