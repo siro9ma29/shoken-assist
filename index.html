@@ -7261,6 +7261,8 @@ function fpOf(d){
 }
 function fileFingerprint(){ return fpOf(serialize()); }
 function fileDirty(){ return hasContent() && fileSt.fp !== fileFingerprint(); }
+// v1.60：見た目の補助（保存の状態の札）が読むだけの口。動きには関わらない
+window.UI_FILE = ()=>({ st:fileSt, dirty:fileDirty(), has:hasContent() });
 
 /* 保存先（ファイルの扱い）をブラウザに記憶する（IndexedDB） */
 function fileIdb(mode, fn){
@@ -7531,15 +7533,16 @@ window.addEventListener('beforeunload', e=>{
   let lastSavedAt = null;
   function renderSave(){
     try{
-      if(typeof fileSt === 'undefined' || typeof fileDirty !== 'function') return;
+      // 保存の状態は、各版が用意した読むだけの口 window.UI_FILE から読む（外国語活動版には保存がないので札を出さない）
+      let fileSt, dirty, has;
+      if(typeof window.UI_FILE === 'function'){ const f = window.UI_FILE(); fileSt = f.st; dirty = f.dirty; has = f.has; }
+      else return;
       if(lastSavedAt === null) lastSavedAt = fileSt.savedAt;
       if(fileSt.savedAt && fileSt.savedAt !== lastSavedAt){
         lastSavedAt = fileSt.savedAt;
         uiToast('✓', '保存しました' + (fileSt.name ? '（' + fileSt.name + '）' : ''));
       }
-      const has = (typeof hasContent === 'function') ? hasContent() : true;
       if(!has){ badge.style.display = 'none'; return; }
-      const dirty = fileDirty();
       const auto = !!(fileSt.handle && fileSt.granted);
       let cls, txt, tip;
       if(!dirty){ cls = 'ok'; txt = '✓ 保存済み'; tip = '作業ファイルに保存してあります。'; }

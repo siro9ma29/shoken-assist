@@ -513,6 +513,188 @@ details.cat>summary{font-size:15px;}
 .sechip.pend::after{content:"！"; color:var(--warn); font-weight:700;}
 .listfilter{display:flex; align-items:center; gap:8px; margin-top:10px; font-size:12.5px; color:var(--sub);}
 .listfilter .seg button{flex:none; padding:5px 12px; font-size:12.5px;}
+/* ==================================================================
+   v1.60：見た目の改善（標準版 v1.60 と同じ。SN v1.23）（機能は変えない。ここから下は上の指定を上書きするだけ）
+   ・色：薄いブルー＋グレーの地、操作は青、完了・成功は緑、注意はだいだい
+   ・文字とボタンを大きく、コントラストを強く
+   ・ステップの表示を「丸い番号＋線」に。終わった手順は緑の✓
+   ・画面の下の操作（戻る／次へ）を帯にして、スクロールしても見えるように
+   ・「コピーしました」「保存しました」を画面の上に大きく知らせる（#uiToast）
+   色を変えるときは、この囲みの :root だけを直す
+   ================================================================== */
+:root{
+  --ink:#1f2933; --sub:#4f5d6b; --line:#d3dce5;
+  --bg:#f1f5f8; --panel:#ffffff; --accent:#2763a8; --accent-soft:#e6eff9;
+  --warn:#9a4d00; --warn-soft:#fff2df; --sel:#2763a8;
+  --grow:#7a5a00; --grow-soft:#fbf2d6;
+  --ok:#23784a; --ok-soft:#e3f3e9;
+  --radius:14px;
+}
+body{font-size:17px; font-family:"BIZ UDPGothic","Hiragino Kaku Gothic ProN","Yu Gothic UI","Yu Gothic","Meiryo",sans-serif;}
+:focus-visible{outline:3px solid #e8a800 !important; outline-offset:2px;}   /* キーボードで操作している場所が分かる */
+
+/* 上の帯 */
+header.apphead{box-shadow:0 1px 0 var(--line);}
+.headrow{max-width:980px;}
+header h1{font-size:21px; align-items:center;}
+header h1::before{content:"✎"; display:inline-grid; place-items:center; width:34px; height:34px; border-radius:10px;
+  background:var(--accent-soft); color:var(--accent); font-size:18px;}
+.headnav{align-items:center; flex-wrap:wrap;}
+.linkbtn{font-size:15px; padding:8px 10px;}
+.filebtn{font-size:15px; padding:8px 16px; min-height:42px; border-radius:10px;}
+.filebtn.save.dirty{background:var(--warn); border-color:var(--warn);}
+.uisave{display:inline-flex; align-items:center; gap:4px; padding:6px 14px; border-radius:999px; font-size:14px; font-weight:700;
+  white-space:nowrap; cursor:default;}
+.uisave.ok{background:var(--ok-soft); color:var(--ok);}
+.uisave.busy{background:var(--accent-soft); color:var(--accent);}
+.uisave.ng{background:var(--warn-soft); color:var(--warn); cursor:pointer;}
+.uihelp{font:inherit; font-size:15px; font-weight:700; padding:8px 14px; min-height:42px; border-radius:10px; cursor:pointer;
+  border:2px solid var(--line); background:var(--panel); color:var(--sub);}
+.uihelp:hover{border-color:var(--accent); color:var(--accent);}
+
+/* ステップの表示：丸い番号と線 */
+.stepbar{gap:0; margin-top:14px;}
+.stepbar li{position:relative; border-bottom:none; padding:42px 4px 2px; font-size:14px; white-space:normal; line-height:1.4; overflow:visible;}
+.stepbar li::before{content:counter(st); position:absolute; top:0; left:50%; transform:translateX(-50%); z-index:1;
+  width:36px; height:36px; border-radius:50%; display:grid; place-items:center; font-size:16px; font-weight:700;
+  background:var(--panel); border:3px solid var(--line); color:var(--sub);}
+.stepbar li::after{content:""; position:absolute; top:17px; left:-50%; width:100%; height:4px; background:var(--line); z-index:0;}
+.stepbar li:first-child::after{display:none;}
+.stepbar li.done{color:var(--ok);}
+.stepbar li.done::before{content:"✓"; background:var(--ok); border-color:var(--ok); color:#fff;}
+.stepbar li.done::after,.stepbar li.cur::after{background:var(--accent);}
+.stepbar li.cur{color:var(--accent);}
+.stepbar li.cur::before{background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:0 0 0 5px var(--accent-soft);}
+
+/* 画面の本体 */
+.stage{padding-top:24px;}
+.screen{padding:28px 30px; border-radius:var(--radius); box-shadow:0 2px 10px rgba(31,41,51,.04);}
+.scrtitle{font-size:24px;}
+/* 「この画面でやること」の案内（各画面の説明文を青い囲みにする） */
+.screen .lead{font-size:17px; background:var(--accent-soft); border-left:6px solid var(--accent); border-radius:10px;
+  padding:12px 16px; color:var(--ink);}
+.screen .lead:empty{display:none;}
+.lead::before{content:"👉 ";}
+.hint{font-size:14px;}
+.note{font-size:14px; border-radius:10px;}
+.field label{font-size:15px;}
+input[type=number],input[type=text]{font-size:16px; padding:10px 12px; border:2px solid var(--line); border-radius:10px;}
+input[type=number]:focus,input[type=text]:focus{border-color:var(--accent);}
+textarea{font-size:16px;}
+
+/* ボタン：大きく、押せる形をはっきり */
+.btn{font-size:16px; min-height:50px; border-radius:10px; border:2px solid transparent;}
+.btn.primary:hover{background:#1d4f8a;}
+.btn.ghost{border:2px solid var(--line);}
+.btn.ghost:hover{border-color:var(--accent); color:var(--accent);}
+.seg{border:2px solid var(--line); border-radius:10px;}
+.seg button{font-size:15px; padding:10px 8px;}
+.choice{border-radius:16px; padding:28px 24px;}
+.choice:hover{background:#d6e5f6;}
+.ch-title{font-size:23px;}
+.ch-title::after{content:" →";}
+.ch-sub{font-size:15px;}
+.lenpick button{border-radius:16px;}
+.yearpick button{font-size:17px; min-height:54px;}
+.dropzone{border-color:#9dbbe0; background:#f7fafd;}
+.c4th{border-color:#bcd2ec;}
+
+/* 画面の下の操作の帯：「次へ」は青い大きなボタン1つ。スクロールしても見える */
+.screen > .navrow{position:sticky; bottom:0; z-index:5; margin:24px -30px 0; padding:14px 30px;
+  background:#fff; border-top:1px solid var(--line);}
+.screen > .navrow:last-child{margin-bottom:-28px; border-radius:0 0 var(--radius) var(--radius);}
+.navrow .btn{min-width:140px;}
+.navrow .btn.primary{min-width:230px; font-size:18px; min-height:56px; box-shadow:0 3px 10px rgba(39,99,168,.25);}
+
+/* 項目を選ぶ */
+.whobar{font-size:15px;}
+.whobar b{font-size:20px;}
+.pagechips button{font-size:14px; padding:6px 13px; border-radius:18px;}
+details.cat{border-radius:12px; border-width:2px;}
+details.cat>summary{font-size:16px; padding:12px 14px; background:#f6f9fc;}
+#scrItems .item{padding:12px 6px; border-radius:8px;}
+#scrItems .item .txt{font-size:16px;}
+#scrItems .item.sel{background:var(--accent-soft);}
+#scrItems .item.sel.issue{background:#fdf3ea;}
+#scrItems .lvlpick span{font-size:14.5px; padding:9px 15px; border:2px solid var(--line);}
+/* 選んだ程度は塗りつぶして、ひと目で分かるようにする */
+.lvlpick input:checked + span.can{background:var(--accent); border-color:var(--accent); color:#fff;}
+.lvlpick input:checked + span.grow{background:var(--grow); border-color:var(--grow); color:#fff;}
+.lvlpick input:checked + span.issue{background:var(--warn); border-color:var(--warn); color:#fff;}
+.lvlpick input:checked + span::before{content:"✓ ";}
+.star{font-size:14px; padding:6px 10px; border-width:2px;}
+.clr{font-size:14px; padding:9px 13px;}
+.item:not(.sel) .clr{background:#eef2f6;}
+.meterbar{font-size:15.5px; background:#f6f9fc; border:1px solid var(--line); border-radius:10px;}
+.meter-ok{color:var(--ok);}
+
+/* 文章の確認 */
+#scrDraft .out{font-size:18px; background:#fff; border:2px solid var(--line); border-radius:12px;}
+#outEdit{font-size:18px; border-radius:12px; box-shadow:0 0 0 4px var(--accent-soft);}
+.tools button{font-size:15px; min-height:46px; border:2px solid var(--line); border-radius:10px; color:var(--ink);}
+#scrDraft .tools button{font-size:15px; padding:10px 16px;}
+.tools button:hover:not(:disabled){border-color:var(--accent); color:var(--accent);}
+#copyBtn{border-color:var(--accent); color:var(--accent); font-weight:700;}
+#copyBtn::before{content:"📋 ";}
+.handbar{font-size:14.5px; background:var(--accent-soft); border-radius:10px;}
+.handbar button{font-size:14px; min-height:40px;}
+
+/* 所見一覧 */
+.listtable{border-radius:12px;}
+.listtable table{font-size:15px;}
+.listtable th{font-size:13.5px; background:#f6f9fc;}
+.listtable tr.lrow:hover td{background:var(--accent-soft);}
+.listtable td.ops button{font-size:13.5px; padding:6px 11px;}
+.badge{font-size:13px; padding:3px 10px;}
+.badge.ok,.sdone.ok{background:var(--ok-soft); color:var(--ok);}
+.banner{background:var(--ok-soft); color:var(--ok); font-size:17px; border-radius:10px;}
+.banner::before{content:"✓ ";}
+.listtools .btn{font-size:15px;}
+
+/* ダイアログ */
+.modal{background:rgba(31,41,51,.5);}
+.modalbox{border-radius:18px;}
+.tourpage p{font-size:16px;}
+.exitem li{font-size:15px;}
+.excopy{font-size:13px; padding:4px 10px;}
+.c4thtitle{color:var(--accent);}
+
+/* コピーしたボタン：緑に変わる */
+.ui-copied, #scrDraft .tools button.ui-copied{background:var(--ok) !important; border-color:var(--ok) !important; color:#fff !important; font-weight:700;}
+#copyBtn.ui-copied::before{content:"✓ ";}
+
+/* 状態の知らせ（画面の上の中央に大きく出る） */
+#uiToast{position:fixed; top:84px; left:50%; transform:translate(-50%,-16px); z-index:200; opacity:0; pointer-events:none;
+  display:flex; align-items:center; gap:10px; max-width:92vw; padding:14px 26px; border-radius:14px;
+  background:var(--ok); color:#fff; font-size:17px; font-weight:700; box-shadow:0 8px 26px rgba(0,0,0,.18);
+  transition:opacity .2s, transform .2s;}
+#uiToast.show{opacity:1; transform:translate(-50%,0);}
+#uiToast .ic{font-size:22px;}
+@media (prefers-reduced-motion: reduce){ #uiToast{transition:none;} }
+
+/* ヒント（？）：指を乗せる・Tabキーで選ぶと説明が出る */
+.uitip{position:relative; display:inline-grid; place-items:center; width:24px; height:24px; margin-left:6px; vertical-align:middle;
+  border-radius:50%; border:2px solid var(--accent); background:#fff; color:var(--accent); font-size:13px; font-weight:700; cursor:help;}
+.uitip::after{content:attr(data-tip); position:absolute; bottom:calc(100% + 10px); left:50%; transform:translateX(-50%);
+  width:max-content; max-width:280px; padding:10px 12px; border-radius:8px; background:#25303b; color:#fff;
+  font-size:14px; font-weight:400; line-height:1.6; text-align:left; white-space:normal; letter-spacing:0;
+  opacity:0; pointer-events:none; transition:opacity .15s; z-index:60;}
+.uitip:hover::after,.uitip:focus::after{opacity:1;}
+
+@media (max-width:640px){
+  body{font-size:16px;}
+  .stepbar li{font-size:12px;}
+  .screen{padding:22px 18px;}
+  /* 狭い画面ではボタンが2段になり文章を隠すので、帯を固定しない */
+  .screen > .navrow{position:static; margin-left:-18px; margin-right:-18px; padding:12px 18px;}
+  .navrow .btn.primary{min-width:0; flex:1;}
+  .uisave{font-size:12.5px; padding:5px 10px;}
+}
+
+/* 特別支援学級版：選んだ程度（一人で／言葉かけ／一緒に）を塗りつぶす */
+.lvlpick input:checked + span.solo{background:var(--ok); border-color:var(--ok); color:#fff;}
+.lvlpick input:checked + span.verbal{background:var(--accent); border-color:var(--accent); color:#fff;}
+.lvlpick input:checked + span.together{background:var(--warn); border-color:var(--warn); color:#fff;}
 </style>
 </head>
 <body>
@@ -520,12 +702,15 @@ details.cat>summary{font-size:15px;}
   <div class="headrow">
     <h1>所見文アシスト（特別支援学級・知的障害）<span class="ver" id="verBadge"></span></h1>
     <nav class="headnav">
+      <!-- 保存の状態（表示だけ。中身は最後の「見た目の補助」が fileSt から作る） -->
+      <span class="uisave" id="uiSave" style="display:none;" role="status"></span>
       <button type="button" class="linkbtn" id="navHome">はじめの画面</button>
       <button type="button" class="linkbtn" id="navList">所見一覧</button>
       <span class="filebox">
         <button type="button" class="filebtn" id="fileOpenBtn" title="作業ファイル（.json）を開いて続きをする">開く</button>
         <button type="button" class="filebtn save" id="fileSaveBtn" title="作業ファイルに保存する（Ctrl＋S）">保存</button>
       </span>
+      <button type="button" class="uihelp" id="uiHelp" title="使い方の案内を開きます">？ 使い方</button>
     </nav>
   </div>
   <ol class="stepbar" id="stepbar" style="display:none;"></ol>
@@ -693,7 +878,7 @@ details.cat>summary{font-size:15px;}
     <p class="hint">一覧の表示とCSVに使います。</p>
   </div>
   <div class="field">
-    <label for="noIn">出席番号</label>
+    <label for="noIn">出席番号<span class="uitip" tabindex="0" data-tip="所見一覧の並び順と、C4th用Excelに書き込むときの照合に使います。">？</span></label>
     <input type="number" id="noIn" class="bigin" min="1" max="99" style="width:120px;">
   </div>
   <div class="navrow">
@@ -794,6 +979,7 @@ details.cat>summary{font-size:15px;}
     <button id="regenBtn">別の言い方にする</button>
     <button id="editItems">項目を選び直す</button>
     <button id="undoDraft" disabled>元に戻す</button>
+    <span class="uitip" tabindex="0" data-tip="「別の言い方にする」は、同じ内容で書き出しや文末を変えます。手で直した文章は、聞かずに消えることはありません。">？</span>
   </div>
   <div class="navrow">
     <button type="button" class="btn ghost" id="draftSub"></button>
@@ -979,9 +1165,10 @@ details.cat>summary{font-size:15px;}
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "SN v1.22";
+const APP_VERSION = "SN v1.23";
 const APP_DATE    = "2026-11-07";
 const APP_HISTORY = [
+  {v:"SN v1.23", d:"2026-11-07", note:"見た目を標準版 v1.60 と同じにした（機能は変えていない）。色を薄いブルーとグレーの地・操作は青・完了は緑・注意はだいだいにし、文字とボタンを大きくした。ステップの表示を丸い番号と線に（終わった手順は✓）、説明文を青い案内の囲みに、下の「戻る」「次へ」を帯に（狭い画面では固定しない）。コピーするとボタンが緑になり画面の上に「コピーしました」と出る。上の帯に「？ 使い方」、保存の状態（保存済み／保存中／未保存の変更）、作業ファイルに保存したときの「保存しました」を出す。選んだ程度（一人で／言葉かけ／一緒に）は塗りつぶし。出席番号と文章の操作に「？」の説明を付けた。CSSは「v1.60：見た目の改善」の囲み、表示の補助は最後の「見た目の補助（v1.60）」の囲み。"},
   "SN v1.22 「委員会」が入った文を確かめるようにした（通常版 v1.54 の CHECK_WORDS と同じ。委員会に入っていない児童もいるため）。",
   "　　　　文章の画面に「確かめてください」を出す（手で直した文章も）。個別の指導計画の文では「要確認：確かめる語（委員会）」の印を付ける（文は使うまま）。",
   "SN v1.21 所見一覧に「C4th用Excelに書き込む」を追加（通常版 v1.38〜v1.41 と同じ、①出力→②書き込み→③読み取り の案内つき）。",
@@ -5268,6 +5455,8 @@ function fpOf(d){
 }
 function fileFingerprint(){ return fpOf(serialize()); }
 function fileDirty(){ return SH.ready && hasContent() && fileSt.fp !== fileFingerprint(); }
+// SN v1.23：見た目の補助（保存の状態の札）が読むだけの口。動きには関わらない
+window.UI_FILE = ()=>({ st:fileSt, dirty:fileDirty(), has:hasContent() });
 function fpOfText(text){ try{ return fpOf(JSON.parse(text)); }catch(e){ return null; } }
 
 /* 保存先（ファイルの扱い）と、このパソコンで最後に保存したときの指紋をブラウザに記憶する */
@@ -6525,5 +6714,85 @@ window.KK_DEBUG = KKS;   // 動作確認用（コンソールから読み取り�
 })();
 </script>
 
+<!-- 状態の知らせ（v1.60） -->
+<div id="uiToast" role="status" aria-live="polite"><span class="ic"></span><span class="msg"></span></div>
+
+<script>
+/* ==================================================================
+   見た目の補助（v1.60）
+   ------------------------------------------------------------------
+   機能は変えない。いまの状態を「見せる」ことだけをする。
+   ・コピー：ボタンの文字が「コピーしました」に変わったら（copyBtn と copyText が変える）、
+     ボタンを緑にし、画面の上に知らせを出す
+   ・保存：作業ファイルに保存できたら（fileSt.savedAt が変わったら）「保存しました」と知らせる
+   ・上の帯の札：保存の状態（保存済み／保存中／保存していない変更）を fileSt・fileDirty() から出す
+   ・「？ 使い方」：はじめの画面の「使い方を見る」と同じ案内（showTour）を開く
+   既存の関数は呼ぶだけで、書き換えていない。
+   ================================================================== */
+(function(){
+  const toastEl = document.getElementById('uiToast');
+  let toastTimer = null;
+  function uiToast(ic, msg){
+    toastEl.querySelector('.ic').textContent = ic;
+    toastEl.querySelector('.msg').textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>toastEl.classList.remove('show'), 2200);
+  }
+  window.uiToast = uiToast;
+
+  // ---- コピーの知らせ：ボタンの文字の変化を見る ----
+  const copyWatch = new MutationObserver(list=>{
+    list.forEach(m=>{
+      const b = m.target.nodeType === 1 ? m.target : m.target.parentElement;
+      if(!b || b.tagName !== 'BUTTON') return;
+      const copied = b.textContent.trim() === 'コピーしました';
+      if(copied && !b.classList.contains('ui-copied')){
+        b.classList.add('ui-copied');
+        uiToast('📋', 'コピーしました。貼り付けたい場所で Ctrl＋V を押してください');
+      }else if(!copied && b.classList.contains('ui-copied')){
+        b.classList.remove('ui-copied');
+      }
+    });
+  });
+  copyWatch.observe(document.body, {childList:true, characterData:true, subtree:true});
+
+  // ---- 保存の状態の札と「保存しました」 ----
+  const badge = document.getElementById('uiSave');
+  let lastSavedAt = null;
+  function renderSave(){
+    try{
+      // 保存の状態は、各版が用意した読むだけの口 window.UI_FILE から読む（外国語活動版には保存がないので札を出さない）
+      let fileSt, dirty, has;
+      if(typeof window.UI_FILE === 'function'){ const f = window.UI_FILE(); fileSt = f.st; dirty = f.dirty; has = f.has; }
+      else return;
+      if(lastSavedAt === null) lastSavedAt = fileSt.savedAt;
+      if(fileSt.savedAt && fileSt.savedAt !== lastSavedAt){
+        lastSavedAt = fileSt.savedAt;
+        uiToast('✓', '保存しました' + (fileSt.name ? '（' + fileSt.name + '）' : ''));
+      }
+      if(!has){ badge.style.display = 'none'; return; }
+      const auto = !!(fileSt.handle && fileSt.granted);
+      let cls, txt, tip;
+      if(!dirty){ cls = 'ok'; txt = '✓ 保存済み'; tip = '作業ファイルに保存してあります。'; }
+      else if(auto){ cls = 'busy'; txt = '● 保存中…'; tip = '変更を作業ファイルに自動で上書きしています。'; }
+      else { cls = 'ng'; txt = '● 未保存の変更'; tip = 'このパソコンのブラウザには自動で保存されています。作業ファイルにも残すには、押すか「保存」を押してください。'; }
+      badge.className = 'uisave ' + cls;
+      badge.textContent = txt;
+      badge.title = tip;
+      badge.style.display = '';
+    }catch(e){ /* 表示だけなので、失敗しても何もしない */ }
+  }
+  badge.addEventListener('click', ()=>{ if(badge.classList.contains('ng')) document.getElementById('fileSaveBtn').click(); });
+  setInterval(renderSave, 700);
+  renderSave();
+
+  // ---- 「？ 使い方」 ----
+  document.getElementById('uiHelp').addEventListener('click', ()=>{
+    if(typeof showTour === 'function') showTour();
+    else document.getElementById('goTour').click();
+  });
+})();
+</script>
 </body>
 </html>
