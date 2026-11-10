@@ -375,6 +375,9 @@ details.cat>summary{font-size:15px;}
 .out .autou{text-decoration:underline dotted #e57373; text-underline-offset:4px;}
 .unitpick.auto select{border:2px solid #c62828; color:#c62828;}
 .unitpick.auto .unitnote{color:#c62828; font-weight:700;}
+.unitpick .unok{font:inherit; font-size:13px; margin-left:6px; padding:3px 12px; border-radius:8px; border:1px solid #c62828; background:#c62828; color:#fff; cursor:pointer;}
+.unitpick .unstate{margin-left:6px; font-size:12.5px;}
+.unitpick .unstate.ok{color:#2e7d32; font-weight:700;}
 .unitnote-box{margin:10px 0; padding:10px 14px; border-radius:10px; border:2px solid #e57373; background:#fdecea; font-size:14px; line-height:1.7;}
 .unitnote-box.allok{border-color:var(--line); background:var(--panel);}
 .unitnote-box .unhead{color:#c62828;}
@@ -1127,9 +1130,10 @@ details.cat>summary{font-size:16px; padding:12px 14px; background:#f6f9fc;}
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "v1.65";
-const APP_DATE    = "2026-11-09";
+const APP_VERSION = "v1.66";
+const APP_DATE    = "2026-11-10";
 const APP_HISTORY = [
+  {v:"v1.66", d:"2026-11-10", note:"取り上げる学習内容は「決定する」を押すまで赤字のままにした（v1.63 は選んだだけで黒になっていた）。(1) 選ぶ欄で学習内容を変えても、文章は変わるが赤字のまま。「決定する」を押すと黒になる。(2) 状態は「自動（出席番号）」「選んだ（まだ決定していません）」「✓ 決定しました」の3つ。決定したあとに選び直すと、また赤字に戻る。「自動に戻す」も使える。(3) 項目の画面の「取り上げる学習内容」にも「決定する」ボタンを付け、決定するまで赤で示す。(4) 決定したかどうかを児童ごとに保存する（unitOk）。v1.65 以前のデータで学習内容を選んであった教科は、決定したものとして扱う。"},
   {v:"v1.65", d:"2026-11-09", note:"国語の学年別・領域別の文（v1.64）の言い回しを、勤務校の教科書（光村図書）の単元のめあてや学習用語に合わせた。例：1年「語のまとまりや言葉の響きに気をつけて音読」「問いと答えに気をつけて読む」、2年「話す事柄の順序」「はじめ・中・おわりの組み立て」、3年「登場人物の気持ちの変化に気をつけて」「段落どうしの関係に着目して」、4年「場面の移り変わりと結び付けて想像」「中心となる語や文を見つけて要約」、5年「優れた表現に着目して」「文章全体の構成をとらえて要旨をまとめる」、6年「筆者の主張や意図をとらえて」「視点や表現の工夫に着目して人物の生き方について考えをもつ」。領域と学習内容の名前（選ぶ欄の表示）は変えていないので、保存した選択はそのまま使える。"},
   {v:"v1.64", d:"2026-11-09", note:"国語の「できる」の文を、単元別から領域別（読むこと／書くこと／話すこと・聞くこと／言語事項）にした。(1) 1〜6年の各学年に、4領域×2つ（例：読むこと（物語）・読むこと（説明する文章）、言語事項（漢字）・言語事項（言葉のきまり））の計8つ、全48の文例を用意した（GRADE_TEXT の k_l_koku・k_m_koku・k_h_koku。各領域の知識・技能／思考・判断・表現／主体的に学習に取り組む態度の文と、3観点の文・まとめた文）。(2) 出席番号で自動に選ぶときは8つすべてから選び、続く番号の児童は別の領域になる。(3) 「取り上げる学習内容」の選ぶ欄は領域ごとに分けて出す。(4) v1.63 以前に国語の学習内容を決めて保存した児童は、番号が新しい領域の文に当たるため、選び直しが必要。"},
   {v:"v1.63", d:"2026-11-09", note:"出席番号で自動に選んだ学習内容（教科の「できる」の文）を赤字で示し、担任が選んで決める箇所が一目で分かるようにした。(1) 文章の確認画面で、自動で選んだ学習内容を使っている文を赤字にする（3観点の文・まとめた文・「〜ことで、」の文も、その文ごと赤）。(2) 文章の下に「取り上げる学習内容を決めてください」の欄を出し、教科ごとに学習内容を選ぶか「この内容に決める」を押すと、その文は黒になる。決めた学習内容もこの欄で変えられ、「自動に戻す」もできる。(3) 項目の画面の「取り上げる学習内容」も、自動のままなら赤で示す。(4) 所見一覧に、自動の学習内容が残っている児童の印（赤の「学習内容 未決定」）と人数を出す。(5) 赤字は画面の表示だけで、コピー・CSV・C4th用Excelに書き出す文章は今までどおり（色は付かない）。手で直した文章は赤字にしない。児童のレコードに autoSent（赤字の文）を保存する。v1.62 以前のデータは、文章の確認画面を開くと赤字が付く。"},
@@ -2368,11 +2372,29 @@ function unitFixed(key){
   const us = gradeUnits(key), f = state.units ? state.units[key] : undefined;
   return !!us && Number.isInteger(f) && f >= 0 && f < us.length;
 }
-/* v1.63：観点 c の文が、出席番号で自動に選んだ学習内容を使っていれば、その教科のキーを返す */
+/* v1.66：先生が「決定する」を押したか（選んだだけでは決定にならない） */
+function unitDecided(key){
+  return unitFixed(key) && !!(state.unitOk && state.unitOk[key]);
+}
+/* v1.66：学習内容を選ぶ（決定は外れる）。v < 0 は自動に戻す */
+function chooseUnit(key, v){
+  if(!state.units) state.units = {};
+  if(!state.unitOk) state.unitOk = {};
+  if(v >= 0) state.units[key] = v; else delete state.units[key];
+  delete state.unitOk[key];
+}
+/* v1.66：学習内容を決定する（v は選ぶ欄の値。自動のときは自動で選んだ番号） */
+function decideUnit(key, v){
+  if(!(v >= 0)) v = autoUnitIndex(key, state.seed || 0);
+  if(!state.units) state.units = {};
+  if(!state.unitOk) state.unitOk = {};
+  state.units[key] = v; state.unitOk[key] = true;
+}
+/* v1.63：観点 c の文が、まだ決定していない学習内容（自動・選んだだけ）を使っていれば、その教科のキーを返す（v1.66） */
 function autoUnitKey(c){
   if(!c || c.lvl !== 'can') return null;
   const sc = subjCode(c.it.id);
-  return (sc && gradeUnits(sc.key) && !unitFixed(sc.key)) ? sc.key : null;
+  return (sc && gradeUnits(sc.key) && !unitDecided(sc.key)) ? sc.key : null;
 }
 /* 教科の観点ID → {key, code}（例：k_m_san_c → {key:"k_m_san", code:"c"}） */
 function subjCode(id){
@@ -2723,13 +2745,18 @@ DB.forEach((group, gidx)=>{
   if(gkey){
     const up = document.createElement('div'); up.className = 'unitpick'; up.dataset.key = gkey;
     up.innerHTML = `<label>取り上げる学習内容 <select data-key="${gkey}"></select></label>`
+      + `<button type="button" class="unok">決定する</button><span class="unstate"></span>`
       + `<span class="unitnote">「できる」の文に使います</span>`;
     up.querySelector('select').addEventListener('change', e=>{
-      const v = +e.target.value;
-      if(!state.units) state.units = {};
-      if(v >= 0) state.units[gkey] = v; else delete state.units[gkey];
+      chooseUnit(gkey, +e.target.value);   // v1.66：選んだだけでは決定しない
       syncUnitPickers();
       // 文章は afterSelEdit（#cats の change）で作り直される
+    });
+    up.querySelector('.unok').addEventListener('click', ()=>{   // v1.66
+      snapUndo();
+      decideUnit(gkey, +up.querySelector('select').value);
+      syncUnitPickers();
+      afterSelEdit();
     });
     box.appendChild(up);
   }
@@ -2814,7 +2841,7 @@ function syncUnitPickers(){
     // 項目の表示名も、学年別の文があるときはその学習内容の文にする（学年帯の文のままだと出力とずれるため）
     const VIEW = { c:'知識・技能', s:'思考・判断・表現', t:'主体的に学習に取り組む態度' };
     const cu = us ? unitOf(key, state.seed || 0) : null;
-    const isAuto = !!us && !unitFixed(key);   // v1.63：自動で選んだ学習内容のままなら赤で示す
+    const isAuto = !!us && !unitDecided(key);   // v1.63：まだ決定していない学習内容なら赤で示す（v1.66）
     up.parentElement.querySelectorAll('.item').forEach(r=>{
       const sc = subjCode(r.dataset.id), tx = r.querySelector('.txt');
       if(!sc || !tx) return;
@@ -2824,7 +2851,12 @@ function syncUnitPickers(){
     });
     up.classList.toggle('auto', isAuto);
     const un = up.querySelector('.unitnote');
-    if(un) un.textContent = isAuto ? '出席番号で自動に選んでいます（赤字）。児童に合う学習内容を選んでください' : '「できる」の文に使います';
+    if(un) un.textContent = !isAuto ? '「できる」の文に使います'
+      : unitFixed(key) ? 'まだ決定していません（赤字）。この学習内容でよければ「決定する」を押してください'
+      : '出席番号で自動に選んでいます（赤字）。児童に合う学習内容を選び、「決定する」を押してください';
+    const ub = up.querySelector('.unok'), ust = up.querySelector('.unstate');   // v1.66
+    if(ub) ub.style.display = isAuto ? '' : 'none';
+    if(ust){ ust.textContent = isAuto ? '' : '✓ 決定しました'; ust.className = 'unstate' + (isAuto ? '' : ' ok'); }
     if(!us){ up.style.display = 'none'; return; }
     up.style.display = '';
     const auto = us[autoUnitIndex(key, state.seed || 0)];
@@ -4771,10 +4803,10 @@ function renderUnitNote(){
   if(!el) return;
   const keys = (state.hand && state.handOut) ? [] : unitNoteKeys();
   if(!keys.length){ el.style.display = 'none'; el.innerHTML = ''; return; }
-  const nAuto = keys.filter(k=>!unitFixed(k)).length;
+  const nAuto = keys.filter(k=>!unitDecided(k)).length;
   const rows = keys.map(key=>{
-    const us = gradeUnits(key), fixed = unitFixed(key);
-    const ai = autoUnitIndex(key, state.seed || 0), cur = fixed ? state.units[key] : ai;
+    const us = gradeUnits(key), fixed = unitDecided(key), chosen = unitFixed(key);   // v1.66
+    const ai = autoUnitIndex(key, state.seed || 0), cur = chosen ? state.units[key] : ai;
     const g = DB.find(x=>x.items.some(it=>(subjCode(it.id)||{}).key === key));
     const opt = (u,i)=>`<option value="${i}"${i===cur?' selected':''}>${esc(u.u)}</option>`;
     const opts = unitOptsHtml(us, opt);   // v1.64
@@ -4782,19 +4814,20 @@ function renderUnitNote(){
       + `<span class="unsubj">${esc(g ? g.cat : key)}</span>`
       + `<select aria-label="${esc(g ? g.cat : key)}の取り上げる学習内容">${opts}</select>`
       + (fixed
-          ? `<span class="unstate ok">✓ 決めました</span><button type="button" class="linkbtn unauto">自動に戻す</button>`
-          : `<span class="unstate">自動（出席番号）</span><button type="button" class="unok">この内容に決める</button>`)
+          ? `<span class="unstate ok">✓ 決定しました</span>`
+          : `<span class="unstate">${chosen ? '選んだ（まだ決定していません）' : '自動（出席番号）'}</span><button type="button" class="unok">決定する</button>`)
+      + (chosen ? `<button type="button" class="linkbtn unauto">自動に戻す</button>` : '')
       + `</div>`;
   }).join('');
   el.innerHTML = (nAuto
-      ? `<b class="unhead">赤字の文は、出席番号で自動に選んだ学習内容です。</b>児童の学習の様子に合う学習内容を選ぶか、そのままでよければ「この内容に決める」を押してください。決めると黒い字になります。`
-      : `<b>取り上げる学習内容</b>（すべて決めてあります。変えるときは選び直してください）`)
+      ? `<b class="unhead">赤字の文は、学習内容がまだ決定していない文です。</b>児童の学習の様子に合う学習内容を選び、「決定する」を押してください。選ぶだけでは赤字のままです。決定すると黒い字になります。`
+      : `<b>取り上げる学習内容</b>（すべて決定しました。変えるときは選び直して、もう一度「決定する」を押してください）`)
     + rows;
   el.classList.toggle('allok', !nAuto);
   el.style.display = '';
   const setUnit = (key, v)=>{
-    if(!state.units) state.units = {};
-    if(v >= 0) state.units[key] = v; else delete state.units[key];
+    snapUndo();
+    chooseUnit(key, v);   // v1.66：選んだだけでは決定しない（赤字のまま）
     runAdoption();
     if(nav.scr === 'scrDraft'){ renderDraftHead(); syncUndoBtns(); }
   };
@@ -4803,12 +4836,11 @@ function renderUnitNote(){
     r.querySelector('select').addEventListener('change', e=>setUnit(key, +e.target.value));
     const ok = r.querySelector('.unok');
     if(ok) ok.addEventListener('click', ()=>{
-      // 「この内容に決める」は文章を変えないための操作。採用の判定は言い回し0で行うため、
+      // 「決定する」は文章を変えないための操作。採用の判定は言い回し0で行うため、
       // 「別の言い方」のあとに決めると入る項目が入れ替わることがある。そのときは今の顔ぶれのままにする。
+      snapUndo();
       const keep = state.adopted.map(c=>c.it.id), wasManual = state.manual;
-      const v = +r.querySelector('select').value;
-      if(!state.units) state.units = {};
-      state.units[key] = v;
+      decideUnit(key, +r.querySelector('select').value);   // v1.66
       runAdoption();
       const now = state.adopted.map(c=>c.it.id);
       if(!wasManual && (now.length !== keep.length || now.some(id=>!keep.includes(id)))){
@@ -5004,7 +5036,7 @@ function setOut(t, empty, marks){
       if(i < 0) return;
       if(i > pos) o.appendChild(document.createTextNode(t.slice(pos, i)));
       const sp = document.createElement('span'); sp.className = 'autou'; sp.textContent = m;
-      sp.title = '出席番号で自動に選んだ学習内容の文です。下の欄で学習内容を決めてください。';
+      sp.title = '学習内容がまだ決定していない文です。下の欄で学習内容を選び、「決定する」を押してください。';
       o.appendChild(sp);
       pos = i + m.length;
     });
@@ -5227,7 +5259,8 @@ function blankStudent(){
            sel:{}, pri:[], manual:false, mIn:[], out:"", updated:"",
            seed:0, okOut:"", year:0,      // v1.33：言い回し・確認した文章・学年
            hand:false, handSig:"",        // v1.59：手で直した文章か（文章は out）
-           autoSent:[] };                 // v1.63：自動で選んだ学習内容の文（赤字）
+           autoSent:[],                   // v1.63：自動で選んだ学習内容の文（赤字）
+           units:{}, unitOk:{} };         // v1.66：選んだ学習内容と、決定した教科
 }
 
 /* ---- 画面 ⇄ レコード ---- */
@@ -5254,6 +5287,7 @@ function captureCurrent(){
   rec.handSig = rec.hand ? state.handSig : "";
   rec.seed    = state.seed;   // v1.33：言い回しを保存し、開き直しても同じ文章にする
   rec.units   = Object.assign({}, state.units || {});   // v1.49
+  rec.unitOk  = Object.assign({}, state.unitOk || {});  // v1.66：決定した教科
   rec.updated = new Date().toISOString();
 }
 
@@ -5262,6 +5296,8 @@ function applyRecord(rec){
   if(!rec) return;
   state.year  = [1,2,3,4,5,6].includes(+rec.year) ? +rec.year : 0;   // v1.49
   state.units = Object.assign({}, rec.units || {});                   // v1.49：先生が選んだ学習内容
+  state.unitOk = rec.unitOk ? Object.assign({}, rec.unitOk)            // v1.66：決定した教科（v1.65 以前は選んだ教科を決定済みとみなす）
+    : Object.fromEntries(Object.keys(rec.units || {}).map(k=>[k, true]));
   state.sel  = new Map(Object.entries(rec.sel || {}));
   state.pri  = new Set(rec.pri || []);
   state.manual = !!rec.manual;
@@ -5450,8 +5486,14 @@ function normalizeStudent(s){
            year: [1,2,3,4,5,6].includes(+s.year) ? +s.year : 0,
            autoSent: (!s.hand && Array.isArray(s.autoSent))   // v1.63
              ? s.autoSent.filter(x=>typeof x === 'string' && x && String(s.out||"").includes(x)) : [],
-           units: Object.fromEntries(Object.entries(s.units || {})
-             .filter(([k,v])=>GRADE_TEXT[k] && Number.isInteger(v) && v >= 0 && v < GT_MAX)) };   // v1.62：3→GT_MAX
+           units: normUnits(s.units),   // v1.62：3→GT_MAX
+           unitOk: (s.unitOk && typeof s.unitOk === 'object')   // v1.66：v1.65 以前は選んだ教科を決定済みとみなす
+             ? Object.fromEntries(Object.keys(normUnits(s.units)).filter(k=>s.unitOk[k]).map(k=>[k, true]))
+             : Object.fromEntries(Object.keys(normUnits(s.units)).map(k=>[k, true])) };
+}
+function normUnits(u){
+  return Object.fromEntries(Object.entries(u || {})
+    .filter(([k,v])=>GRADE_TEXT[k] && Number.isInteger(v) && v >= 0 && v < GT_MAX));
 }
 
 function loadData(data){
@@ -7689,7 +7731,8 @@ function snapUndo(){
   nav.undo = { id:roster.curId, sel:[...state.sel], pri:[...state.pri], manual:state.manual,
                mIn:[...state.mIn], seed:state.seed, len:state.len, grade:state.grade,
                draft: !$('out').classList.contains('empty'),
-               hand: !!(state.hand && state.handOut), handOut: state.handOut, handSig: state.handSig };   // v1.59
+               hand: !!(state.hand && state.handOut), handOut: state.handOut, handSig: state.handSig,   // v1.59
+               units: Object.assign({}, state.units || {}), unitOk: Object.assign({}, state.unitOk || {}) };   // v1.66
   syncUndoBtns();
 }
 function syncUndoBtns(){
@@ -7702,7 +7745,8 @@ function doUndo(){
   nav.undo = null;
   const rec = curRec();
   applyRecord(Object.assign({}, rec, { sel:Object.fromEntries(u.sel), pri:u.pri, manual:u.manual,
-    mIn:u.mIn, len:u.len, grade:u.grade, out: u.hand ? u.handOut : '', hand:u.hand, handSig:u.handSig }));
+    mIn:u.mIn, len:u.len, grade:u.grade, out: u.hand ? u.handOut : '', hand:u.hand, handSig:u.handSig,
+    units: u.units || rec.units, unitOk: u.unitOk || rec.unitOk }));   // v1.66
   if(u.hand){ showHand(); renderRoster(); saveNow(); }   // v1.59：手直しした文章に戻す
   else if(u.draft && state.sel.size){ state.seed = u.seed; runAdoption(); }
   else{ clearPicker(); setOut(EMPTY_DRAFT, true); renderRoster(); saveNow(); }
