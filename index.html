@@ -1130,9 +1130,10 @@ details.cat>summary{font-size:16px; padding:12px 14px; background:#f6f9fc;}
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "v1.66";
+const APP_VERSION = "v1.67";
 const APP_DATE    = "2026-11-10";
 const APP_HISTORY = [
+  {v:"v1.67", d:"2026-11-10", note:"算数の学習内容の文の文末に「様子が見られました」を使わないようにした（しろさんの希望）。算数（k_l_san・k_m_san・k_h_san）の観点が入る「できる」の文では、文末の候補の2つ目（〜様子が見られました）の代わりに1つ目（〜ことができました／〜できました）を使う（LOOK_END・noLook()）。2観点をまとめた文も同じ。ほかの教科・項目の文末は変えていない。"},
   {v:"v1.66", d:"2026-11-10", note:"取り上げる学習内容は「決定する」を押すまで赤字のままにした（v1.63 は選んだだけで黒になっていた）。(1) 選ぶ欄で学習内容を変えても、文章は変わるが赤字のまま。「決定する」を押すと黒になる。(2) 状態は「自動（出席番号）」「選んだ（まだ決定していません）」「✓ 決定しました」の3つ。決定したあとに選び直すと、また赤字に戻る。「自動に戻す」も使える。(3) 項目の画面の「取り上げる学習内容」にも「決定する」ボタンを付け、決定するまで赤で示す。(4) 決定したかどうかを児童ごとに保存する（unitOk）。v1.65 以前のデータで学習内容を選んであった教科は、決定したものとして扱う。"},
   {v:"v1.65", d:"2026-11-09", note:"国語の学年別・領域別の文（v1.64）の言い回しを、勤務校の教科書（光村図書）の単元のめあてや学習用語に合わせた。例：1年「語のまとまりや言葉の響きに気をつけて音読」「問いと答えに気をつけて読む」、2年「話す事柄の順序」「はじめ・中・おわりの組み立て」、3年「登場人物の気持ちの変化に気をつけて」「段落どうしの関係に着目して」、4年「場面の移り変わりと結び付けて想像」「中心となる語や文を見つけて要約」、5年「優れた表現に着目して」「文章全体の構成をとらえて要旨をまとめる」、6年「筆者の主張や意図をとらえて」「視点や表現の工夫に着目して人物の生き方について考えをもつ」。領域と学習内容の名前（選ぶ欄の表示）は変えていないので、保存した選択はそのまま使える。"},
   {v:"v1.64", d:"2026-11-09", note:"国語の「できる」の文を、単元別から領域別（読むこと／書くこと／話すこと・聞くこと／言語事項）にした。(1) 1〜6年の各学年に、4領域×2つ（例：読むこと（物語）・読むこと（説明する文章）、言語事項（漢字）・言語事項（言葉のきまり））の計8つ、全48の文例を用意した（GRADE_TEXT の k_l_koku・k_m_koku・k_h_koku。各領域の知識・技能／思考・判断・表現／主体的に学習に取り組む態度の文と、3観点の文・まとめた文）。(2) 出席番号で自動に選ぶときは8つすべてから選び、続く番号の児童は別の領域になる。(3) 「取り上げる学習内容」の選ぶ欄は領域ごとに分けて出す。(4) v1.63 以前に国語の学習内容を決めて保存した児童は、番号が新しい領域の文に当たるため、選び直しが必要。"},
@@ -2552,10 +2553,17 @@ const IMPRESS_END = 3;   // ENDINGS.can の「姿が印象的でした」の位�
 function noImpress(ids){
   return ids.some(id=>/^k_[lmh]_[a-z0-9]+_[cs]$/.test(id) || /^sm[0cs]$/.test(id));
 }
-function endCan(frag, variant, past, plain){
+/* v1.67：算数の学習内容の文は「様子が見られました」を使わず「〜できました」にする（しろさんの希望）。
+   その文では、2つ目の文末（様子が見られました）の代わりに1つ目（ことができました）を使う。 */
+const LOOK_END = 1;   // ENDINGS.can の「様子が見られました」の位置
+function noLook(ids){
+  return ids.some(id=>/^k_[lmh]_san_/.test(id));
+}
+function endCan(frag, variant, past, plain, can){
   const opts = ENDINGS.can;
   let k = variant % opts.length;
   if(plain && k === IMPRESS_END) k = 0;
+  if(can && k === LOOK_END) k = 0;
   const fn = opts[k];
   return past ? toPast(fn(frag)) : fn(frag);
 }
@@ -3013,9 +3021,9 @@ function getFragment(it, lvl, idx, seed){
   const a = altOf(it, seed);                 // v1.48：言い回しの候補から選ぶ
   if(lvl==='can'){
     const sc = subjCode(it.id), u = sc && unitOf(sc.key, seed);   // v1.49：学年別の教科の文
-    if(u) return endCan(u[sc.code], variant, past, noImpress([it.id]));
+    if(u) return endCan(u[sc.code], variant, past, noImpress([it.id]), noLook([it.id]));
   }
-  return lvl==='can' ? endCan(a.can, variant, past, noImpress([it.id])) : endGrow(a.grow, variant, past);
+  return lvl==='can' ? endCan(a.can, variant, past, noImpress([it.id]), noLook([it.id])) : endGrow(a.grow, variant, past);
 }
 
 /* ============ 2観点を1文にまとめる（v1.26） ============
@@ -4636,7 +4644,7 @@ function buildText(list, seed){
         const core = joinCore(c, n, seed);
         const variant = i + seed + altBase();
         const past = EVENT_IDS.has(c.it.id);   // 2件とも同じカテゴリ（canJoin）
-        let sent = c.lvl==='can' ? endCan(core, variant, past, noImpress([c.it.id, n.it.id])) : endGrow(core, variant, past);
+        let sent = c.lvl==='can' ? endCan(core, variant, past, noImpress([c.it.id, n.it.id]), noLook([c.it.id, n.it.id])) : endGrow(core, variant, past);
         if(c.lvl==='grow' && firstGrowPos.has(i) && i>0) sent = conn() + sent;
         parts.push(sent);   owners.push([c, n]);
         inJoin.add(i+1);
