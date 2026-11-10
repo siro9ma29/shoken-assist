@@ -251,6 +251,9 @@ details.fold.mini>summary{font-size:13px; font-weight:600;}
 .exclose li{display:flex; align-items:flex-start; gap:8px; padding:5px 0; border-bottom:1px dashed var(--line); font-size:14px;}
 .exclose li:last-child{border-bottom:none;} .exclose li .exs{flex:1;}
 .exlink{text-align:right; margin:-2px 0 4px;}
+/* 文例一覧の書き出し（SN v1.24） */
+.exout{display:flex; flex-wrap:wrap; align-items:center; gap:6px; font-size:13px; font-weight:700; color:var(--sub);}
+.btn.exoutbtn{min-height:34px; font-size:13.5px; padding:4px 12px; flex:none;}
 .exlink .linkbtn{font-size:12.5px; padding:2px 6px;}
 @media (max-width:560px){
   .exbox > *{margin-left:12px; margin-right:12px;}
@@ -1144,6 +1147,10 @@ details.cat>summary{font-size:16px; padding:12px 14px; background:#f6f9fc;}
     </div>
     <div class="exctl">
       <label class="excat">欄 <select id="exSub"></select></label>
+      <span class="exout">文例一覧をExcelに書き出す：
+        <button type="button" class="btn ghost exoutbtn" id="exOutOne">この欄</button>
+        <button type="button" class="btn ghost exoutbtn" id="exOutAll">すべての欄</button>
+      </span>
     </div>
    </div>
     <p class="hint exnote">通知表に載る形の例です。実際の所見では、文末（〜ことができました／〜姿が見られました／〜ています／〜ようになりました）を文ごとに変えたり、2つの項目を1文にまとめたりします。「言葉かけ」「一緒に」の文の頭の言い回し（言葉かけを受けて、／促しを受けて、／教師と一緒に、／手を添えると、 など）も文ごとに変わり、個別の指導計画の手立てを登録したときは、その手立ての言い方（ふりがなを付けると、 など）を使います。文例はこの画面では選べません（項目の画面で選びます）。</p>
@@ -1165,9 +1172,10 @@ details.cat>summary{font-size:16px; padding:12px 14px; background:#f6f9fc;}
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "SN v1.23";
-const APP_DATE    = "2026-11-07";
+const APP_VERSION = "SN v1.24";
+const APP_DATE    = "2026-11-10";
 const APP_HISTORY = [
+  {v:"SN v1.24", d:"2026-11-10", note:"「文例を見る」画面に「文例一覧をExcelに書き出す」（この欄／すべての欄）を追加した。項目ごとに 一人で／言葉かけ／一緒に の3段階の文例を、画面と同じ通知表に載る形で1行に並べ、最後にその欄の結びの一文を付ける。「すべての欄」では、先頭の「すべての欄」シート（欄の列で絞り込める）と、欄ごとのシートを作る。見出しの行は固定・絞り込みつき、印刷は横向き・幅1ページ・見出しを毎ページに。生成の処理と児童の選択は変えていない。"},
   {v:"SN v1.23", d:"2026-11-07", note:"見た目を標準版 v1.60 と同じにした（機能は変えていない）。色を薄いブルーとグレーの地・操作は青・完了は緑・注意はだいだいにし、文字とボタンを大きくした。ステップの表示を丸い番号と線に（終わった手順は✓）、説明文を青い案内の囲みに、下の「戻る」「次へ」を帯に（狭い画面では固定しない）。コピーするとボタンが緑になり画面の上に「コピーしました」と出る。上の帯に「？ 使い方」、保存の状態（保存済み／保存中／未保存の変更）、作業ファイルに保存したときの「保存しました」を出す。選んだ程度（一人で／言葉かけ／一緒に）は塗りつぶし。出席番号と文章の操作に「？」の説明を付けた。CSSは「v1.60：見た目の改善」の囲み、表示の補助は最後の「見た目の補助（v1.60）」の囲み。"},
   "SN v1.22 「委員会」が入った文を確かめるようにした（通常版 v1.54 の CHECK_WORDS と同じ。委員会に入っていない児童もいるため）。",
   "　　　　文章の画面に「確かめてください」を出す（手で直した文章も）。個別の指導計画の文では「要確認：確かめる語（委員会）」の印を付ける（文は使うまま）。",
@@ -4942,6 +4950,154 @@ $('exModal').addEventListener('click', e=>{ if(e.target === $('exModal')) closeE
 document.addEventListener('keydown', e=>{
   if(e.key === 'Escape' && $('exModal').style.display !== 'none') closeExamples();
 });
+/* ---- 文例一覧をExcelに書き出す（SN v1.24） ----
+   画面（renderExamples）と同じ exSentences() の文を、1項目＝1行で並べた .xlsx を作る。
+   外部の部品は使わず、C4th用の書き込みと同じ zipWrite()（無圧縮ZIP）で組み立てる。文字列はインライン文字列。 */
+const EX_NOTE = '通知表に載る形の例です。実際の所見では、文末（〜ことができました／〜姿が見られました など）や、'
+  + '「言葉かけ」「一緒に」の文の頭の言い回しが文ごとに変わります。個別の指導計画の手立てを登録したときは、その手立ての言い方を使います。';
+const EX_HEAD = ['番号','欄','小見出し','項目', ...LEVELS.map(l=>l.label)];
+/* keys の欄の文例を行にする。欄の列は「すべての欄」シートだけで使う */
+function exRows(keys){
+  const rows = []; let no = 0;
+  keys.forEach(k=>{
+    const sub = SUB_BY_KEY[k]; if(!sub) return;
+    sub.groups.forEach(g=>g.items.forEach(it=>{
+      const ex = exSentences(it);
+      rows.push({ kind:'item', cells:[++no, sub.name, g.cat, it.txt, ...LEVEL_ORDER.map(l=>ex[l])] });
+    }));
+  });
+  return rows;
+}
+function exCloserRows(sub){
+  return (sub.closers || []).map((c,i)=>({ kind:'close', cells:['', sub.name, i ? '' : '結びの一文', c] }));
+}
+const xmlEsc = s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))
+  .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '');
+function exCol(i){ let s = ''; i++; while(i){ const m = (i-1)%26; s = String.fromCharCode(65+m) + s; i = Math.floor((i-1)/26); } return s; }
+/* 1枚のシートのXML。withSec=false のときは「欄」の列を省く。返り値の last は最後の列の名前 */
+function exSheetXml(title, rows, withSec){
+  const pick = r => withSec ? r : r.filter((_,i)=>i!==1);
+  const head = pick(EX_HEAD);
+  const nCol = head.length, last = exCol(nCol-1);
+  const widths = withSec ? [6,14,18,26,40,40,40] : [6,18,26,40,40,40];
+  const c = (ref, v, st) => (typeof v === 'number')
+    ? `<c r="${ref}" s="${st}"><v>${v}</v></c>`
+    : (v === '' ? `<c r="${ref}" s="${st}"/>` : `<c r="${ref}" s="${st}" t="inlineStr"><is><t xml:space="preserve">${xmlEsc(v)}</t></is></c>`);
+  const xr = [];
+  xr.push(`<row r="1">${c('A1', title, 3)}</row>`);
+  xr.push(`<row r="2" ht="36" customHeight="1">${c('A2', EX_NOTE, 4)}</row>`);
+  xr.push(`<row r="4">${head.map((h,i)=>c(exCol(i)+'4', h, 2)).join('')}</row>`);
+  let r = 5, lastItem = 4;
+  const merges = [`A2:${last}2`];
+  rows.forEach(row=>{
+    if(row.kind === 'gap'){ r++; return; }
+    const vals = pick(row.cells);
+    // 行の高さ：Excel は開いたときに折り返しの行を広げないことがあるため、字数から見積もって指定する
+    //（全角1字 ≒ 列幅2。結びの一文はつないだ列の幅で数える）
+    const ci = withSec ? 3 : 2;
+    const lines = Math.max(1, ...vals.map((v,i)=>{
+      if(typeof v !== 'string' || !v) return 1;
+      const w = (row.kind==='close' && i===ci) ? widths.slice(ci).reduce((a,b)=>a+b,0) : widths[i];
+      return Math.ceil([...v].length / Math.max(1, Math.floor((w-1)/2)));
+    }));
+    xr.push(`<row r="${r}" ht="${lines*17+4}" customHeight="1">${vals.map((v,i)=>c(exCol(i)+r, v, row.kind==='close' && i===(withSec?2:1) ? 5 : 1)).join('')}</row>`);
+    if(row.kind === 'item') lastItem = r;
+    // 結びの一文は 項目〜最後の列 をつないで1つのセルにする
+    if(row.kind === 'close') merges.push(`${exCol(withSec?3:2)}${r}:${last}${r}`);
+    r++;
+  });
+  return { last, lastItem, xml: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>
+<dimension ref="A1:${last}${Math.max(r-1,4)}"/>
+<sheetViews><sheetView workbookViewId="0"><pane ySplit="4" topLeftCell="A5" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>
+<sheetFormatPr defaultRowHeight="18"/>
+<cols>${widths.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join('')}</cols>
+<sheetData>${xr.join('')}</sheetData>
+<autoFilter ref="A4:${last}${lastItem}"/>
+<mergeCells count="${merges.length}">${merges.map(m=>`<mergeCell ref="${m}"/>`).join('')}</mergeCells>
+<pageMargins left="0.4" right="0.4" top="0.5" bottom="0.5" header="0.3" footer="0.3"/>
+<pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/>
+<headerFooter><oddFooter>&amp;C&amp;P / &amp;N</oddFooter></headerFooter>
+</worksheet>` };
+}
+/* シート名：Excelで使えない文字を除き31字まで。重なったら番号を付ける */
+function exSheetName(name, used){
+  let b = String(name).replace(/[\\\/?*\[\]:]/g,'').slice(0,31) || 'シート', n = b, i = 2;
+  while(used.has(n)){ const t = `(${i++})`; n = b.slice(0, 31 - t.length) + t; }
+  used.add(n); return n;
+}
+/* keys：書き出す欄。all=true なら先頭に「すべての欄」シートを置く。{name, files} を返す */
+function exWorkbook(keys, all){
+  const sheets = [], used = new Set();
+  const stampD = (()=>{ const d = new Date(); return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`; })();
+  const ttl = t => `所見文アシスト（特支・知的） 文例一覧：${t}（${APP_VERSION}・${stampD} 書き出し）`;
+  if(all){
+    const rows = exRows(keys);
+    const cl = [];
+    keys.forEach(k=>{ const sub = SUB_BY_KEY[k]; if(sub) cl.push(...exCloserRows(sub)); });
+    sheets.push({ name: exSheetName('すべての欄', used), ...exSheetXml(ttl('すべての欄'), cl.length ? [...rows, {kind:'gap'}, ...cl] : rows, true) });
+  }
+  keys.forEach(k=>{
+    const sub = SUB_BY_KEY[k]; if(!sub) return;
+    const rows = exRows([k]), cl = exCloserRows(sub);
+    sheets.push({ name: exSheetName(sub.name, used), ...exSheetXml(ttl(sub.name), cl.length ? [...rows, {kind:'gap'}, ...cl] : rows, false) });
+  });
+  const enc = new TextEncoder(), f = (name, xml) => ({ name, data: enc.encode(xml) });
+  const X = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
+  const files = [
+    f('[Content_Types].xml', X + `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">`
+      + `<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>`
+      + `<Default Extension="xml" ContentType="application/xml"/>`
+      + `<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>`
+      + `<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>`
+      + sheets.map((_,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')
+      + `</Types>`),
+    f('_rels/.rels', X + `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">`
+      + `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`),
+    f('xl/workbook.xml', X + `<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">`
+      + `<bookViews><workbookView/></bookViews><sheets>`
+      + sheets.map((s,i)=>`<sheet name="${xmlEsc(s.name)}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join('')
+      + `</sheets><definedNames>`
+      + sheets.map((s,i)=>`<definedName name="_xlnm._FilterDatabase" localSheetId="${i}" hidden="1">'${xmlEsc(s.name.replace(/'/g,"''"))}'!$A$4:$${s.last}$${s.lastItem}</definedName>`
+        + `<definedName name="_xlnm.Print_Titles" localSheetId="${i}">'${xmlEsc(s.name.replace(/'/g,"''"))}'!$4:$4</definedName>`).join('')
+      + `</definedNames></workbook>`),
+    f('xl/_rels/workbook.xml.rels', X + `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">`
+      + sheets.map((_,i)=>`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join('')
+      + `<Relationship Id="rId${sheets.length+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`),
+    // スタイル：0 標準／1 本文（折り返し・上ぞろえ・罫線）／2 見出し（太字・塗り）／3 表題（太字・大）／4 注記（折り返し・灰色）／5 結びの見出し（太字）
+    f('xl/styles.xml', X + `<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">`
+      + `<fonts count="4"><font><sz val="11"/><name val="Meiryo UI"/><family val="3"/><charset val="128"/></font>`
+      + `<font><b/><sz val="11"/><name val="Meiryo UI"/><family val="3"/><charset val="128"/></font>`
+      + `<font><b/><sz val="14"/><name val="Meiryo UI"/><family val="3"/><charset val="128"/></font>`
+      + `<font><sz val="10"/><color rgb="FF555555"/><name val="Meiryo UI"/><family val="3"/><charset val="128"/></font></fonts>`
+      + `<fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>`
+      + `<fill><patternFill patternType="solid"><fgColor rgb="FFDCE8F5"/><bgColor indexed="64"/></patternFill></fill></fills>`
+      + `<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border>`
+      + `<border><left style="thin"><color rgb="FFBFBFBF"/></left><right style="thin"><color rgb="FFBFBFBF"/></right><top style="thin"><color rgb="FFBFBFBF"/></top><bottom style="thin"><color rgb="FFBFBFBF"/></bottom><diagonal/></border></borders>`
+      + `<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>`
+      + `<cellXfs count="6"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>`
+      + `<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>`
+      + `<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>`
+      + `<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>`
+      + `<xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>`
+      + `<xf numFmtId="0" fontId="1" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf></cellXfs>`
+      + `<cellStyles count="1"><cellStyle name="標準" xfId="0" builtinId="0"/></cellStyles></styleSheet>`),
+  ];
+  sheets.forEach((s,i)=>files.push(f(`xl/worksheets/sheet${i+1}.xml`, s.xml)));
+  return { sheets: sheets.map(s=>s.name), files };
+}
+function exportExamples(all){
+  const keys = all ? SUBJECTS.map(s=>s.key) : [exState.key];
+  const wb = exWorkbook(keys, all);
+  const label = all ? 'すべての欄' : SUB_BY_KEY[exState.key].name;
+  download(`所見文アシスト特支_文例一覧_${safeName(label)}_${stamp()}.xlsx`, zipWrite(wb.files),
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  if(typeof setSave === 'function') setSave(`文例一覧（${label}）をExcelに書き出しました`, true);
+}
+window.exWorkbook = exWorkbook;   // テスト用
+$('exOutOne').addEventListener('click', ()=>exportExamples(false));
+$('exOutAll').addEventListener('click', ()=>exportExamples(true));
 /* はじめの画面から：いまの児童の今の欄（なければ国語）で開く */
 $('goExamples').addEventListener('click', ()=>openExamples(state.cur || 'ko', null));
 
