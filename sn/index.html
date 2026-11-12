@@ -1172,9 +1172,10 @@ details.cat>summary{font-size:16px; padding:12px 14px; background:#f6f9fc;}
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "SN v1.24";
-const APP_DATE    = "2026-11-10";
+const APP_VERSION = "SN v1.25";
+const APP_DATE    = "2026-11-12";
 const APP_HISTORY = [
+  {v:"SN v1.25", d:"2026-11-12", note:"個別の指導計画から作る欄は、評価の文のよいところ（できたこと・様子の文）を取り出して文末を整えるだけにした。手立ての言い回し（「ふりがなを付けると、」など）と結びの一文は足さず、めやすの字数を超えても自動では外さない（字数の知らせで伝え、担任が「評価の文から選ぶ」で減らす）。観点が変わるところの「また、」は残す。さらに足したいときは今までどおり「項目を選んで足す」で文例から選ぶ（結びの一文は、計画の文章がない欄だけ）。計画から作らない欄は今までどおり。"},
   {v:"SN v1.24", d:"2026-11-10", note:"「文例を見る」画面に「文例一覧をExcelに書き出す」（この欄／すべての欄）を追加した。項目ごとに 一人で／言葉かけ／一緒に の3段階の文例を、画面と同じ通知表に載る形で1行に並べ、最後にその欄の結びの一文を付ける。「すべての欄」では、先頭の「すべての欄」シート（欄の列で絞り込める）と、欄ごとのシートを作る。見出しの行は固定・絞り込みつき、印刷は横向き・幅1ページ・見出しを毎ページに。生成の処理と児童の選択は変えていない。"},
   {v:"SN v1.23", d:"2026-11-07", note:"見た目を標準版 v1.60 と同じにした（機能は変えていない）。色を薄いブルーとグレーの地・操作は青・完了は緑・注意はだいだいにし、文字とボタンを大きくした。ステップの表示を丸い番号と線に（終わった手順は✓）、説明文を青い案内の囲みに、下の「戻る」「次へ」を帯に（狭い画面では固定しない）。コピーするとボタンが緑になり画面の上に「コピーしました」と出る。上の帯に「？ 使い方」、保存の状態（保存済み／保存中／未保存の変更）、作業ファイルに保存したときの「保存しました」を出す。選んだ程度（一人で／言葉かけ／一緒に）は塗りつぶし。出席番号と文章の操作に「？」の説明を付けた。CSSは「v1.60：見た目の改善」の囲み、表示の補助は最後の「見た目の補助（v1.60）」の囲み。"},
   "SN v1.22 「委員会」が入った文を確かめるようにした（通常版 v1.54 の CHECK_WORDS と同じ。委員会に入っていない児童もいるため）。",
@@ -3079,9 +3080,9 @@ function generate(){
    計画の評価の文がある欄では、評価の文から文章を作る。
    SN v1.12〜：項目を選ぶと、評価の文から作った文章のあとに、選んだ項目の文を足す
    （それまでは項目を選ぶと項目だけの文章に切り替わっていた）。
-     ・計画の文章は、項目がないときと同じ（めやすの字数で外す文も同じ）
+     ・計画の文章は、項目がないときと同じ（SN v1.25〜：よいところの文を文末だけ整えて並べる。字数では外さない）
      ・選んだ項目は、字数に関わらずすべて入れる（担任が足すと決めた文のため）。長くなったら字数の知らせで伝える
-     ・結びの一文は、足すとめやすに近づくときだけ
+     ・結びの一文は、計画の文章がない（項目の文だけの）ときだけ。足すとめやすに近づくときに限る
    文の見分け・言い換え・組み立ては kkCompose、つなぎは kkJoinItems（個別の指導計画の読み取りの囲みの中）。 */
 function kkUse(){ return !!(window.SHELL && SHELL.R.students.length && typeof kkHas === 'function' && kkHas(SHELL.curRec(), state.cur)); }
 function kkOptOf(rec, k){
@@ -3104,7 +3105,8 @@ function snMix(rec, k, o, io, chosen){
   const sub = SUB_BY_KEY[k];
   const it = buildText(chosen, Object.assign({}, io, { subject:sub, name: r.text ? '' : o.name, closer:false }));
   let text = kkJoinItems(r.text, it.text), len = [...text].length, closer = '';
-  const c = o.closer && sub && sub.closers, target = o.len || 150;
+  /* 結びの一文は、計画の文章がない（項目の文だけの）ときだけ（SN v1.25〜） */
+  const c = !r.text && o.closer && sub && sub.closers, target = o.len || 150;
   if(c && c.length){
     const cl = c[(o.seed||0) % c.length], n2 = len + [...cl].length;
     if(Math.abs(n2 - target) < Math.abs(len - target) && n2 <= Math.round(target * 1.15)){ text += cl; len = n2; closer = cl; }
@@ -3139,8 +3141,7 @@ function kkShowNote(r, nItem){
   if(n.teacher) out.push(`教師の手立て・今後の方針の文 ${n.teacher}`);
   if(n.memo)    out.push(`メモ ${n.memo}`);
   if(n.health)  out.push(`健康・家庭に関わる文 ${n.health}`);
-  if(n.cut)     out.push(`字数のめやすで外した文 ${n.cut}`);
-  let h = `個別の指導計画の評価の文から作りました（${n.all}文のうち ${n.use}文を使用）。`;
+  let h = `個別の指導計画の評価の文から、よいところの文を取り出して文末を整えました（${n.all}文のうち ${n.use}文を使用）。`;
   if(nItem) h += `<br>そのあとに、選んだ項目 ${nItem}件 の文を足しました（項目の文は字数に関わらずすべて入れます）。`;
   if(out.length) h += `<br>使わなかった文：${out.join('・')}。`;
   if(n.pend) h += `<br><b class="kkpend">要確認 ${n.pend}文</b>：下の一覧で、所見に載せてよいか確かめてください。`;
@@ -6192,12 +6193,13 @@ function kkRedoPlan(rec, kk, compose){
         act    … どちらとも言えない文
         kuse   … 直しきれなかった書き癖（「本児」「〜してあげる」など）
    3. 通知表の言い方に直す（文末を敬体に、「本児」→呼び方／自分、「〜てあげた」→「〜た」）
-   4. 評価の文に支援の語がないときだけ、計画の手立ての言い回し（PLAN_BY_ID）を文頭に足す
-   5. めやすの字数を超えるときは、優先度の低い文から外す
-      （優先度：できたこと＞様子。各ブロックの最初の文は残す。同じなら後ろの文から外す）
+   SN v1.25〜：評価の文は「よいところを取り出して、文末を整える」だけにする。
+      ・手立ての言い回し（PLAN_BY_ID の phrase）は足さない（v1.24 までは支援の語がない文の頭に足していた）
+      ・めやすの字数を超えても自動では外さない（字数の知らせで伝え、担任が下の一覧で減らす）
+      ・結びの一文は足さない（項目を足したときも、計画の文章がある欄では足さない）
+      ・観点（ブロック）が変わるところの「また、」は残す
 
    担任が文ごとに選んだ結果は rec.kk.pick（"ブロック番号.文番号" → 1 使う／0 使わない）に入る。
-   選んだ文は字数で外さない。
    画面には触らない。テスト：sn/test/kk_bun_test.js（node sn/test/kk_bun_test.js）
    ================================================================== */
 
@@ -6394,7 +6396,9 @@ function kkFix(s, yobi){
   return { t, kuse };
 }
 
-/* ---------- 支援の語・手立ての言い回し ---------- */
+/* ---------- 支援の語・手立ての言い回し ----------
+   SN v1.25 から、計画の文に手立ての言い回しを足すのをやめたので、下の kkOverlap・kkPhraseFits・kkPutPhrase は組み立てでは使っていない
+   （戻すときのために残している）。 */
 const KK_SUPWORD = /(一緒に|いっしょに|手を添え|手添え|介助|支援|補助|手伝|手本|見本|言葉かけ|言葉掛け|声かけ|声掛け|声をかけ|声を掛け|促し|促され|促す|ヒント|見守|個別に|一人で|ひとりで|自分で|自分から|自ら|進んで|教師と|教師が|担任と|担任が|絵カード|視覚|提示)/;
 /* 手立ての言い回しと評価の文が同じことを言っている（「ふりがなを付けると、」＋「ふりがなを付けた文章を〜」）か */
 function kkOverlap(phrase, t){
@@ -6455,23 +6459,13 @@ function kkCompose(rec, k, opt){
     s.use = s.fixed ? !!pick[s.key] : s.on;
     s.cut = false;
   });
-  const phraseOf = bi => { const u = blocks[bi].sup || {}; const p = u.k === 'table' && PLAN_BY_ID[u.id]; return p ? p.phrase : ''; };
 
   /* 選ばれた文から、1つの文章を組み立てる */
   const build = list=>{
-    const usedPhrase = new Set(), doneBlock = new Set();
     let firstBlock = null, mata = false;
     const parts = list.map((s, i)=>{
       let t = s.text;
-      const isHead = i === 0 && !!name;
-      /* 手立ての言い回し：ブロックごとに1回。文に支援の語がなく、同じことを言っていないときだけ。
-         呼び方が付く1文目には付けない（「〇〇さんは、ふりがなを付けると、」は誰が付けたのか曖昧になる） */
-      if(!doneBlock.has(s.b) && !isHead){
-        const ph = phraseOf(s.b);
-        if(ph && !usedPhrase.has(ph) && kkPhraseFits(s) && !KK_SUPWORD.test(s.text) && !kkOverlap(ph, s.text)){ t = kkPutPhrase(ph, t); usedPhrase.add(ph); }
-        doneBlock.add(s.b);
-      }
-      if(isHead) t = name + 'は、' + t;
+      if(i === 0 && name) t = name + 'は、' + t;
       /* 2つ目の観点（ブロック）に移るところに1回だけ「また、」 */
       if(firstBlock === null) firstBlock = s.b;
       else if(!mata && s.b !== firstBlock && blocks[s.b] && blocks[firstBlock] && !/^(また|さらに|そして|まず|はじめ|最初)/.test(t)){
@@ -6483,29 +6477,9 @@ function kkCompose(rec, k, opt){
     return { text, len:[...text].length };
   };
 
-  /* めやすの字数（＋15％）を超える間、優先度の低い文から外す。担任が選んだ文は外さない */
-  const target = opt.len || 150, hi = Math.round(target * 1.15);
-  let list = sents.filter(s=>s.use);
-  const firstOf = new Set(); { const seen = new Set(); list.forEach(s=>{ if(!seen.has(s.b)){ seen.add(s.b); firstOf.add(s.key); } }); }
-  const prio = s => (s.kind === 'pos' ? 3 : 1) + (firstOf.has(s.key) ? 2 : 0);
-  let r = build(list);
-  while(r.len > hi && list.length > 1){
-    const cand = list.filter(s=>!s.fixed);
-    if(!cand.length) break;
-    const low = Math.min(...cand.map(prio));
-    const drop = cand.filter(s=>prio(s) === low).pop();   // 同じ優先度なら後ろの文から
-    drop.cut = true;
-    list = list.filter(s=>s !== drop);
-    r = build(list);
-  }
-  sents.forEach(s=>{ s.use = list.includes(s); });
-
-  /* 結びの一文：足すとめやすに近づくときだけ */
-  const c = opt.closer && opt.subject && opt.subject.closers;
-  if(list.length && c && c.length){
-    const cl = c[(opt.seed||0) % c.length], n2 = r.len + [...cl].length;
-    if(Math.abs(n2 - target) < Math.abs(r.len - target) && n2 <= hi) r = { text: r.text + cl, len: n2, closer: cl };
-  }
+  /* 字数で外す・結びの一文を足すのは SN v1.25 でやめた（使う文はすべて入れる。長いときは字数の知らせで伝える） */
+  const list = sents.filter(s=>s.use);
+  const r = build(list);
   const n = { all: sents.length, use: list.length, cut: sents.filter(s=>s.cut).length };
   ['issue','teacher','memo'].forEach(x=>{ n[x] = sents.filter(s=>s.kind === x && !s.use).length; });
   n.health = sents.filter(s=>s.chk.includes('health') && !s.use).length;

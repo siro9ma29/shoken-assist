@@ -123,19 +123,22 @@ const rec = { kk:{ blocks:[
   { sec:'sa', ev:'', sup:{k:'none'} },
 ], pick:{} } };
 const r1 = A.kkCompose(rec, 'ko', { len:150, subject:A.SUB_BY_KEY.ko });
-eq(r1.text, '名前を呼んでから伝えると、教師の話を最後まで聞き、問いに答えることができました。また、手本を見ながら自分の名前を書けるようになりました。ふりがなを付けた文章を、すらすらと読むことができました。', '国語の組み立て');
+eq(r1.text, '教師の話を最後まで聞き、問いに答えることができました。また、手本を見ながら自分の名前を書けるようになりました。ふりがなを付けた文章を、すらすらと読むことができました。', '国語の組み立て（手立ての言い回しは足さない。SN v1.25〜）');
 eq(r1.n.teacher, 1, '教師の方針の文を外した数');
 const r2 = A.kkCompose(rec, 'sa', { len:150, name:'児童01さん' });
-eq(r2.text, '児童01さんは、具体物を使って、繰り上がりのないたし算ができました。', '呼び方（1文目に手立ては付けない）');
+eq(r2.text, '児童01さんは、具体物を使って、繰り上がりのないたし算ができました。', '呼び方');
 const r3 = A.kkCompose({ kk:{ blocks:[{ sec:'sa', ev:'数を数えることができた。10までのたし算ができた。', sup:{k:'table', id:'yomu1'} }], pick:{} } }, 'sa', { len:150 });
-eq(r3.text, '読み方を一緒に確かめると、数を数えることができました。10までのたし算ができました。', '手立ての言い回しはブロックの最初の文に1回');
+eq(r3.text, '数を数えることができました。10までのたし算ができました。', '文末を整えるだけ（手立ての言い回しは足さない）');
 const r4 = A.kkCompose(rec, 'ko', { len:60 });
-eq(r4.sents.filter(s=>s.use).length, 2, '字数を超えたら外す（各ブロックの最初の文を残し、後ろから）');
-eq(r4.sents.find(s=>s.cut).b, 2, '外したのは最後のブロック');
+eq(r4.sents.filter(s=>s.use).length, 3, '字数を超えても外さない（SN v1.25〜）');
+eq(r4.sents.some(s=>s.cut), false, '字数で外した文はない');
+eq(r4.n.cut, 0, 'n.cut');
 const recP = JSON.parse(JSON.stringify(rec)); recP.kk.pick = { '1.1': 1 };
 eq(A.kkCompose(recP, 'ko', { len:500 }).text.includes('後期も支援していきたい'), true, '担任が選んだ文は入る（言い換えはしない）');
 const r5 = A.kkCompose({ kk:{ blocks:[{ sec:'sh', ev:'町たんけんで、お店の人に質問することができた。', sup:{k:'table', id:'yomu1'} }], pick:{} } }, 'sh', { len:150 });
-eq(r5.text, '町たんけんで、読み方を一緒に確かめると、お店の人に質問することができました。', '場面の後ろに手立てを入れる');
+eq(r5.text, '町たんけんで、お店の人に質問することができました。', '場面の文もそのまま（手立ては入れない）');
+eq(A.kkCompose(rec, 'ko', { len:150, closer:true, subject:A.SUB_BY_KEY.ko, seed:0 }).closer, '', '結びの一文は足さない（SN v1.25〜）');
+eq(A.kkPutPhrase('ふりがなを付けると、', '町たんけんで、質問した。'), '町たんけんで、ふりがなを付けると、質問した。', 'kkPutPhrase（残している関数）');
 eq(A.kkHas(rec, 'sa'), true, 'kkHas');
 eq(A.kkHas(rec, 'on'), false, 'kkHas（計画にない欄）');
 
