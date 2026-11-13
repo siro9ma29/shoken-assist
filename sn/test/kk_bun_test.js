@@ -267,7 +267,6 @@ eq(!!A.SUB_BY_KEY.gg && A.SUB_BY_KEY.gg.name, '外国語', '外国語の欄が�
     ['〇時、〇時半の時刻を読めるようになりました。', 'sa', 'sa7'],
     ['リコーダーの指づかいに気を付けて練習しました。', 'on', 'on9'],
     ['サーキット運動で３分間走り続けることができました。', 'ta', 'ta11'],
-    ['運動会の踊りの練習に意欲的に取り組みました。', 'ta', 'ta10'],
     ['よい言葉を選択肢から選ぶ学習で、ぽかぽか言葉を選べました。', 'do', 'do10'],
     ['畑で野菜の収穫に取り組みました。', 'se', 'se11'],
     ['日直の仕事に喜んで取り組みました。', 'tk', 'tk8'],
@@ -349,6 +348,56 @@ eq(!!A.SUB_BY_KEY.gg && A.SUB_BY_KEY.gg.name, '外国語', '外国語の欄が�
   eq(on('on11').act.includes('教科書の歌'), true, 'v1.27：音楽 on11 は教科書の歌');
   eq(on('on12').act.includes('体を使って楽しく表現'), false, 'v1.27：音楽 on12 は体育の表現運動と重ならない文');
   eq(has('曲の強弱を感じ取って手拍子をしました。', 'on', 'on12'), true, 'v1.27：強弱・手拍子 → on12');
+}
+
+/* 文例の整理（SN v1.28）：体育・道徳・生活単元・行動のようす・家庭 */
+{
+  const S = (text)=>({ text, src: text, use: true });
+  const has = (text, k, id)=>[...A.kkItemHits([S(text)], A.SUB_BY_KEY[k]).keys()].includes(id);
+  const ids = k=>A.SUB_BY_KEY[k].groups.flatMap(g=>g.items.map(it=>it.id));
+  const item = (k, id)=>A.SUB_BY_KEY[k].groups.flatMap(g=>g.items).find(it=>it.id===id);
+  eq(ids('ta').includes('ta10'), false, 'v1.28：体育「運動会の踊りや団体種目」を除いた');
+  eq(item('ta','ta11').txt, '休まずに運動を続ける', 'v1.28：体育 ta11 の表記');
+  eq(/決められた時間/.test(item('ta','ta11').act), false, 'v1.28：体育 ta11 に「決められた時間」がない');
+  eq(has('持久走で休まずに走り続けました。', 'ta', 'ta11'), true, 'v1.28：持久走 → ta11');
+  // 道徳：すべて inner を持ち、「できました」「姿が見られました」で終わらない
+  let bad = 0, cnt = 0;
+  A.SUB_BY_KEY.do.groups.forEach(g=>g.items.forEach(it=>{
+    if(!it.inner || it.inner.length < 2) { bad++; return; }
+    ['solo','verbal','together'].forEach(lvl=>[0,1,2,3].forEach(seed=>{
+      cnt++;
+      const t = A.buildText([{ it, lvl }], { subject:A.SUB_BY_KEY.do, variant:true, regenSeed:seed, name:'', scene:'' }).text;
+      if(/できました|姿が見られました|ています。|ようになりました/.test(t) || !/(気付きました|高まってきました|高まりました)。$/.test(t)) bad++;
+    }));
+  }));
+  eq(bad, 0, `v1.28：道徳の文は心の変化で終わる（${cnt}通り）`);
+  const d1 = item('do','do1');
+  const t2 = A.buildText([{ it:d1, lvl:'solo' }, { it:item('do','do2'), lvl:'solo' }], { subject:A.SUB_BY_KEY.do, join:true, variant:false, name:'', scene:'' }).text;
+  eq(t2, 'あいさつや返事をすると、お互いに気持ちよく過ごせることに気付きました。きまりを守ると、みんなが安心して過ごせることに気付きました。', 'v1.28：道徳は2項目を1文にまとめない');
+  eq(A.exSentences(d1).verbal, '言葉かけを受けて、あいさつや返事をすると、お互いに気持ちよく過ごせることに気付きました。', 'v1.28：道徳の文例を見る');
+  eq(has('役割演技で登場人物を演じました。', 'do', 'do18'), true, 'v1.28：役割演技 → do18');
+  // 生活単元
+  eq(item('se','se1').txt + '|' + item('se','se1').act, 'めあてを知って活動に参加する|活動のめあてを知って参加する', 'v1.28：生活単元「めあて」');
+  // 行動のようす
+  ['gy13','gy14','gy15','gy16','gy17'].forEach(id=>eq(ids('gy').includes(id), true, 'v1.28：行動のようすに ' + id));
+  eq(has('朝のあいさつや返事をしました。', 'gy', 'gy13'), true, 'v1.28：あいさつ → gy13');
+  eq(has('手洗いやうがいを忘れずにしました。', 'gy', 'gy14'), true, 'v1.28：健康 → gy14');
+  eq(has('休み時間に外で遊びました。', 'gy', 'gy15'), true, 'v1.28：体力 → gy15');
+  eq(has('あきらめずに取り組みました。', 'gy', 'gy16'), true, 'v1.28：粘り強さ → gy16');
+  eq(has('誰にでも公平に接しました。', 'gy', 'gy17'), true, 'v1.28：公平 → gy17');
+  // 家庭
+  eq(A.SUB_BY_KEY.kt.groups.map(g=>g.cat).includes('家庭生活'), true, 'v1.28：家庭に「家庭生活」');
+  eq(A.exSentences(item('kt','kt9')).solo, '家族とのふれあいや団らんの大切さに気付くことができました。', 'v1.28：家庭生活の文例');
+  eq(A.lintDB().length, 0, 'v1.28：lintDB 指摘なし');
+  // 道徳には作業の支援の言い回しを付けない
+  let odd = 0;
+  const dos = A.SUB_BY_KEY.do.groups.flatMap(g=>g.items);
+  ['verbal','together'].forEach(lvl=>[0,1,2,3,4,5].forEach(seed=>{
+    const list = dos.slice(0, 5).map(it=>({ it, lvl }));
+    const t = A.buildText(list, { subject:A.SUB_BY_KEY.do, variant:true, regenSeed:seed, name:'', scene:'' }).text;
+    if(/手順|手を添え|同じ動き|見本を示/.test(t)) odd++;
+  }));
+  eq(odd, 0, 'v1.28：道徳に「手順を伝えると」などが付かない');
 }
 
 /* セルの中の折り返しの改行をつなぐ（SN v1.15〜。文はすべて架空） */
