@@ -1010,7 +1010,6 @@ details.cat>summary{font-size:16px; padding:12px 14px; background:#f6f9fc;}
         <span class="hint" style="margin:0;">字前後で調整</span>
       </div>
     </div>
-    <div class="field"><label>結びの一文（身に付いた力）（学級で共通）</label><div class="seg" id="closeSeg"><button data-close="off">付けない</button><button data-close="on" class="on">付ける</button></div></div>
     <div class="field"><label>文のまとめ方（学級で共通）</label><div class="seg" id="joinSeg"><button data-join="off" class="on">1項目＝1文</button><button data-join="on">2項目をまとめる</button></div>
       <p class="hint">同じ支援の程度の項目2件を「〜し、〜」で1文にまとめます。</p></div>
     <div class="field"><label>文末表現のばらつき（学級で共通）</label><div class="seg" id="varSeg"><button data-var="off">そろえる</button><button data-var="on" class="on">変化をつける</button></div></div>
@@ -1172,9 +1171,10 @@ details.cat>summary{font-size:16px; padding:12px 14px; background:#f6f9fc;}
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "SN v1.25";
-const APP_DATE    = "2026-11-12";
+const APP_VERSION = "SN v1.26";
+const APP_DATE    = "2026-11-13";
 const APP_HISTORY = [
+  {v:"SN v1.26", d:"2026-11-13", note:"結びの一文（「〜力が育っています。」など）を付けないようにした。実際の児童の姿と合わないことがあるため。「くわしい設定」の「結びの一文」の切り替えをなくし、文例を見る画面・文例一覧のExcelからも外した。文例のデータ（closers）は戻すときのために残した（未使用）。"},
   {v:"SN v1.25", d:"2026-11-12", note:"個別の指導計画から作る欄は、評価の文のよいところ（できたこと・様子の文）を取り出して文末を整えるだけにした。手立ての言い回し（「ふりがなを付けると、」など）と結びの一文は足さず、めやすの字数を超えても自動では外さない（字数の知らせで伝え、担任が「評価の文から選ぶ」で減らす）。観点が変わるところの「また、」は残す。さらに足したいときは今までどおり「項目を選んで足す」で文例から選ぶ（結びの一文は、計画の文章がない欄だけ）。計画から作らない欄は今までどおり。"},
   {v:"SN v1.24", d:"2026-11-10", note:"「文例を見る」画面に「文例一覧をExcelに書き出す」（この欄／すべての欄）を追加した。項目ごとに 一人で／言葉かけ／一緒に の3段階の文例を、画面と同じ通知表に載る形で1行に並べ、最後にその欄の結びの一文を付ける。「すべての欄」では、先頭の「すべての欄」シート（欄の列で絞り込める）と、欄ごとのシートを作る。見出しの行は固定・絞り込みつき、印刷は横向き・幅1ページ・見出しを毎ページに。生成の処理と児童の選択は変えていない。"},
   {v:"SN v1.23", d:"2026-11-07", note:"見た目を標準版 v1.60 と同じにした（機能は変えていない）。色を薄いブルーとグレーの地・操作は青・完了は緑・注意はだいだいにし、文字とボタンを大きくした。ステップの表示を丸い番号と線に（終わった手順は✓）、説明文を青い案内の囲みに、下の「戻る」「次へ」を帯に（狭い画面では固定しない）。コピーするとボタンが緑になり画面の上に「コピーしました」と出る。上の帯に「？ 使い方」、保存の状態（保存済み／保存中／未保存の変更）、作業ファイルに保存したときの「保存しました」を出す。選んだ程度（一人で／言葉かけ／一緒に）は塗りつぶし。出席番号と文章の操作に「？」の説明を付けた。CSSは「v1.60：見た目の改善」の囲み、表示の補助は最後の「見た目の補助（v1.60）」の囲み。"},
@@ -1504,6 +1504,7 @@ function planPool(subjectKey, lvl, planIds, cat){
           必ず「常体の動詞終止形」で終えること（「〜ている」「〜する姿」は不可）。
           「一人でできる」「言葉かけ」「一緒に」の3段階すべてで
           同じ act を使うので、支援の有無を含まない書き方にすること。 */
+/* closers（結びの一文）：SN v1.26 で使わないことにした。戻すときのために残している */
 const SUBJECTS = [
   {key:"ko", name:"国語", defLen:150, groups:[
     {cat:"聞く・話す", items:[
@@ -2192,8 +2193,6 @@ function buildText(list, opt){
   const sentences = units.map((u,i)=>{
     const lvl = u[0].lvl;
     let v = opt.variant ? (i + seed) : 0;
-    // 結びの一文と語尾（〜ています。）が重なるのを避ける
-    if(opt.closer && i===lastIdx && v % ENDINGS.length === 2) v++;
 
     let core;
     if(u.length===2){
@@ -2224,11 +2223,7 @@ function buildText(list, opt){
     return sent;
   });
 
-  // 3) 結びの一文
-  if(opt.closer && opt.subject && opt.subject.closers && opt.subject.closers.length){
-    const c = opt.subject.closers;
-    sentences.push(c[seed % c.length]);
-  }
+  // 3) 結びの一文は SN v1.26 で付けないことにした（実際の児童の姿と合わないことがあるため）
 
   const text = sentences.join("");
   return { text, len:[...text].length };
@@ -2672,7 +2667,7 @@ const state = {
   name: "",
   variant: true,
   join: false,
-  closer: true,
+  closer: false,    // 結びの一文（SN v1.26〜 常に付けない）
   cur: "ko",
   active: DEFAULT_ACTIVE.slice(),
   plan: [],         // 個別の指導計画から選んだ手立てのID（最大 MAX_PLAN 件）
@@ -2726,7 +2721,7 @@ function load(){
   state.name    = data.name || "";
   state.variant = data.variant !== false;
   state.join    = !!data.join;
-  state.closer  = data.closer !== false;
+  state.closer  = false;   // SN v1.26〜 結びの一文は付けない
   state.active  = Array.isArray(data.active) && data.active.length ? data.active : DEFAULT_ACTIVE.slice();
   state.plan    = (Array.isArray(data.plan) ? data.plan : []).filter(id=>PLAN_BY_ID[id]).slice(0, MAX_PLAN);
   if(data.memo) document.getElementById('memo').value = data.memo;
@@ -3016,12 +3011,6 @@ document.getElementById('sceneChips').addEventListener('click',e=>{
   inp.value = (inp.value.trim() === e.target.dataset.scene) ? "" : e.target.dataset.scene;
   cur().scene = inp.value; updateSceneChips(); save();
 });
-document.getElementById('closeSeg').addEventListener('click',e=>{
-  if(!e.target.dataset.close) return;
-  [...e.currentTarget.children].forEach(b=>b.classList.remove('on'));
-  e.target.classList.add('on');
-  state.closer = e.target.dataset.close==='on'; save();
-});
 document.getElementById('joinSeg').addEventListener('click',e=>{
   if(!e.target.dataset.join) return;
   [...e.currentTarget.children].forEach(b=>b.classList.remove('on'));
@@ -3040,7 +3029,7 @@ function opts(){
   return {
     name: state.name.trim(),
     scene: curSub().scene ? cur().scene.trim() : "",
-    closer: state.closer,
+    closer: false,   // SN v1.26〜 結びの一文は付けない
     join: state.join,
     variant: state.variant,
     regenSeed: state.regenSeed,
@@ -3082,13 +3071,13 @@ function generate(){
    （それまでは項目を選ぶと項目だけの文章に切り替わっていた）。
      ・計画の文章は、項目がないときと同じ（SN v1.25〜：よいところの文を文末だけ整えて並べる。字数では外さない）
      ・選んだ項目は、字数に関わらずすべて入れる（担任が足すと決めた文のため）。長くなったら字数の知らせで伝える
-     ・結びの一文は、計画の文章がない（項目の文だけの）ときだけ。足すとめやすに近づくときに限る
+     ・結びの一文は付けない（SN v1.26〜。v1.25 までは計画の文章がない欄だけ付けていた）
    文の見分け・言い換え・組み立ては kkCompose、つなぎは kkJoinItems（個別の指導計画の読み取りの囲みの中）。 */
 function kkUse(){ return !!(window.SHELL && SHELL.R.students.length && typeof kkHas === 'function' && kkHas(SHELL.curRec(), state.cur)); }
 function kkOptOf(rec, k){
   const f = (rec.secs && rec.secs[k]) || {};
   return { name: String(rec.yobi||'').trim(), len: f.len || (SUB_BY_KEY[k] ? SUB_BY_KEY[k].defLen : 150),
-           closer: state.closer, subject: SUB_BY_KEY[k], seed: f.seed || 0 };
+           closer: false, subject: SUB_BY_KEY[k], seed: f.seed || 0 };
 }
 /* 選んだ項目（Map：項目ID → 支援の程度）を、文を作る形 [{it, lvl}] にする */
 function snChosen(k, selMap){
@@ -3104,14 +3093,9 @@ function snMix(rec, k, o, io, chosen){
   if(!n) return { text:r.text, len:r.len, r, nItem:0 };
   const sub = SUB_BY_KEY[k];
   const it = buildText(chosen, Object.assign({}, io, { subject:sub, name: r.text ? '' : o.name, closer:false }));
-  let text = kkJoinItems(r.text, it.text), len = [...text].length, closer = '';
-  /* 結びの一文は、計画の文章がない（項目の文だけの）ときだけ（SN v1.25〜） */
-  const c = !r.text && o.closer && sub && sub.closers, target = o.len || 150;
-  if(c && c.length){
-    const cl = c[(o.seed||0) % c.length], n2 = len + [...cl].length;
-    if(Math.abs(n2 - target) < Math.abs(len - target) && n2 <= Math.round(target * 1.15)){ text += cl; len = n2; closer = cl; }
-  }
-  return { text, len, r, nItem:n, closer };
+  const text = kkJoinItems(r.text, it.text), len = [...text].length;
+  /* 結びの一文は付けない（SN v1.26〜） */
+  return { text, len, r, nItem:n, closer:'' };
 }
 /* 児童のレコードだけから作る（読み込み直しのとき。画面の今の児童でなくてよい） */
 function snMixRec(rec, k){
@@ -3570,7 +3554,6 @@ function showAnalysis(hits, msg){
 
   // SN v1.4：読み込みは共通の枠組みが行う（load は使わない）
   document.getElementById('nameInput').value = state.name;
-  [...document.querySelectorAll('#closeSeg button')].forEach(b=>b.classList.toggle('on', (b.dataset.close==='on')===state.closer));
   [...document.querySelectorAll('#joinSeg button')].forEach(b=>b.classList.toggle('on', (b.dataset.join==='on')===state.join));
   [...document.querySelectorAll('#varSeg button')].forEach(b=>b.classList.toggle('on', (b.dataset.var==='on')===state.variant));
   buildUseList();
@@ -3706,10 +3689,9 @@ const APP = {
   lenWord(){ return snLenWord(); },
   classCapture(){ return { variant:state.variant, join:state.join, closer:state.closer }; },
   classApply(d){
-    state.variant = d.variant !== false; state.join = !!d.join; state.closer = d.closer !== false;
+    state.variant = d.variant !== false; state.join = !!d.join; state.closer = false;
     document.querySelectorAll('#varSeg button').forEach(b=>b.classList.toggle('on', (b.dataset.var==='on') === state.variant));
     document.querySelectorAll('#joinSeg button').forEach(b=>b.classList.toggle('on', (b.dataset.join==='on') === state.join));
-    document.querySelectorAll('#closeSeg button').forEach(b=>b.classList.toggle('on', (b.dataset.close==='on') === state.closer));
   },
   /* 名簿を読み込んだあとは、学級で使う欄を1回だけ決める */
   afterRoster(){ SHELL.SH.useScope = 'class'; return 'scrUse'; },
@@ -4895,7 +4877,7 @@ function copyText(text, btn, label){
 /* ==================================================================
    文例を見る（SN v1.19。通常版 v1.57 の「文例を見る」を特別支援学級版に合わせたもの）
    欄（教科等）を選ぶと、小見出しごとに項目を並べ、支援の程度3段階（一人で／言葉かけ／一緒に）の
-   文例を通知表に載る形で見せる。最後にその欄の結びの一文も並べる。
+   文例を通知表に載る形で見せる。（結びの一文は SN v1.26 で付けないことにしたので並べない）
    見るだけの画面で、児童の選択（state.subj など）には触らない。文は exSentences()（TEXT-CORE）で作る。
    ================================================================== */
 const exState = { key:'', cat:null };
@@ -4916,12 +4898,7 @@ function renderExamples(){
     }).join('');
     return `<h4 class="excathead" data-gi="${gi}">${esc(g.cat)}</h4>` + items;
   }).join('');
-  const cl = (sub.closers || []);
-  const closeHtml = cl.length
-    ? `<h4 class="excathead">結びの一文（「くわしい設定」で「付ける」にしたとき、最後に1つ付きます）</h4>`
-      + `<div class="exitem exclose"><ul>${cl.map(exLi).join('')}</ul></div>`
-    : '';
-  $('exBody').innerHTML = `<p class="exsum">${esc(sub.name)}：${nItem}項目・${nSent}文${cl.length ? `・結びの一文${cl.length}` : ''}</p>` + html + closeHtml;
+  $('exBody').innerHTML = `<p class="exsum">${esc(sub.name)}：${nItem}項目・${nSent}文</p>` + html;
   $('exBody').querySelectorAll('.excopy').forEach(b=>b.addEventListener('click', ()=>copyText(b.dataset.copy, b, 'コピー')));
 }
 /* key：開いたときに見せる欄（省略時は先頭）。cat：その欄の中で見せる小見出し（そこまで送る） */
@@ -4969,8 +4946,9 @@ function exRows(keys){
   });
   return rows;
 }
+/* 結びの一文は SN v1.26 で付けないことにしたので、文例一覧にも出さない（空を返す） */
 function exCloserRows(sub){
-  return (sub.closers || []).map((c,i)=>({ kind:'close', cells:['', sub.name, i ? '' : '結びの一文', c] }));
+  return [];
 }
 const xmlEsc = s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))
   .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '');
@@ -5165,7 +5143,7 @@ function afterEdit(){
   syncUndo();
 }
 const UNDO_CLICK = '#cats .star, #cats .clr, #regenBtn, #lenSeg button, #clearBtn, #applyAn';
-const EDIT_CLICK = '#cats .star, #lenSeg button, #closeSeg button, #joinSeg button, #varSeg button, #sceneChips button, #applyAn, #clearBtn, #regenBtn';
+const EDIT_CLICK = '#cats .star, #lenSeg button, #joinSeg button, #varSeg button, #sceneChips button, #applyAn, #clearBtn, #regenBtn';
 document.addEventListener('click', e=>{ if(e.target.closest && e.target.closest(UNDO_CLICK)) snapUndo(); }, true);
 document.addEventListener('change', e=>{ if(e.target.closest && e.target.closest('#cats')) snapUndo(); }, true);
 document.addEventListener('change', e=>{ if(e.target.closest && e.target.closest('#cats')) afterEdit(); });

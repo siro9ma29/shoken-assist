@@ -8,7 +8,7 @@ const core = html.slice(html.indexOf('/* ===TEXT-CORE-START==='), html.indexOf('
 const kkStart = html.indexOf('   個別の指導計画（様式3-1 .xlsx）の読み取り');
 const kk = html.slice(html.lastIndexOf('/* ====', kkStart), html.indexOf('</script>', kkStart));
 const ctx = {}; vm.createContext(ctx);
-vm.runInContext(core + '\n' + kk + '\nthis.API = { kkPutPhrase, kkSplit, kkKind, kkPart, kkPolite, kkFix, kkSentsOf, kkCompose, kkHas, kkPending, kkResolve, kkResetPick, kkNameKey, kkMatch, kkDupTo, kkKeepSecs, kkRedoPlan, kkSubjKey, kkJoinItems, kkItemHits, kkItemTail, SUB_BY_KEY, scanMemo, lintDB, exSentences, SUBJECTS, checksOf };', ctx);
+vm.runInContext(core + '\n' + kk + '\nthis.API = { kkPutPhrase, kkSplit, kkKind, kkPart, kkPolite, kkFix, kkSentsOf, kkCompose, kkHas, kkPending, kkResolve, kkResetPick, kkNameKey, kkMatch, kkDupTo, kkKeepSecs, kkRedoPlan, kkSubjKey, kkJoinItems, kkItemHits, kkItemTail, SUB_BY_KEY, scanMemo, lintDB, exSentences, SUBJECTS, checksOf, buildText };', ctx);
 const A = ctx.API;
 
 let ng = 0, n = 0;
@@ -369,6 +369,22 @@ eq(!!A.SUB_BY_KEY.gg && A.SUB_BY_KEY.gg.name, '外国語', '外国語の欄が�
   eq(a[2].chk.includes('word'), false, '確かめる語：ない文には付かない');
   eq(A.checksOf('図書委員会では、本の整理をしました。').length, 1, 'checksOf：委員会');
   eq(A.checksOf('交流学級で発表しました。').length, 0, 'checksOf：なし');
+}
+
+/* 結びの一文は付けない（SN v1.26〜）：closer:true を渡しても、どの欄でも「育っています」などの文が付かない */
+{
+  let bad = 0, cnt = 0;
+  A.SUBJECTS.forEach(sub=>{
+    const it = sub.groups[0].items[0];
+    ['solo','verbal','together'].forEach(lvl=>{
+      [0,1,2,3].forEach(seed=>{
+        cnt++;
+        const r = A.buildText([{ it, lvl }], { closer:true, subject:sub, variant:true, regenSeed:seed, name:'', scene:'' });
+        if((sub.closers||[]).some(c=>r.text.includes(c)) || r.text.includes('育っています')) bad++;
+      });
+    });
+  });
+  eq(bad, 0, `結びの一文は付かない（${cnt}通り）`);
 }
 
 console.log(`${n - ng} / ${n} OK`);
