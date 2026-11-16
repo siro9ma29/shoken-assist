@@ -251,6 +251,31 @@ details.fold.mini>summary{font-size:13px; font-weight:600;}
 .exclose li{display:flex; align-items:flex-start; gap:8px; padding:5px 0; border-bottom:1px dashed var(--line); font-size:14px;}
 .exclose li:last-child{border-bottom:none;} .exclose li .exs{flex:1;}
 .exlink{text-align:right; margin:-2px 0 4px;}
+/* 欄ごとに全員分を見てコピー（SN v1.29。C4thの通知表入力のExcelが欄ごとに分かれているため） */
+.modalbox.scbox{width:min(980px,100%); max-height:94vh; padding:0;}
+.scbox > *{margin-left:20px; margin-right:20px;}
+.sctop{position:sticky; top:0; background:var(--panel); z-index:1; padding-top:14px; border-bottom:1px solid var(--line);}
+.schead{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+.schead h3{margin:0;}
+.scsteps{margin:8px 0 4px; padding-left:1.4em; font-size:13px; color:var(--sub);}
+.scsteps li{margin:1px 0;}
+.sctabs{display:flex; flex-wrap:wrap; gap:6px; padding:8px 0;}
+.sctabs button{font-family:inherit; font-size:14px; padding:6px 12px; border:1px solid var(--line); border-radius:999px;
+  background:var(--panel); color:var(--ink); cursor:pointer;}
+.sctabs button small{color:var(--sub); margin-left:4px; font-size:11.5px;}
+.sctabs button.on{background:var(--accent); border-color:var(--accent); color:#fff;}
+.sctabs button.on small{color:#fff;}
+.sctabs button.full:not(.on){border-color:#9ec7ae;}
+.scctl{display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; padding:4px 0 10px;}
+.scctl .btn{min-height:40px; flex:none;}
+.scctl label{font-size:13px; display:flex; align-items:center; gap:4px; cursor:pointer;}
+.scwarn{font-size:13px; color:var(--warn); margin:0 0 8px;}
+.scwarn:empty{display:none;}
+#scBody{padding:10px 0 20px;}
+#scBody td.tx{color:var(--ink); white-space:pre-wrap; min-width:320px;}
+#scBody tr.off td{color:#b4ae9f;}
+#scBody td.ops button{border:1px solid var(--line); background:var(--panel); border-radius:6px; padding:4px 9px; font-size:12px; font-family:inherit; cursor:pointer;}
+@media (max-width:560px){ .scbox > *{margin-left:12px; margin-right:12px;} }
 /* 文例一覧の書き出し（SN v1.24） */
 .exout{display:flex; flex-wrap:wrap; align-items:center; gap:6px; font-size:13px; font-weight:700; color:var(--sub);}
 .btn.exoutbtn{min-height:34px; font-size:13.5px; padding:4px 12px; flex:none;}
@@ -881,7 +906,7 @@ details.cat>summary{font-size:16px; padding:12px 14px; background:#f6f9fc;}
     <p class="hint">一覧の表示とCSVに使います。</p>
   </div>
   <div class="field">
-    <label for="noIn">出席番号<span class="uitip" tabindex="0" data-tip="所見一覧の並び順と、C4th用Excelに書き込むときの照合に使います。">？</span></label>
+    <label for="noIn">出席番号<span class="uitip" tabindex="0" data-tip="所見一覧と、欄ごとにコピーするときの並び順に使います。C4thの番号と合わせてください。">？</span></label>
     <input type="number" id="noIn" class="bigin" min="1" max="99" style="width:120px;">
   </div>
   <div class="navrow">
@@ -1053,13 +1078,15 @@ details.cat>summary{font-size:16px; padding:12px 14px; background:#f6f9fc;}
     <div class="listcount" id="rosterCount">—</div>
   </div>
   <div class="listtools">
-    <button type="button" class="btn ghost" id="expC4thBtn">C4th用Excelに書き込む</button>
+    <button type="button" class="btn primary" id="secCopyBtn">欄ごとにコピー（C4th用）</button>
     <button type="button" class="btn ghost" id="copyAllBtn">全員分コピー</button>
     <button type="button" class="btn ghost" id="expCsvBtn">CSVで保存</button>
     <button type="button" class="btn primary" id="addStuBtn">＋ 児童を追加</button>
   </div>
   <p class="hint">「全員分コピー」は、番号・名前・各欄の所見をタブで区切ってコピーします（1行目は欄の名前）。Excelに貼り付けると表になります。行を押すと、その児童の欄ごとの所見を開きます。</p>
-  <p class="hint">「C4th用Excelに書き込む」を押すと、C4thに所見を取り込む手順を1つずつ案内します。</p>
+  <p class="hint">「欄ごとにコピー（C4th用）」を押すと、国語・算数などの欄ごとに全員分の所見を並べて見られます。C4thから出した欄ごとのExcelの「所見」の列に、そのまま貼り付けられます。</p>
+  <!-- SN v1.21〜v1.28 の「C4th用Excelに書き込む」は、C4thのExcelが欄ごとに分かれていて1枚にまとめられないため、SN v1.29 で画面から外した（処理 exportC4th は残してある） -->
+  <button type="button" id="expC4thBtn" hidden></button>
   <!-- 個別の指導計画から作ったとき、要確認の文が残っている児童だけに絞る（SN v1.7〜。APP.secFlag があるときだけ出す） -->
   <div class="listfilter" id="listFilter" style="display:none;"></div>
   <div class="listtable" id="listTable"></div>
@@ -1136,6 +1163,33 @@ details.cat>summary{font-size:16px; padding:12px 14px; background:#f6f9fc;}
   </div>
 </div>
 
+<!-- ===== 欄ごとにコピー（SN v1.29）：欄を選ぶと、全員分の所見を番号順に並べ、まとめてコピーできる ===== -->
+<div class="modal" id="scModal" style="display:none;" role="dialog" aria-labelledby="scTitle">
+  <div class="modalbox scbox">
+   <div class="sctop">
+    <div class="schead">
+      <h3 id="scTitle">欄ごとにコピー（C4th用）</h3>
+      <button type="button" class="btn ghost" id="scClose">閉じる</button>
+    </div>
+    <ol class="scsteps">
+      <li>C4thの「通知表入力」→「エクセル出力」で、欄（国語・算数 など）のExcelを出します。</li>
+      <li>下で同じ欄を選び、「所見をコピー」を押します。</li>
+      <li>Excelの「所見」の列の、1人目（いちばん上の児童）のセルを選んで貼り付けます。番号と名前が下の一覧と同じ並びか確かめてください。</li>
+      <li>保存したExcelを、C4thで読み取らせます。ほかの欄も同じようにくり返します。</li>
+    </ol>
+    <div class="sctabs" id="scTabs"></div>
+    <div class="scctl">
+      <button type="button" class="btn primary" id="scCopy">所見をコピー</button>
+      <button type="button" class="btn ghost" id="scCopyNm">番号・名前つきでコピー</button>
+      <label id="scBlankWrap"><input type="checkbox" id="scBlank" checked>この欄を使わない児童も空の行にする</label>
+      <button type="button" class="btn ghost" id="scNext">次の欄へ →</button>
+    </div>
+    <div class="scwarn" id="scWarn"></div>
+   </div>
+    <div id="scBody" class="listtable"></div>
+  </div>
+</div>
+
 <!-- ===== 文例を見る（SN v1.19）：欄を選んで、項目ごとに支援の程度3段階の文例を並べる（見るだけ） ===== -->
 <div class="modal" id="exModal" style="display:none;" role="dialog" aria-labelledby="exTitle">
   <div class="modalbox exbox">
@@ -1171,9 +1225,10 @@ details.cat>summary{font-size:16px; padding:12px 14px; background:#f6f9fc;}
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "SN v1.28";
-const APP_DATE    = "2026-11-13";
+const APP_VERSION = "SN v1.29";
+const APP_DATE    = "2026-11-16";
 const APP_HISTORY = [
+  {v:"SN v1.29", d:"2026-11-16", note:"所見一覧の「C4th用Excelに書き込む」を「欄ごとにコピー（C4th用）」に替えた。C4thの通知表入力のExcelは欄（教科等）ごとに分かれて出てくるため。欄を選ぶと、全員分の所見を番号順に並べて見られ、「所見をコピー」で1行1人の形でコピーできる（Excelの所見の列の1人目のセルに貼り付ける）。その欄を使わない児童も空の行にする（切り替えあり）。番号の抜け・重なり、まだできていない児童・下書きの児童がいれば知らせる。1人ずつのコピー、番号・名前つきのコピー、「次の欄へ」もある。"},
   {v:"SN v1.28", d:"2026-11-13", note:"文例を直した。体育：「運動会の踊りや団体種目」を除いた（行事の内容のため）。「決められた時間、運動を続ける」を「休まずに運動を続ける」に（時間を守る意味に読めないように）。道徳：行動を評価する文（〜できました）をやめ、「〜に気付きました」「〜気持ちが高まってきました」など心の変化を書く文にした（項目ごとに2通り）。生活単元：「目当て」を「めあて」に。行動のようす：あいさつや返事・健康管理（自分の体調に気を付ける）・体力向上（進んで体を動かす）・粘り強さ・誰にでも公平に接する を足した。家庭：小見出し「家庭生活」と「家族とのふれあいや団らんの大切さに気付く」を足した。"},
   {v:"SN v1.27", d:"2026-11-13", note:"文例を直した。「生活」の欄にあった行動のようす・生活単元の内容を、それぞれの欄へ移した（行動のようす：一日の予定・あいさつややり取り・みんなのものを大切に使う／生活単元：交通のきまり・手伝いや仕事・身の回りの道具・校外学習）。ほかの欄と同じ内容（身の回りの始末・友達と遊ぶ・役割を果たす・買い物）は除いた。「生活」は、学校や地域の探検・動植物の世話・季節・自分の成長の発表と、交流学級の項目にした。音楽：「校歌や学年の歌」を「校歌や教科書の歌」に、「音楽に合わせて体で表現する」を「曲の速さや強弱を感じ取って動く」に（体育の表現運動と重ならないように）、「発表会に向けて練習する」を除いた（行事の内容のため）。"},
   {v:"SN v1.26", d:"2026-11-13", note:"結びの一文（「〜力が育っています。」など）を付けないようにした。実際の児童の姿と合わないことがあるため。「くわしい設定」の「結びの一文」の切り替えをなくし、文例を見る画面・文例一覧のExcelからも外した。文例のデータ（closers）は戻すときのために残した（未使用）。"},
@@ -5624,6 +5679,92 @@ function c4Open(){
 }
 function c4CloseModal(){ $('c4thModal').style.display = 'none'; }
 $('expC4thBtn').addEventListener('click', c4Open);
+
+/* ==================================================================
+   欄ごとにコピー（SN v1.29）
+   C4th の特別支援学級の通知表入力は、Excel が欄（教科等）ごとに分かれて出てくる。
+   そこで、欄を1つ選ぶと学級全員分の所見を番号順に並べ、「所見」の列にそのまま貼れる形でコピーする。
+     ・1行＝1人。番号順（sorted()）。その欄を使わない児童も、既定では空の行にする（並びをC4thとそろえるため）
+     ・改行を含む所見は "〜" で囲む（Excelに貼ると1つのセルに入る）。
+     ・番号が飛んでいる・重なっている・まだできていない児童がいれば、上に知らせる
+   ================================================================== */
+const scState = { key:'' };
+function scRows(k){
+  const blank = $('scBlank').checked;
+  return sorted().filter(s=>blank || secsOf(s).includes(k))
+    .map(s=>({ s, use: secsOf(s).includes(k), out: secsOf(s).includes(k) ? (sec(s,k).out || '') : '' }));
+}
+/* Excel に貼る1つのセル：改行やタブがあるとき（と " で始まるとき）だけ "〜" で囲む */
+function scCell(v){
+  v = String(v || '').replace(/\r\n?/g, '\n');
+  return /[\n\t]|^"/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+}
+function scText(k, withName){
+  return scRows(k).map(x=>withName ? [scCell(x.s.no), scCell(x.s.name), scCell(x.out)].join('\t') : scCell(x.out)).join('\r\n');
+}
+function scCount(k){
+  const list = sorted().filter(s=>secsOf(s).includes(k));
+  return { all:list.length, done:list.filter(s=>sec(s,k).out).length, ok:list.filter(s=>secOk(s,k)).length };
+}
+function renderSecCopy(){
+  capture();
+  const ks = usedSecs();
+  if(!ks.includes(scState.key)) scState.key = ks[0] || '';
+  const k = scState.key;
+  $('scTabs').innerHTML = ks.map(x=>{ const c = scCount(x);
+    return `<button type="button" data-k="${esc(x)}" class="${x===k?'on':''}${c.all && c.done===c.all?' full':''}" title="${esc(APP.secName(x))}：できている ${c.done} / ${c.all}人">${esc(APP.secName(x))}<small>${c.done}/${c.all}</small></button>`; }).join('');
+  $('scTabs').querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ scState.key = b.dataset.k; renderSecCopy(); }));
+  const i = ks.indexOf(k);
+  $('scNext').disabled = i < 0 || i >= ks.length-1;
+  $('scCopy').disabled = $('scCopyNm').disabled = !k;
+  if(!k){ $('scBody').innerHTML = '<p class="hint" style="padding:10px;">まだ児童がいません。</p>'; $('scWarn').textContent = ''; return; }
+  // その欄を使わない児童がいなければ、切り替えは出さない
+  $('scBlankWrap').style.display = sorted().some(s=>!secsOf(s).includes(k)) ? '' : 'none';
+  const rows = scRows(k);
+  /* 知らせること */
+  const w = [], c = scCount(k);
+  if(c.done < c.all) w.push(`まだ所見ができていない児童が ${c.all-c.done}人 います（空のセルになります）。`);
+  if(c.ok < c.done) w.push(`「確認済み」になっていない（下書きの）児童が ${c.done-c.ok}人 います。`);
+  const nos = rows.map(x=>parseInt(x.s.no,10));
+  if(nos.some(isNaN)) w.push('番号が入っていない児童がいます。C4thの並びと合うか確かめてください。');
+  const ok = nos.filter(n=>!isNaN(n)), dup = ok.filter((n,j)=>ok.indexOf(n)!==j);
+  if(dup.length) w.push(`同じ番号の児童がいます（${[...new Set(dup)].join('・')}番）。`);
+  const miss = []; for(let n=Math.min(...ok); ok.length && n<=Math.max(...ok); n++) if(!ok.includes(n)) miss.push(n);
+  if(miss.length) w.push(`この一覧にない番号があります（${miss.join('・')}番）。C4thのExcelにその番号の行があるときは、そこで貼り付けがずれます。その番号の行の前と後で分けて貼り付けてください。`);
+  $('scWarn').innerHTML = w.map(t=>`<div>・${esc(t)}</div>`).join('');
+  let html = '<table><thead><tr><th>番号</th><th>名前</th><th>所見</th><th>字数</th><th>状態</th><th></th></tr></thead><tbody>';
+  rows.forEach(x=>{
+    const st = x.use ? secStatus(x.s, k) : '';
+    html += `<tr class="${x.use?'':'off'}" data-id="${esc(x.s.id)}"><td class="no">${esc((x.s.no||'').trim()||'—')}</td><td class="nm">${esc((x.s.name||'').trim()||'（名前なし）')}</td>`
+      + `<td class="tx">${x.use ? esc(x.out) || '<span style="color:var(--sub)">（まだ作っていません）</span>' : '（この欄を使っていません）'}</td>`
+      + `<td class="len">${x.out ? [...x.out].length+'字' : ''}</td><td>${st ? `<span class="badge ${st}">${ST_LABEL[st]}</span>` : ''}</td>`
+      + `<td class="ops">${x.out ? '<button type="button" class="cp">コピー</button>' : ''}</td></tr>`;
+  });
+  $('scBody').innerHTML = html + '</tbody></table>';
+  $('scBody').querySelectorAll('tr[data-id]').forEach(tr=>{
+    const cp = tr.querySelector('.cp');
+    if(cp) cp.addEventListener('click', ()=>{ const s = R.students.find(z=>z.id===tr.dataset.id); copyText(sec(s,k).out || '', cp, 'コピー'); });
+  });
+}
+function openSecCopy(){
+  if(!usedSecs().length){ alert('まだ児童がいません。'); return; }
+  $('scModal').style.display = 'flex';
+  renderSecCopy();
+  setTimeout(()=>$('scCopy').focus(), 0);
+}
+function scDoCopy(withName, btn, label){
+  const k = scState.key; if(!k) return;
+  saveNow();
+  copyText(scText(k, withName), btn, label);
+  if(typeof setSave === 'function') setSave(`${APP.secName(k)}の所見（${scRows(k).length}行）をコピーしました`, true);
+}
+$('secCopyBtn').addEventListener('click', openSecCopy);
+$('scClose').addEventListener('click', ()=>{ $('scModal').style.display = 'none'; });
+$('scModal').addEventListener('keydown', e=>{ if(e.key === 'Escape') $('scModal').style.display = 'none'; });
+$('scCopy').addEventListener('click', ()=>scDoCopy(false, $('scCopy'), '所見をコピー'));
+$('scCopyNm').addEventListener('click', ()=>scDoCopy(true, $('scCopyNm'), '番号・名前つきでコピー'));
+$('scBlank').addEventListener('change', renderSecCopy);
+$('scNext').addEventListener('click', ()=>{ const ks = usedSecs(), i = ks.indexOf(scState.key); if(i >= 0 && i < ks.length-1){ scState.key = ks[i+1]; renderSecCopy(); } });
 $('c4Next0').addEventListener('click', ()=>c4Show(1));
 $('c4Back1').addEventListener('click', ()=>c4Show(0));
 $('c4Back2').addEventListener('click', ()=>{ $('c4Msg1').textContent=''; c4Show(1); });
