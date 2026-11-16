@@ -409,6 +409,14 @@ details.cat>summary{font-size:15px;}
 .filebtn.save.dirty::after{content:"●"; font-size:9px; margin-left:5px; vertical-align:2px;}
 .filestate{display:block; font-size:12px; color:var(--sub); margin-top:10px;}
 .filestate.dirty{color:var(--warn); font-weight:700;}
+/* v1.69：保存先の画面 */
+.fwbox{width:min(600px,100%);}
+.fwbody{font-size:15px; line-height:1.75;}
+.fwbody p{margin:8px 0;}
+.fwbody .fwname{display:inline-block; padding:4px 10px; border-radius:8px; background:var(--bg); border:1px solid var(--line); font-weight:700; word-break:break-all;}
+.fwbody ol{margin:6px 0; padding-left:1.4em;}
+.fwbody .hint{font-size:13px;}
+.fwbtns{display:flex; flex-wrap:wrap; gap:10px; justify-content:flex-end; margin-top:16px;}
 .filetoast{position:fixed; left:50%; bottom:18px; transform:translateX(-50%); z-index:50; display:flex; align-items:center; gap:10px; flex-wrap:wrap;
   width:max-content; max-width:92vw; padding:10px 14px; border-radius:10px; background:var(--panel); border:2px solid var(--warn); box-shadow:0 6px 24px rgba(0,0,0,.15); font-size:14px;}
 .filetoast .btn{padding:6px 14px; font-size:13.5px; white-space:nowrap;}
@@ -648,6 +656,7 @@ details.cat>summary{font-size:16px; padding:12px 14px; background:#f6f9fc;}
       <span class="filebox">
         <button type="button" class="filebtn" id="fileOpenBtn" title="作業ファイル（.json）を開いて続きをする">開く</button>
         <button type="button" class="filebtn save" id="fileSaveBtn" title="作業ファイルに保存する（Ctrl＋S）">保存</button>
+        <button type="button" class="filebtn" id="fileWhereBtn" title="作業ファイルをどこに保存するかを確かめる・変える">保存先</button>
       </span>
       <button type="button" class="uihelp" id="uiHelp" title="使い方の案内を開きます">？ 使い方</button>
     </nav>
@@ -683,7 +692,7 @@ details.cat>summary{font-size:16px; padding:12px 14px; background:#f6f9fc;}
     <button type="button" class="linkbtn" id="goExamples">文例を見る</button>
   </div>
   <div class="note small">
-    入力した内容は、このパソコンのブラウザの中に自動で保存されます。上の「保存」を押すと作業ファイル（.json）にも保存でき、一度保存したファイルには、そのあとの変更も自動で上書きされます。<b>共有のパソコンでは、作業のあと「所見一覧」の「くわしい設定」から「学級をすべて消す」を押してください。</b>
+    入力した内容は、このパソコンのブラウザの中に自動で保存されます。上の「保存」を押すと、保存する場所（フォルダ）とファイル名を選んで作業ファイル（.json）にも保存でき、一度保存したファイルには、そのあとの変更も自動で上書きされます。どこに保存しているかは、上の「保存先」で確かめたり変えたりできます。<b>共有のパソコンでは、作業のあと「所見一覧」の「くわしい設定」から「学級をすべて消す」を押してください。</b>
   </div>
 </section>
 
@@ -979,7 +988,7 @@ details.cat>summary{font-size:16px; padding:12px 14px; background:#f6f9fc;}
       <button id="impWorkBtn">作業ファイルを開く</button>
       <button id="wipeBtn" class="danger">学級をすべて消す</button>
     </div>
-    <p class="hint">別のパソコンで続けるとき、控えを残すときは作業ファイルを使います。ふだんは画面上の「保存」で、決めたファイルに上書き保存できます。「名前を付けて保存」は、別のファイルに分けて保存したいときに使います。</p>
+    <p class="hint">別のパソコンで続けるとき、控えを残すときは作業ファイルを使います。ふだんは画面上の「保存」で、決めたファイルに上書き保存できます。「名前を付けて保存」は、別のファイルに分けて保存したいときに使います。保存先は画面上の「保存先」でも確かめたり変えたりできます。</p>
   </details>
   <div class="note small">
     <b>共有のパソコンでは、作業が終わったら「学級をすべて消す」を押してください。</b>転記の前に、必ず担任が一人一人の文章を確かめてください。
@@ -991,6 +1000,14 @@ details.cat>summary{font-size:16px; padding:12px 14px; background:#f6f9fc;}
 </main>
 
 <footer class="appfoot"><span class="filestate" id="fileState"></span><span class="savestate ok" id="saveState">自動保存：オン</span></footer>
+<!-- v1.69：作業ファイルの保存先を確かめる・変える -->
+<div class="modal" id="fileWhereModal" style="display:none;" role="dialog" aria-labelledby="fileWhereTitle">
+  <div class="modalbox fwbox">
+    <h3 id="fileWhereTitle">作業ファイルの保存先</h3>
+    <div id="fileWhereBody" class="fwbody"></div>
+    <div class="navrow fwbtns" id="fileWhereBtns"></div>
+  </div>
+</div>
 <div class="filetoast" id="fileToast" style="display:none;">
   <span id="fileToastMsg"></span>
   <button type="button" class="btn primary" id="fileToastSave">保存する</button>
@@ -1130,9 +1147,10 @@ details.cat>summary{font-size:16px; padding:12px 14px; background:#f6f9fc;}
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "v1.68";
+const APP_VERSION = "v1.69";
 const APP_DATE    = "2026-11-10";
 const APP_HISTORY = [
+  {v:"v1.69", d:"2026-11-17", note:"作業ファイル（.json）の保存先が分かり、選べるようにした。(1) 画面上の「開く」「保存」の横に「保存先」ボタンを置いた。押すと、いまの保存先のファイル名を出し、「別の場所を選んで保存」で保存する場所（フォルダ）とファイル名を選び直せる。「保存先を外す」もできる。まだ決めていなければ「保存先を選んで保存」を出す。(2) 画面を開き直して最初に「保存」を押したとき、前回の保存先に黙って上書きせず、「このファイルに保存」「別の場所を選んで保存」を選べるようにした。(3) 保存する場所を選ぶ画面を出せないブラウザ（機能がない・設定で止められている）では、従来どおりダウンロードで保存するが、最初の1回に「ダウンロード」フォルダに保存されること・ファイル名・毎回保存場所を選ぶためのブラウザの設定を知らせる。保存したあとは画面下と「保存しました」の知らせに「ダウンロード」フォルダのファイル名を出す。(4) 選ぶ画面を出せなかったときは、エラーにせずダウンロードで保存する（開くときは、ふつうのファイル選択で開く）。"},
   {v:"v1.68", d:"2026-11-10", note:"体育の「できる」の文を学年別・領域別にした（段階2）。(1) 勤務校の年間指導計画（体育の単元配当表）から、1〜6年の各学年に12〜17の学習内容（例：1年「多様な動きをつくる運動遊び（なわとび）」、4年「ゴール型ゲーム（タグラグビー・ポートボール）」、6年「走り高跳び」「保健（病気の予防）」）を用意した（GRADE_TEXT の k_l_tai・k_m_tai・k_h_tai。各学習内容の知識・技能／思考・判断・表現／主体的に学習に取り組む態度の文と、3観点の文・まとめた文）。(2) 国語と同じく、「取り上げる学習内容」の選ぶ欄は領域ごと（体つくり運動・器械運動・陸上運動・ボール運動・表現運動・保健・スケートなど）に分けて出す。(3) 出席番号で自動に選ぶときは全件から選び、続く番号の児童は別の領域になる。(4) 4年の保健は、計画では3年と同じ「健康な生活」だが、学習指導要領に合わせて「体の発育・発達」にした。(5) 伸長中の文は学年帯のまま。"},
   {v:"v1.67", d:"2026-11-10", note:"算数の学習内容の文の文末に「様子が見られました」を使わないようにした（しろさんの希望）。算数（k_l_san・k_m_san・k_h_san）の観点が入る「できる」の文では、文末の候補の2つ目（〜様子が見られました）の代わりに1つ目（〜ことができました／〜できました）を使う（LOOK_END・noLook()）。2観点をまとめた文も同じ。ほかの教科・項目の文末は変えていない。"},
   {v:"v1.66", d:"2026-11-10", note:"取り上げる学習内容は「決定する」を押すまで赤字のままにした（v1.63 は選んだだけで黒になっていた）。(1) 選ぶ欄で学習内容を変えても、文章は変わるが赤字のまま。「決定する」を押すと黒になる。(2) 状態は「自動（出席番号）」「選んだ（まだ決定していません）」「✓ 決定しました」の3つ。決定したあとに選び直すと、また赤字に戻る。「自動に戻す」も使える。(3) 項目の画面の「取り上げる学習内容」にも「決定する」ボタンを付け、決定するまで赤で示す。(4) 決定したかどうかを児童ごとに保存する（unitOk）。v1.65 以前のデータで学習内容を選んであった教科は、決定したものとして扱う。"},
@@ -5652,9 +5670,10 @@ function download(filename, text, mime){
 function exportWork(){
   saveNow();
   const cls = safeName(roster.cls) || '学級';
-  download(`所見文アシスト_作業_${cls}_${stamp()}.json`,
-           JSON.stringify(serialize(), null, 1), 'application/json');
+  const name = `所見文アシスト_作業_${cls}_${stamp()}.json`;
+  download(name, JSON.stringify(serialize(), null, 1), 'application/json');
   setSaveState(`作業ファイルを書き出しました（${roster.students.length}人分）`, true);
+  return name;
 }
 
 /* CSV は Excel で開くため、先頭に BOM を付け、改行を CRLF にする。
@@ -7991,7 +8010,12 @@ function navBoot(){
    ================================================================== */
 const FS_OK = typeof window.showSaveFilePicker === 'function';
 const FILE_REMIND_MS = 10 * 60 * 1000;   // 保存していない変更を知らせるまでの時間
-const fileSt = { handle:null, name:'', granted:false, checked:false, fp:null, savedAt:0, dirtySince:0, remindedAt:0, timer:null, busy:false };
+const fileSt = { handle:null, name:'', granted:false, checked:false, fp:null, savedAt:0, dirtySince:0, remindedAt:0, timer:null, busy:false,
+  dlName:'',            // v1.69：ダウンロードで保存したときのファイル名
+  pickerBlocked:false   // v1.69：保存先を選ぶ画面を出せなかった（ブラウザの設定・制限など）
+};
+const FILE_DL_TOLD_KEY = 'shoken_assist_dl_told';   // v1.69：ダウンロードで保存することを一度知らせたか
+function fsUsable(){ return FS_OK && !fileSt.pickerBlocked; }
 const FILE_TYPES = [{ description:'所見文アシストの作業ファイル', accept:{ 'application/json':['.json'] } }];
 
 /* 保存の中身の「指紋」（保存日時は除く）。ファイルに保存したときの指紋と比べて未保存かを決める */
@@ -8057,20 +8081,104 @@ async function fileWrite(h){
 }
 function fileSuggestName(){ return `所見文アシスト_作業_${safeName(roster.cls) || '学級'}.json`; }
 
-/* 「保存」。asNew＝名前を付けて保存 */
-async function fileSave(asNew){
-  if(fileSt.busy) return;
-  saveNow();
-  if(!FS_OK){
-    // ファイル保存の機能がないブラウザ：従来どおり日時入りのファイルをダウンロードする
-    exportWork();
-    fileSt.fp = fileFingerprint(); fileSt.savedAt = Date.now(); fileSt.dirtySince = 0;
-    fileRender();
-    return;
+/* v1.69：保存先を確かめる・変える画面。押したボタンの値（閉じたときは null）を返す。
+   mode：'info'（「保存先」ボタン）／'first'（この画面で初めて、前回の保存先に保存するとき）／
+         'dl'（ダウンロードで保存することを初めて知らせるとき）／'blocked'（保存先を選ぶ画面を出せなかったとき） */
+function fileWhereAsk(mode){
+  return new Promise(res=>{
+    const m = document.getElementById('fileWhereModal');
+    const body = document.getElementById('fileWhereBody'), btns = document.getElementById('fileWhereBtns');
+    const esc = t=>String(t).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const DL_HOW = `<p class="hint">保存する場所を毎回選びたいときは、ブラウザの右上の「…」（または「︙」）→「設定」→「ダウンロード」で、`
+      + `<b>ダウンロードの前に保存場所を確認する設定</b>をオンにしてください。そのあとは「保存」を押すたびに、保存する場所を選ぶ画面が出ます。</p>`;
+    const dlName = `所見文アシスト_作業_${esc(safeName(roster.cls) || '学級')}_（日時）.json`;
+    let html, b;
+    if(mode === 'blocked' || mode === 'dl' || (mode === 'info' && !fsUsable())){
+      html = (mode === 'blocked'
+          ? `<p>保存する場所を選ぶ画面を出せませんでした（ブラウザの設定で止められている可能性があります）。</p>`
+          : `<p>このブラウザでは、アプリから保存する場所を選ぶ画面を出せません。</p>`)
+        + `<p>作業ファイルは、ブラウザの<b>ダウンロードの保存先</b>（ふつうは<b>「ダウンロード」フォルダ</b>）に、次の名前で保存されます。</p>`
+        + `<p><span class="fwname">${dlName}</span></p>`
+        + (fileSt.dlName ? `<p class="hint">前回の保存：<span class="fwname">${esc(fileSt.dlName)}</span></p>` : '')
+        + DL_HOW
+        + `<p class="hint">保存したあとで、ファイルをエクスプローラーで好きなフォルダ（共有フォルダなど）へ移してもかまいません。続きをするときは「開く」でそのファイルを選びます。</p>`;
+      b = [['dl', mode === 'info' ? 'いま保存する' : '保存する', 'primary'], [null, mode === 'info' ? '閉じる' : 'やめる', 'ghost']];
+    }else if(mode === 'first'){
+      html = `<p>前回と同じ作業ファイルに上書き保存します。</p>`
+        + `<p><span class="fwname">${esc(fileSt.name)}</span></p>`
+        + `<p class="hint">ブラウザの仕組みで、フォルダの場所は画面に出せません。このファイルは、前に保存先を選んだときのフォルダにあります。</p>`
+        + `<p>別の場所やファイル名にするときは「別の場所を選んで保存」を押してください。</p>`;
+      b = [['same', 'このファイルに保存', 'primary'], ['pick', '別の場所を選んで保存', 'ghost'], [null, 'やめる', 'ghost']];
+    }else if(fileSt.handle){
+      html = `<p>いまの保存先（作業ファイル）：</p>`
+        + `<p><span class="fwname">${esc(fileSt.name)}</span>${fileSt.savedAt ? `　<span class="hint">${hhmm(fileSt.savedAt)} 保存</span>` : ''}</p>`
+        + `<p class="hint">ブラウザの仕組みで、フォルダの場所は画面に出せません。このファイルは、保存先を選んだときのフォルダにあります。</p>`
+        + `<p>「別の場所を選んで保存」を押すと、保存する場所（フォルダ）とファイル名を選び直せます。そのあとの変更は、新しく選んだファイルに保存されます。</p>`;
+      b = [['pick', '別の場所を選んで保存', 'primary'], ['off', '保存先を外す', 'ghost'], [null, '閉じる', 'ghost']];
+    }else{
+      html = `<p>まだ保存先を決めていません。</p>`
+        + `<p>「保存先を選んで保存」を押すと、<b>保存する場所（フォルダ）とファイル名を選ぶ画面</b>が出ます。共有フォルダやUSBメモリも選べます。</p>`
+        + `<p class="hint">一度選ぶと、そのあとの変更は同じファイルに自動で上書きされます。</p>`;
+      b = [['pick', '保存先を選んで保存', 'primary'], [null, '閉じる', 'ghost']];
+    }
+    body.innerHTML = html;
+    btns.innerHTML = '';
+    b.forEach(([v, label, cls])=>{
+      const e = document.createElement('button');
+      e.type = 'button'; e.className = 'btn ' + cls; e.textContent = label;
+      if(v) e.dataset.v = v;
+      e.addEventListener('click', ()=>close(v));
+      btns.appendChild(e);
+    });
+    function onKey(e){
+      if(e.key === 'Escape'){ e.preventDefault(); close(null); }
+      if((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) e.preventDefault();
+      if(e.key !== 'Tab' && e.key !== 'Enter' && e.key !== ' ') e.stopPropagation();
+    }
+    function close(v){
+      m.style.display = 'none';
+      document.removeEventListener('keydown', onKey, true);
+      res(v);
+    }
+    document.addEventListener('keydown', onKey, true);
+    m.style.display = 'flex';
+    const f = btns.querySelector('.primary'); if(f) f.focus();
+  });
+}
+function fileWhereOpen(){ return document.getElementById('fileWhereModal').style.display !== 'none'; }
+
+/* v1.69：保存先を選べないとき（ブラウザに機能がない・止められている）は、ダウンロードで保存する。
+   どこに保存されるかを最初の1回（と、選ぶ画面を出せなかったとき）に知らせる */
+async function fileDownloadSave(blocked){
+  let told = false;
+  try{ told = localStorage.getItem(FILE_DL_TOLD_KEY) === '1'; }catch(e){}
+  if(!told || blocked){
+    const a = await fileWhereAsk(blocked ? 'blocked' : 'dl');
+    if(a !== 'dl') return false;
+    try{ localStorage.setItem(FILE_DL_TOLD_KEY, '1'); }catch(e){}
   }
+  const name = exportWork();
+  fileSt.dlName = name;
+  fileSt.fp = fileFingerprint(); fileSt.savedAt = Date.now(); fileSt.dirtySince = 0;
+  setSaveState(`「ダウンロード」フォルダに「${name}」を保存しました（${roster.students.length}人分）`, true);
+  fileRender();
+  return true;
+}
+
+/* 「保存」。asNew＝名前を付けて保存（保存先を選び直す） */
+async function fileSave(asNew){
+  if(fileSt.busy || fileWhereOpen()) return;
+  saveNow();
+  if(!fsUsable()){ await fileDownloadSave(false); return; }
   fileSt.busy = true;
   try{
     let h = asNew ? null : fileSt.handle;
+    // v1.69：この画面で初めて、前回の保存先に保存するときは、どのファイルに保存するかを見せて確かめる
+    if(h && !fileSt.checked){
+      const a = await fileWhereAsk('first');
+      if(!a) return;
+      if(a === 'pick') h = null;
+    }
     if(h && !(await filePermission(h, true))) h = null;
     // この画面を開いてから初めて上書きするときは、ほかのパソコンでファイルが保存されていないかを確かめる
     if(h && !fileSt.checked){
@@ -8081,12 +8189,21 @@ async function fileSave(asNew){
         if(!confirm(`作業ファイル「${h.name}」は、このパソコンで最後に保存したあとに、ほかで保存されています（別のパソコンで続きをした可能性があります）。\n\n`
           + `このまま上書きすると、そちらの変更は消えます。\n`
           + `上書きしてよろしいですか。\n\n※ そちらの内容を使うときは「キャンセル」して、「開く」でファイルを開いてください。`)){
-          fileSt.busy = false; return;
+          return;
         }
       }
     }
     if(!h){
-      h = await window.showSaveFilePicker({ suggestedName: fileSuggestName(), types: FILE_TYPES });
+      try{
+        h = await window.showSaveFilePicker({ suggestedName: fileSuggestName(), types: FILE_TYPES });
+      }catch(e){
+        if(e && e.name === 'AbortError') throw e;
+        // v1.69：保存先を選ぶ画面を出せなかった → ダウンロードで保存する（この画面を開いている間は以後もダウンロード）
+        fileSt.pickerBlocked = true;
+        fileSt.busy = false;
+        await fileDownloadSave(true);
+        return;
+      }
     }
     await fileWrite(h);
     fileConnect(h);
@@ -8104,12 +8221,32 @@ async function fileSave(asNew){
   }
 }
 
+/* v1.69：「保存先」ボタン */
+async function fileWhere(){
+  if(fileSt.busy || fileWhereOpen()) return;
+  const a = await fileWhereAsk('info');
+  if(a === 'pick') fileSave(true);
+  else if(a === 'dl'){ try{ localStorage.setItem(FILE_DL_TOLD_KEY, '1'); }catch(e){} fileSave(false); }
+  else if(a === 'off'){
+    const n = fileSt.name;
+    fileDisconnect();
+    setSaveState(`保存先（${n}）を外しました。次に「保存」を押すと、保存する場所を選ぶ画面が出ます`, true);
+  }
+}
+
 /* 「開く」 */
 async function fileOpen(){
-  if(!FS_OK){ document.getElementById('importFile').click(); return; }
+  if(!fsUsable()){ document.getElementById('importFile').click(); return; }
   if(fileDirty() && !confirm("いまの内容に、作業ファイルへ保存していない変更があります。\n先に「保存」しなくてよろしいですか。")) return;
   try{
-    const [h] = await window.showOpenFilePicker({ types: FILE_TYPES, multiple:false });
+    let h;
+    try{ [h] = await window.showOpenFilePicker({ types: FILE_TYPES, multiple:false }); }
+    catch(e){
+      if(e && e.name === 'AbortError') throw e;
+      fileSt.pickerBlocked = true;   // v1.69：選ぶ画面を出せない → ふつうのファイル選択で開く
+      document.getElementById('importFile').click();
+      return;
+    }
     const text = await (await h.getFile()).text();
     importText(text, ()=>{
       fileConnect(h);
@@ -8157,8 +8294,12 @@ function fileRender(){
     if(fileSt.savedAt) msg += `（${hhmm(fileSt.savedAt)} 保存）`;
     if(dirty) msg += fileSt.granted ? '　変更を保存しています…' : '　保存していない変更があります（「保存」を押してください）';
     else if(fileSt.granted) msg += '　変更は自動で上書きされます';
+  }else if(!fsUsable()){
+    // v1.69：ダウンロードで保存するとき
+    if(fileSt.dlName && !dirty) msg = `「ダウンロード」フォルダに保存しました：${fileSt.dlName}（${hhmm(fileSt.savedAt)}）`;
+    else if(dirty) msg = '作業ファイルに保存していない変更があります（「保存」を押すと「ダウンロード」フォルダに保存されます）';
   }else if(dirty){
-    msg = '作業ファイルに保存していない変更があります（画面上の「保存」で保存できます）';
+    msg = '作業ファイルに保存していない変更があります（「保存」を押すと、保存する場所を選べます）';
   }
   el.textContent = msg;
   el.classList.toggle('dirty', dirty && !(fileSt.handle && fileSt.granted));
@@ -8180,6 +8321,7 @@ document.getElementById('fileToastLater').addEventListener('click', ()=>{ docume
 
 document.getElementById('fileSaveBtn').addEventListener('click', ()=>fileSave(false));
 document.getElementById('fileOpenBtn').addEventListener('click', fileOpen);
+document.getElementById('fileWhereBtn').addEventListener('click', fileWhere);   // v1.69
 document.getElementById('goOpenFile').addEventListener('click', fileOpen);
 document.addEventListener('keydown', e=>{
   if((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && (e.key === 's' || e.key === 'S')){
@@ -8280,7 +8422,8 @@ window.addEventListener('beforeunload', e=>{
       if(lastSavedAt === null) lastSavedAt = fileSt.savedAt;
       if(fileSt.savedAt && fileSt.savedAt !== lastSavedAt){
         lastSavedAt = fileSt.savedAt;
-        uiToast('✓', '保存しました' + (fileSt.name ? '（' + fileSt.name + '）' : ''));
+        uiToast('✓', fileSt.name ? '保存しました（' + fileSt.name + '）'
+          : fileSt.dlName ? '「ダウンロード」フォルダに保存しました' : '保存しました');
       }
       if(!has){ badge.style.display = 'none'; return; }
       const auto = !!(fileSt.handle && fileSt.granted);
