@@ -335,6 +335,20 @@ details.fold.mini>summary{font-size:13px; font-weight:600;}
 .handbar button.pri{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:700;}
 #scrDraft.editing .tools, #scrDraft.editing .navrow, #scrDraft.editing #draftFold{opacity:.35; pointer-events:none;}
 .handmark{display:inline-block; margin-left:4px; font-size:11px; color:var(--accent);}
+/* v1.70：所見文の固定 */
+.lockt{background:#e9edf3; border-bottom:2px solid #8593a6; border-radius:3px;}
+.lockbar{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:10px; padding:9px 12px;
+  border:1px solid var(--line); border-radius:8px; background:#f6f7f9; font-size:13px; line-height:1.6;}
+.lockbar .lklab{font-weight:700; color:#4a586b;}
+.lockbar button{padding:6px 12px; border:1px solid var(--line); border-radius:8px; background:var(--panel);
+  font-size:13px; cursor:pointer; font-family:inherit;}
+.lockbar button.on{background:#5b6b80; border-color:#5b6b80; color:#fff;}
+.lockbar .lknote{flex-basis:100%; color:var(--muted, #666); font-size:12px;}
+#scrDraft.editing .lockbar{opacity:.35; pointer-events:none;}
+.lockmark{display:inline-block; margin-left:4px; padding:1px 6px; border-radius:6px; font-size:11.5px; color:#fff; background:#5b6b80; white-space:nowrap;}
+.lockall{display:flex; gap:8px; flex-wrap:wrap; margin:8px 0;}
+.lockall button{padding:7px 12px; border:1px solid var(--line); border-radius:8px; background:var(--panel); font-size:13px; cursor:pointer; font-family:inherit;}
+.itemslock{display:block; margin-top:4px; font-size:12.5px; color:#4a586b;}
 #scrDraft .tools button{padding:9px 14px; font-size:13.5px;}
 /* 項目の行（1ページ分）。ボタンを大きくし、「選ばない」を足す */
 #scrItems .cat-divider{display:none;}
@@ -913,6 +927,7 @@ details.cat>summary{font-size:16px; padding:12px 14px; background:#f6f9fc;}
     <button id="undoDraft" disabled>元に戻す</button>
     <span class="uitip" tabindex="0" data-tip="「別の言い方にする」は、同じ内容で書き出しや文末を変えます。「文章を手で直す」で直した文章は、聞かずに消えることはありません。">？</span>
   </div>
+  <div class="lockbar" id="lockBar" style="display:none;"></div>
   <div class="navrow">
     <button type="button" class="btn ghost" id="draftSub"></button>
     <span class="navgrp">
@@ -978,6 +993,15 @@ details.cat>summary{font-size:16px; padding:12px 14px; background:#f6f9fc;}
   </div>
   <p class="hint">「全員分コピー」は、番号・名前・所見をタブで区切ってコピーします。Excelに貼り付けると表になります。行を押すと、その児童の文章を開きます。</p>
   <p class="hint">「C4th用Excelに書き込む」を押すと、C4thに所見を取り込む手順を1つずつ案内します。</p>
+  <details class="fold" id="lockFold">
+    <summary>所見文の固定（生活面だけ・学習面だけを先に確定する）</summary>
+    <p class="hint">固定した部分の文は、成績一覧を読み込み直しても変わりません。固定していない面の文だけを作り直します。たとえば、生活面の評価だけの成績一覧で作って生活面を固定し、あとで学習面も入った成績一覧を読み込むと、生活面の文はそのままで学習面の文が前に入ります。字数はめやすを超えることがあるので、最後に整えてください。一人ずつ固定するときは、文章の確認画面の「固定」の欄を使います。</p>
+    <div class="lockall">
+      <button type="button" id="lockAllLife">文章のある全員の生活面を固定</button>
+      <button type="button" id="lockAllLearn">文章のある全員の学習面を固定</button>
+      <button type="button" id="unlockAll">全員の固定を外す</button>
+    </div>
+  </details>
   <p class="autosum" id="autoSum" style="display:none;"></p>
   <p class="dupsum" id="dupSum" style="display:none;"></p>
   <div class="listtable" id="listTable"></div>
@@ -1147,9 +1171,10 @@ details.cat>summary{font-size:16px; padding:12px 14px; background:#f6f9fc;}
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "v1.69";
+const APP_VERSION = "v1.70";
 const APP_DATE    = "2026-11-10";
 const APP_HISTORY = [
+  {v:"v1.70", d:"2026-11-20", note:"所見文の一部を固定できるようにした（生活面を先に確定し、あとで学習面を足す使い方のため）。(1) 文章の確認画面に「固定」の欄を置き、「生活面を固定する」「学習面を固定する」を押すと、その面の文（課題の文を含む）をそのまま残す。固定した文には灰色の下線を付ける。(2) 固定した面の項目は文章づくりに使わず、成績一覧を読み込み直しても、固定していない面の文だけを作り直す。並びは学習面→生活面→課題のまま。固定した部分に課題があれば、ほかの課題は入れない。(3) 固定しても文章が変わらないよう、固定した時点のもう一方の面の顔ぶれを保つ。成績一覧で項目が変わると自動の判定に戻る。(4) 固定していない面には、めやすか「固定した字数＋めやすの半分」の多いほうを目標に文を入れる（めやすを超えることがある）。(5) 手で直した文章は面の切れ目が分からないため、もう一方の面の項目がないときだけ、全体をその面として固定できる。(6) 所見一覧に「固定：生活面」などの印を出し、「所見文の固定」の欄から文章のある全員をまとめて固定・全員の固定を外すことができる。項目を変えたあと開いていない児童は、文章が変わるため固定しない。(7) 成績一覧の読み込みでは、固定した面の★を外し、固定していない面に★がなければその面にだけおすすめの★を付ける。学級をつくり直すときは、固定した文を出席番号で引き継ぐ。"},
   {v:"v1.69", d:"2026-11-17", note:"作業ファイル（.json）の保存先が分かり、選べるようにした。(1) 画面上の「開く」「保存」の横に「保存先」ボタンを置いた。押すと、いまの保存先のファイル名を出し、「別の場所を選んで保存」で保存する場所（フォルダ）とファイル名を選び直せる。「保存先を外す」もできる。まだ決めていなければ「保存先を選んで保存」を出す。(2) 画面を開き直して最初に「保存」を押したとき、前回の保存先に黙って上書きせず、「このファイルに保存」「別の場所を選んで保存」を選べるようにした。(3) 保存する場所を選ぶ画面を出せないブラウザ（機能がない・設定で止められている）では、従来どおりダウンロードで保存するが、最初の1回に「ダウンロード」フォルダに保存されること・ファイル名・毎回保存場所を選ぶためのブラウザの設定を知らせる。保存したあとは画面下と「保存しました」の知らせに「ダウンロード」フォルダのファイル名を出す。(4) 選ぶ画面を出せなかったときは、エラーにせずダウンロードで保存する（開くときは、ふつうのファイル選択で開く）。"},
   {v:"v1.68", d:"2026-11-10", note:"体育の「できる」の文を学年別・領域別にした（段階2）。(1) 勤務校の年間指導計画（体育の単元配当表）から、1〜6年の各学年に12〜17の学習内容（例：1年「多様な動きをつくる運動遊び（なわとび）」、4年「ゴール型ゲーム（タグラグビー・ポートボール）」、6年「走り高跳び」「保健（病気の予防）」）を用意した（GRADE_TEXT の k_l_tai・k_m_tai・k_h_tai。各学習内容の知識・技能／思考・判断・表現／主体的に学習に取り組む態度の文と、3観点の文・まとめた文）。(2) 国語と同じく、「取り上げる学習内容」の選ぶ欄は領域ごと（体つくり運動・器械運動・陸上運動・ボール運動・表現運動・保健・スケートなど）に分けて出す。(3) 出席番号で自動に選ぶときは全件から選び、続く番号の児童は別の領域になる。(4) 4年の保健は、計画では3年と同じ「健康な生活」だが、学習指導要領に合わせて「体の発育・発達」にした。(5) 伸長中の文は学年帯のまま。"},
   {v:"v1.67", d:"2026-11-10", note:"算数の学習内容の文の文末に「様子が見られました」を使わないようにした（しろさんの希望）。算数（k_l_san・k_m_san・k_h_san）の観点が入る「できる」の文では、文末の候補の2つ目（〜様子が見られました）の代わりに1つ目（〜ことができました／〜できました）を使う（LOOK_END・noLook()）。2観点をまとめた文も同じ。ほかの教科・項目の文末は変えていない。"},
@@ -4702,7 +4727,7 @@ function addHeads(parts, owners, seed){
    採用判定にもこの関数を使うため、字数の見積もりと実際の出力が必ず一致する。
    v1.7までは断片の長さを足し算していたため、呼称・接続語・文末表現が
    字数に数えられず、常に実際より短く見積もっていた。 */
-function buildText(list, seed){
+function buildCore(list, seed, connStart){
   seed = seed || 0;
   if(!list.length) return { text:"", len:0, parts:[], owners:[] };
   const ordered = pairUp(groupSubj(order(list)));
@@ -4715,7 +4740,7 @@ function buildText(list, seed){
 
   const inJoin = new Set();   // まとめた1文の後ろ側に入った観点の位置（v1.28）
   // v1.32：「また、」が2回出ないよう、2回目（生活系の伸長中の前）は「さらに、」にする。
-  let connN = 0;
+  let connN = connStart || 0;   // v1.70：固定した部分に「また、」があれば「さらに、」から始める
   const conn = () => (connN++ ? "さらに、" : "また、");
   // v1.34：同じ教科の3つ目に付ける「また、」は、伸長中の前のつなぎと合わせて2回までにする（「さらに、」が2回出ないように）
   let subjConnLeft = 2 - [...firstGrowPos].filter(x=>x>0).length;
@@ -4836,6 +4861,183 @@ function buildText(list, seed){
   return { text, len:[...text].length, parts, owners };
 }
 
+/* ==================================================================
+   所見文の固定（v1.70）
+   ------------------------------------------------------------------
+   生活面を先に確定し、あとで学習面を足す（またはその逆）ために、片方の面の文を固定する。
+   データ：rec.lock = { learn:{body,iss}, life:{body,iss} }（固定していない面は持たない）。
+     body … その面の「できる」「伸長中」の文（総括を含む）、iss … その面の課題の文（2文）。
+   固定した面の項目は文章づくりに使わず（runAdoption）、固定した文をそのまま差し込む（buildText）。
+   並びは従来と同じ：学習面 → 生活面 → 課題。課題は1人1件なので、固定した部分に課題があれば
+   固定していない面の課題は入れない。
+   固定しても文章が変わらないよう、固定した時点のもう一方の面の顔ぶれを「手で決めた顔ぶれ」にする。
+   成績一覧を読み込んで項目が変わると、従来どおり自動の判定に戻る（evalApply）。
+   字数：固定した部分は削れないので、固定していない面には「めやす」か「固定した字数＋めやすの半分」の
+   多いほうを目標にする（めやすを超えることがある。最後に担任が整える前提）。
+   ================================================================== */
+const LOCK_NAME = { learn:'学習面', life:'生活面' };
+function normLock(l){
+  if(!l || typeof l !== 'object') return null;
+  const o = {};
+  ['learn','life'].forEach(d=>{
+    const x = l[d];
+    if(x && typeof x === 'object' && (x.body || x.iss)) o[d] = { body:String(x.body||''), iss:String(x.iss||'') };
+  });
+  return Object.keys(o).length ? o : null;
+}
+function lockOn(){ return !!(state.lock && (state.lock.learn || state.lock.life)); }
+function lockedDom(d){ return !!(state.lock && state.lock[d]); }
+function itemDom(id){ return ITEM_DOMAIN.get(id) || 'life'; }
+function lockText(){
+  if(!lockOn()) return '';
+  return DOMAIN_ORDER.map(d=>state.lock[d] ? state.lock[d].body + state.lock[d].iss : '').join('');
+}
+function lockHasIss(){ return lockOn() && DOMAIN_ORDER.some(d=>state.lock[d] && state.lock[d].iss); }
+function buildText(list, seed){
+  if(!lockOn()) return buildCore(list, seed, 0);
+  const lk = state.lock;
+  const b = buildCore(list, seed, /また、/.test(lockText()) ? 1 : 0);
+  const segs = b.parts.map((t,i)=>({ t, o:b.owners[i], d:domainOf(b.owners[i][0]), iss:b.owners[i][0].lvl==='issue', lock:false }));
+  const parts = [], owners = [], doms = [], locks = [];
+  const put = x=>{ if(!x.t) return; parts.push(x.t); owners.push(x.o); doms.push(x.d); locks.push(x.lock); };
+  DOMAIN_ORDER.forEach(d=>{
+    if(lk[d]) put({ t:lk[d].body, o:[], d, lock:true });
+    else segs.filter(x=>x.d===d && !x.iss).forEach(put);
+  });
+  segs.filter(x=>x.iss).forEach(put);
+  DOMAIN_ORDER.forEach(d=>{ if(lk[d]) put({ t:lk[d].iss, o:[], d, lock:true }); });
+  const text = parts.join("");
+  return { text, len:[...text].length, parts, owners, doms, locks };
+}
+/* 選ばれている項目（学年帯に合うもの）。固定の有無は見ない */
+function chosenItems(){
+  return DB.filter(g=>(g.grade||'all')==='all' || g.grade===state.grade)
+    .flatMap(g=>g.items)
+    .filter(i=>state.sel.has(i.id) && itemInBand(i, state.grade))
+    .map(i=>({it:i, lvl:state.sel.get(i.id)}));
+}
+/* いまの文章の d の面を固定する。quiet のときは知らせを出さず、結果を返す
+   'ok'／'none'（その面の文がない）／'hand'（手直しで切れ目が分からない）／'already' */
+function lockCurrent(d, quiet){
+  if(lockedDom(d)) return 'already';
+  const other = d === 'learn' ? 'life' : 'learn';
+  let body = '', iss = '';
+  if(state.hand && state.handOut){
+    // 手で直した文章は、どこまでがどちらの面か分からない。
+    // もう一方の面の項目が選ばれておらず、固定もしていなければ、文章全体をこの面として固定する。
+    if(lockedDom(other) || chosenItems().some(c=>itemDom(c.it.id)===other)){
+      if(!quiet) alert(`この児童の文章は手で直してあるため、${LOCK_NAME[d]}の文がどこまでか分かりません。\n\n`
+        + `「手直しを消して作り直す」で作り直してから固定してください。\n`
+        + `（${LOCK_NAME[other]}の項目が選ばれていないときは、手で直した文章全体を${LOCK_NAME[d]}として固定できます）`);
+      return 'hand';
+    }
+    body = state.handOut;
+  }else{
+    const b = buildText(state.adopted || [], state.seed);
+    b.parts.forEach((t,i)=>{
+      const lk = b.locks ? b.locks[i] : false;
+      if(lk) return;
+      const c = b.owners[i][0];
+      if(domainOf(c) !== d) return;
+      if(c.lvl === 'issue') iss += t; else body += t;
+    });
+  }
+  if(!body && !iss){
+    if(!quiet) alert(`いまの文章には${LOCK_NAME[d]}の文が入っていないため、固定できません。`);
+    return 'none';
+  }
+  // 固定しても文章が変わらないよう、もう一方の面の顔ぶれをいまのまま保つ
+  const keep = state.hand ? [] : (state.adopted || []).filter(c=>itemDom(c.it.id) !== d).map(c=>c.it.id);
+  state.lock = Object.assign({}, state.lock || {}, { [d]:{ body, iss } });
+  if(state.hand){ state.hand = false; state.handOut = ''; state.handSig = ''; }
+  else if(keep.length){ state.manual = true; state.mIn = new Set(keep); }
+  nav.undo = null;
+  regenCurrent();
+  if(!quiet && nav.scr === 'scrDraft'){ renderDraftHead(); syncUndoBtns(); }
+  return 'ok';
+}
+function unlockCurrent(d){
+  if(!lockedDom(d)) return;
+  if(!confirm(`${LOCK_NAME[d]}の固定を外します。\n${LOCK_NAME[d]}の文は、いま選ばれている項目から作り直します`
+    + `（固定していた文を手で直していた場合、その直しは消えます）。\nよろしいですか。`)) return;
+  const l = Object.assign({}, state.lock);
+  delete l[d];
+  state.lock = normLock(l);
+  state.manual = false; state.mIn = new Set();
+  nav.undo = null;
+  regenCurrent();
+  if(nav.scr === 'scrDraft'){ renderDraftHead(); syncUndoBtns(); }
+}
+/* 文章の確認画面の「固定」の欄 */
+function renderLockBar(){
+  const bar = document.getElementById('lockBar');
+  if(!bar) return;
+  const o = document.getElementById('out');
+  if(!lockOn() && (!o || o.classList.contains('empty'))){ bar.style.display = 'none'; bar.innerHTML = ''; return; }
+  let h = '<span class="lklab">固定</span>';
+  DOMAIN_ORDER.forEach(d=>{
+    if(lockedDom(d)){
+      const n = [...(state.lock[d].body + state.lock[d].iss)].length;
+      h += `<button type="button" class="on" data-unlock="${d}" title="押すと固定を外します">${LOCK_NAME[d]}を固定中（${n}字）・外す</button>`;
+    }else{
+      h += `<button type="button" data-lock="${d}">${LOCK_NAME[d]}を固定する</button>`;
+    }
+  });
+  h += '<span class="lknote">' + (lockOn()
+    ? '灰色の下線の部分が固定した文です。成績一覧を読み込み直しても変わりません。固定していない面の文だけを作り直します（字数はめやすを超えることがあります）。'
+    : '固定した面の文は、成績一覧を読み込み直しても変わりません。生活面を先に確定して、あとで学習面を足すときなどに使います。')
+    + '</span>';
+  bar.innerHTML = h;
+  bar.style.display = 'flex';
+  bar.querySelectorAll('[data-lock]').forEach(b=>b.addEventListener('click', ()=>lockCurrent(b.dataset.lock, false)));
+  bar.querySelectorAll('[data-unlock]').forEach(b=>b.addEventListener('click', ()=>unlockCurrent(b.dataset.unlock)));
+}
+function lockMark(s){
+  const l = normLock(s.lock);
+  if(!l) return '';
+  const ds = DOMAIN_ORDER.filter(d=>l[d]).map(d=>LOCK_NAME[d]);
+  return `<span class="lockmark" title="${esc(ds.join('・') + 'の文を固定しています。成績一覧を読み込み直しても変わりません。')}">固定：${ds.join('・')}</span>`;
+}
+/* 所見一覧からまとめて固定する。開き直して文章が変わる児童は固定しない（担任が見た文章だけを固定する） */
+function lockAll(d){
+  captureCurrent();
+  const targets = sortedStudents().filter(s=>s.out && !(normLock(s.lock) || {})[d]);
+  if(!targets.length){ alert(`${LOCK_NAME[d]}を固定できる児童がいません（文章のある児童は、すでに固定してあります）。`); return; }
+  if(!confirm(`文章のある ${targets.length}人 の${LOCK_NAME[d]}の文を固定します。\n`
+    + `固定した文は、成績一覧を読み込み直しても変わりません。\nよろしいですか。`)) return;
+  const curId = roster.curId;
+  const r = { ok:0, none:0, hand:0, diff:0 };
+  targets.forEach(s=>{
+    const before = s.out;
+    roster.curId = s.id; applyRecord(s); regenCurrent(); captureCurrent();
+    if(!s.hand && s.out !== before){
+      // 項目を変えたあと開いていない児童。文章が変わるので固定しない（文章は元に戻す）
+      r.diff++; applyRecord(Object.assign({}, s, { out:before })); s.out = before; return;
+    }
+    const k = lockCurrent(d, true);
+    if(k === 'ok') r.ok++; else if(k === 'none') r.none++; else if(k === 'hand') r.hand++;
+    captureCurrent();
+  });
+  roster.curId = curId; applyRecord(curRec());
+  renderRoster(); saveNow();
+  const m = [`${r.ok}人 の${LOCK_NAME[d]}を固定しました。`];
+  if(r.none) m.push(`${r.none}人 は${LOCK_NAME[d]}の文がないため固定していません。`);
+  if(r.hand) m.push(`${r.hand}人 は文章を手で直してあり、${LOCK_NAME[d]}の文がどこまでか分からないため固定していません（作り直してから一人ずつ固定してください）。`);
+  if(r.diff) m.push(`${r.diff}人 は項目を変えたあと文章を開いていないため固定していません（文章を開いて確かめてから固定してください）。`);
+  nav.banner = m.join(''); renderList(); nav.banner = '';
+  setSaveState(`${r.ok}人 の${LOCK_NAME[d]}を固定しました`, true);
+}
+function unlockAll(){
+  captureCurrent();
+  const ls = roster.students.filter(s=>normLock(s.lock));
+  if(!ls.length){ alert('固定している児童はいません。'); return; }
+  if(!confirm(`${ls.length}人 の固定をすべて外します。\n外した児童の文章は、次に開いたとき、いま選ばれている項目から作り直します。\nよろしいですか。`)) return;
+  ls.forEach(s=>{ s.lock = null; s.manual = false; s.mIn = []; });
+  applyRecord(curRec());
+  renderRoster(); saveNow();
+  setSaveState(`${ls.length}人 の固定を外しました`, true);
+}
+
 /* 組み立て結果 b の中から、観点 c が持つ文だけをつなげて返す。
    課題は2文なので2つつながる。can→grow の因果文（v1.18）は、can側・grow側
    どちらの観点から呼んでも同じ1文（合体後の文）が返る。 */
@@ -4858,10 +5060,13 @@ function runAdoption(){
   // v1.13：教科別・行事別は学年帯ごとに項目が分かれている。選んだ学年帯（または
   // 学年共通＝grade:"all"）の観点だけを対象にする。他学年で選んだままの観点が
   // 残っていても、学年帯を切り替えている間は所見文に反映されない。
-  const chosen = DB.filter(g=>(g.grade||'all')==='all' || g.grade===state.grade)
-    .flatMap(g=>g.items)
-    .filter(i=>state.sel.has(i.id) && itemInBand(i, state.grade))
-    .map(i=>({it:i, lvl:state.sel.get(i.id)}));
+  // v1.70：固定した面の項目は使わない。固定した部分に課題があれば、ほかの課題も入れない
+  const chosen = chosenItems().filter(c=>!lockedDom(domainOf(c)) && !(c.lvl==='issue' && lockHasIss()));
+  if(chosen.length===0 && lockOn()){
+    state.adopted = []; state.unused = [];
+    render(); renderRoster(); saveNow();
+    return;
+  }
   if(chosen.length===0){
     clearPicker();
     setOut("この学年の項目がまだ選ばれていません。「項目を選び直す」から選んでください。", true);
@@ -4882,7 +5087,8 @@ function runAdoption(){
     // 判定は必ずシード0で行う（v1.11から）。state.seed を使うと、文末の長さの違い
     //（「ことができました。」9字と「様子が見られました。」10字）で字数計算がずれ、
     // 境目にある観点が入れ替わる。言い回しを変えたつもりが中身まで変わってしまう。
-    const target = state.len;
+    // v1.70：固定した部分があるときは、固定していない面にも字数を回す（めやすを超えてよい）
+    const target = lockOn() ? Math.max(state.len, [...lockText()].length + Math.round(state.len / 2)) : state.len;
     adopted = order(chosen.filter(isPri));
     let best = buildText(adopted, 0);
     order(chosen.filter(c=>!isPri(c))).forEach(c=>{
@@ -4910,18 +5116,21 @@ function runAdoption(){
 
 function render(){
   if(state.hand && state.handOut){ showHand(); return; }   // v1.59
-  if(!state.adopted.length){
+  if(!state.adopted.length && !lockOn()){
     // 担任がすべて外した状態。下書きは空だが、一覧は出したままにして戻せるようにする。
     setOut("下書きに入れる観点がありません。「くわしい設定」の「入っていない観点」から入れてください。", true);
     renderPicker(null);
     return;
   }
   const b = buildText(state.adopted, state.seed);
-  setOut(b.text, false, b.parts.filter((p,i)=>b.owners[i].some(autoUnitKey)));   // v1.63：自動の学習内容の文を赤字に
+  setOut(b.text, false, b.parts.filter((p,i)=>b.owners[i].some(autoUnitKey)),   // v1.63：自動の学習内容の文を赤字に
+         b.locks ? b.parts.filter((p,i)=>b.locks[i]) : []);                      // v1.70：固定した文
   renderUnitNote();
   updateMeta(b.text, state.len);
-  showOnlyIssueWarning(state.adopted);
+  if(lockOn()){ const oi = document.getElementById('onlyIssue'); if(oi){ oi.style.display='none'; oi.innerHTML=''; } }
+  else showOnlyIssueWarning(state.adopted);
   renderPicker(b);
+  renderLockBar();
 }
 
 /* v1.63：文章の確認画面の「取り上げる学習内容を決めてください」の欄。
@@ -5161,22 +5370,35 @@ function showOnlyIssueWarning(adopted){
   }
 }
 
-function setOut(t, empty, marks){
+function setOut(t, empty, marks, locks){
   const o=document.getElementById('out');
   o.textContent=t; o.classList.toggle('empty', !!empty);
   // v1.63：marks（自動で選んだ学習内容の文）を赤字にする。o.textContent は文章そのままになる（コピー・保存はこれを使う）
-  if(!empty && marks && marks.length){
-    o.textContent = '';
+  // v1.70：locks（固定した文）に灰色の下線を付ける
+  const rg = [];
+  const find = (list, cls, title)=>{
     let pos = 0;
-    marks.forEach(m=>{
+    (list || []).forEach(m=>{
       if(!m) return;
       const i = t.indexOf(m, pos);
       if(i < 0) return;
-      if(i > pos) o.appendChild(document.createTextNode(t.slice(pos, i)));
-      const sp = document.createElement('span'); sp.className = 'autou'; sp.textContent = m;
-      sp.title = '学習内容がまだ決定していない文です。下の欄で学習内容を選び、「決定する」を押してください。';
+      rg.push({ i, m, cls, title }); pos = i + m.length;
+    });
+  };
+  if(!empty){
+    find(marks, 'autou', '学習内容がまだ決定していない文です。下の欄で学習内容を選び、「決定する」を押してください。');
+    find(locks, 'lockt', '固定した文です。成績一覧を読み込み直しても変わりません。');
+  }
+  if(rg.length){
+    rg.sort((a,b)=>a.i-b.i);
+    o.textContent = '';
+    let pos = 0;
+    rg.forEach(x=>{
+      if(x.i < pos) return;   // 重なりは先のものを優先
+      if(x.i > pos) o.appendChild(document.createTextNode(t.slice(pos, x.i)));
+      const sp = document.createElement('span'); sp.className = x.cls; sp.textContent = x.m; sp.title = x.title;
       o.appendChild(sp);
-      pos = i + m.length;
+      pos = x.i + x.m.length;
     });
     if(pos < t.length) o.appendChild(document.createTextNode(t.slice(pos)));
   }
@@ -5190,6 +5412,7 @@ function setOut(t, empty, marks){
   }
   syncEditBlink();
   if(typeof handBar === 'function' && !(state.hand && state.handOut)) handBar();   // v1.59：手直しの知らせを消す
+  renderLockBar();   // v1.70
 }
 
 /* v1.40：項目の追加が必要な児童では「項目を選び直す」を点滅させる。
@@ -5398,7 +5621,8 @@ function blankStudent(){
            seed:0, okOut:"", year:0,      // v1.33：言い回し・確認した文章・学年
            hand:false, handSig:"",        // v1.59：手で直した文章か（文章は out）
            autoSent:[],                   // v1.63：自動で選んだ学習内容の文（赤字）
-           units:{}, unitOk:{} };         // v1.66：選んだ学習内容と、決定した教科
+           units:{}, unitOk:{},           // v1.66：選んだ学習内容と、決定した教科
+           lock:null };                   // v1.70：固定した部分 {learn:{body,iss}, life:{body,iss}}
 }
 
 /* ---- 画面 ⇄ レコード ---- */
@@ -5426,6 +5650,7 @@ function captureCurrent(){
   rec.seed    = state.seed;   // v1.33：言い回しを保存し、開き直しても同じ文章にする
   rec.units   = Object.assign({}, state.units || {});   // v1.49
   rec.unitOk  = Object.assign({}, state.unitOk || {});  // v1.66：決定した教科
+  rec.lock    = normLock(state.lock);                    // v1.70：固定した部分
   rec.updated = new Date().toISOString();
 }
 
@@ -5452,6 +5677,7 @@ function applyRecord(rec){
   state.hand    = !!rec.hand && !!rec.out;
   state.handOut = state.hand ? rec.out : "";
   state.handSig = state.hand ? String(rec.handSig || "") : "";
+  state.lock = normLock(rec.lock);   // v1.70
 
   document.getElementById('lenInput').value = state.len;
   document.querySelectorAll('#lenSeg button').forEach(b=>{
@@ -5624,6 +5850,7 @@ function normalizeStudent(s){
            year: [1,2,3,4,5,6].includes(+s.year) ? +s.year : 0,
            autoSent: (!s.hand && Array.isArray(s.autoSent))   // v1.63
              ? s.autoSent.filter(x=>typeof x === 'string' && x && String(s.out||"").includes(x)) : [],
+           lock: normLock(s.lock),      // v1.70
            units: normUnits(s.units),   // v1.62：3→GT_MAX
            unitOk: (s.unitOk && typeof s.unitOk === 'object')   // v1.66：v1.65 以前は選んだ教科を決定済みとみなす
              ? Object.fromEntries(Object.keys(normUnits(s.units)).filter(k=>s.unitOk[k]).map(k=>[k, true]))
@@ -6903,7 +7130,7 @@ function evalRenderPreview(){
       const sc = tr.children[7];
       const t = o.mode==='create' ? null : evalTarget(st.no);
       if(o.mode!=='create' && !t){ /* 取り込まない児童 */ }
-      else if(t && (t.pri||[]).length){ sc.textContent = '★あり：変えません'; sc.classList.add('dim'); keepStar++; }
+      else if(t && (t.pri||[]).filter(id=>!(normLock(t.lock) || {})[itemDom(id)]).length){ sc.textContent = '★あり：変えません'; sc.classList.add('dim'); keepStar++; }
       else{
         const sel = t ? evalMergeSel(t, r, o).sel : Object.fromEntries(r.marks);
         const rc = evalRecommend(sel, r.band, st.no);
@@ -6938,6 +7165,10 @@ function evalRenderPreview(){
   }
   if(nSum) msgs.push(`学習面の総括（学習の記録の${Math.round(SUM_ALL_RATE*100)}％以上がA、または主要教科の同じ観点の${Math.round(SUM_KANTEN_RATE*100)}％以上がA）に当たる児童が <b>${nSum}人</b> います。所見の学習面の最初に、学習全体をまとめた文を入れます`
     + (o.star==='on' ? '（★を付けます）。' : '。'));
+  if(o.mode !== 'create'){   // v1.70
+    const nLock = ana.students.filter(st=>{ const t = evalTarget(st.no); return t && normLock(t.lock); }).length;
+    if(nLock) msgs.push(`文を固定してある児童が <b>${nLock}人</b> います。固定した面の文は変えず、固定していない面の文だけを作り直します。`);
+  }
   if(gaiji) msgs.push(`外字を含む氏名が ${gaiji}人 います。「名前に使う部分」を「名だけ」にすると避けられる場合があります。`);
   document.getElementById('evalWarn').innerHTML = msgs.join('<br>');
 
@@ -6978,9 +7209,12 @@ function evalApply(){
 
   if(o.mode === 'create'){
     const cur = roster.students.filter(s=>s.out).length;
+    // v1.70：固定した部分は、出席番号が同じ児童に引き継ぐ
+    const oldLock = new Map(roster.students.filter(s=>normLock(s.lock)).map(s=>[parseInt(s.no,10), normLock(s.lock)]));
     if(!rosterIsBlank()){
       const msg = `${ana.students.length}人の一覧で学級をつくり直します。\n`
         + `いま入力してある${roster.students.length}人分は消えます。`
+        + (oldLock.size ? `\n（固定した文がある ${oldLock.size}人 は、出席番号が同じ児童に固定した文だけを引き継ぎます）` : '')
         + (cur ? `\n\n所見文ができている児童が ${cur}人 います。本当によろしいですか。` : '\nよろしいですか。');
       if(!confirm(msg)) return;
     }
@@ -6992,8 +7226,10 @@ function evalApply(){
       if(st.year) rec.year = st.year;
       rec.sel = Object.fromEntries(r.marks);
       if(r.marks.size) changed++;
+      const lk = oldLock.get(parseInt(st.no,10)) || null;   // v1.70
+      if(lk) rec.lock = lk;
       if(o.star === 'on'){
-        rec.pri = evalRecommend(rec.sel, r.band, st.no).ids;
+        rec.pri = evalRecommend(rec.sel, r.band, st.no).ids.filter(id=>!(lk && lk[itemDom(id)]));
         if(rec.pri.length) starred++;
       }
       return rec;
@@ -7018,9 +7254,12 @@ function evalApply(){
       rec.grade = r.band;
       if(st.year) rec.year = st.year;
       rec.pri = (rec.pri||[]).filter(id=>sel[id]);
+      // v1.70：固定した面の★は使わない（固定していない面に★がなければ、その面にだけおすすめを付ける）
+      const lk = normLock(rec.lock);
+      if(lk) rec.pri = rec.pri.filter(id=>!lk[itemDom(id)]);
       // おすすめ★（v1.27）。担任がすでに★を付けている児童は変えない。
       if(o.star === 'on' && !rec.pri.length){
-        rec.pri = evalRecommend(sel, r.band, st.no).ids;
+        rec.pri = evalRecommend(sel, r.band, st.no).ids.filter(id=>!(lk && lk[itemDom(id)]));
         if(rec.pri.length){ starred++; rec.manual = false; rec.mIn = []; }
       }
       if(JSON.stringify(sel) !== before){
@@ -7406,7 +7645,8 @@ function pageCount(i){
 function renderItems(){
   const rec = curRec(); if(!rec) return;
   const w = whoLabel(rec);
-  $('itemsWho').innerHTML = `<span><b>${esc(w.nm)}</b>　${esc(w.sub)}</span>` + progText(rec);
+  $('itemsWho').innerHTML = `<span><b>${esc(w.nm)}</b>　${esc(w.sub)}</span>` + progText(rec)
+    + (lockOn() ? `<span class="itemslock">${DOMAIN_ORDER.filter(lockedDom).map(d=>LOCK_NAME[d]).join('・')}の文を固定しています。その面の項目を変えても文章は変わりません（固定を外すと反映されます）。</span>` : '');   // v1.70
   $('pageChips').innerHTML = PAGES.map((p,i)=>{
     const n = pageCount(i);
     return `<button type="button" data-page="${i}" class="${i===nav.page?'cur':''}">${p.title}${n?`<span class="n">${n}</span>`:''}</button>`;
@@ -7465,7 +7705,7 @@ function openDraft(id, mode){
 function regenCurrent(){
   const rec = curRec();
   if(state.hand && state.handOut){ showHand(); renderRoster(); saveNow(); return; }   // v1.59：項目を全部外しても残す
-  if(state.sel.size){
+  if(state.sel.size || lockOn()){   // v1.70：項目がなくても、固定した文は出す
     state.seed = (rec && rec.seed) || 0;
     runAdoption();
     // 他の学年帯の観点しか選ばれていないと runAdoption は空の下書きを出す
@@ -7673,7 +7913,7 @@ function renderList(){
       + `<td class="nm">${esc((s.name||'').trim() || '（名前なし）')}</td>`
       + `<td class="tx">${esc(head)}</td>`
       + `<td class="len${bad?' bad':''}" title="${bad?'めやす（'+(s.len||175)+'字）から離れています':''}">${n ? n + '字' : ''}</td>`
-      + `<td><span class="badge ${st}">${STATUS_LABEL[st]}</span>${s.hand && s.out ? '<span class="handmark" title="手で直した文章です">✎手直し</span>' : ''}${umark}${dmark}${cmark}</td>`
+      + `<td><span class="badge ${st}">${STATUS_LABEL[st]}</span>${s.hand && s.out ? '<span class="handmark" title="手で直した文章です">✎手直し</span>' : ''}${lockMark(s)}${umark}${dmark}${cmark}</td>`
       + `<td class="ops">${s.out ? '<button type="button" class="cp">コピー</button>' : ''}<button type="button" class="del" title="この児童を削除">×</button></td></tr>`;
   });
   html += '</tbody></table>';
@@ -7893,6 +8133,9 @@ function doUndo(){
   if(nav.scr === 'scrDraft'){ renderDraftHead(); syncUndoBtns(); }
 }
 $('undoItems').addEventListener('click', doUndo);
+$('lockAllLife').addEventListener('click', ()=>lockAll('life'));     // v1.70
+$('lockAllLearn').addEventListener('click', ()=>lockAll('learn'));
+$('unlockAll').addEventListener('click', unlockAll);
 $('undoDraft').addEventListener('click', doUndo);
 
 /* 変更の直前（捕捉段階）に控えを取り、変更のあと（通常の段階）に文章を作り直す */
