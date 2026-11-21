@@ -1226,9 +1226,10 @@ details.cat>summary{font-size:16px; padding:12px 14px; background:#f6f9fc;}
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "SN v1.30";
-const APP_DATE    = "2026-11-16";
+const APP_VERSION = "SN v1.31";
+const APP_DATE    = "2026-11-21";
 const APP_HISTORY = [
+  {v:"SN v1.31", d:"2026-11-21", note:"ネットで一度開いた端末なら、あとでネットがつながらなくても開けるようにした（オフライン対応）。(1) リポジトリの先頭に sw.js（Service Worker）を置いた。ネットで開くと、標準版・外国語活動版・特別支援学級版の3つの画面をまとめてブラウザの中に保存する。(2) 画面を開くときはネットの最新版を優先し、取れたら保存し直す。ネットがない・4秒待っても返事がないときは保存した版を出す（HTMLを更新しても sw.js を書き換える必要はない）。(3) 見出しの横に「オフライン可」（緑）の札を出す。ネットが切れると「オフラインで使用中」（だいだい）に変わる。札を押すと説明が出る。ファイルをダブルクリックで開いたとき・対応していないブラウザでは何もしない。(4) 扱うのはアプリの画面だけで、入力内容（児童名・所見）は扱わない。自動保存はネットで開いたときと同じ場所（localStorage）を使うので、オフラインで開いても続きから使える。処理は最後の「オフライン対応」の囲みと sw.js。"},
   {v:"SN v1.30", d:"2026-11-16", note:"「欄ごとにコピー（C4th用）」の「所見をコピー」「番号・名前つきでコピー」をなくし、一人ずつコピーする形だけにした。C4thには1人の欄ずつしか貼り付けられず、まとめてコピーすると1人の欄に全員分が入ってしまうため。その欄を使う児童だけを並べ、コピーした児童に「コピー済み」の印を付ける（欄のボタンにもコピー済みの人数を出す）。空の行の切り替えと番号の抜けの知らせは不要になったので外した。コピーのボタンは番号の左に置き、色を付けて目立たせた（コピー済みは緑）。所見一覧の「全員分コピー」もなくした（C4thには使えないため。CSVで保存は残した）。"},
   {v:"SN v1.29", d:"2026-11-16", note:"所見一覧の「C4th用Excelに書き込む」を「欄ごとにコピー（C4th用）」に替えた。C4thの通知表入力のExcelは欄（教科等）ごとに分かれて出てくるため。欄を選ぶと、全員分の所見を番号順に並べて見られ、「所見をコピー」で1行1人の形でコピーできる（Excelの所見の列の1人目のセルに貼り付ける）。その欄を使わない児童も空の行にする（切り替えあり）。番号の抜け・重なり、まだできていない児童・下書きの児童がいれば知らせる。1人ずつのコピー、番号・名前つきのコピー、「次の欄へ」もある。"},
   {v:"SN v1.28", d:"2026-11-13", note:"文例を直した。体育：「運動会の踊りや団体種目」を除いた（行事の内容のため）。「決められた時間、運動を続ける」を「休まずに運動を続ける」に（時間を守る意味に読めないように）。道徳：行動を評価する文（〜できました）をやめ、「〜に気付きました」「〜気持ちが高まってきました」など心の変化を書く文にした（項目ごとに2通り）。生活単元：「目当て」を「めあて」に。行動のようす：あいさつや返事・健康管理（自分の体調に気を付ける）・体力向上（進んで体を動かす）・粘り強さ・誰にでも公平に接する を足した。家庭：小見出し「家庭生活」と「家族とのふれあいや団らんの大切さに気付く」を足した。"},
@@ -7097,6 +7098,88 @@ window.KK_DEBUG = KKS;   // 動作確認用（コンソールから読み取り�
     if(typeof showTour === 'function') showTour();
     else document.getElementById('goTour').click();
   });
+})();
+</script>
+<script>
+/* ==================================================================
+   オフライン対応（SN v1.31）
+   ------------------------------------------------------------------
+   ネットで一度開いた端末なら、あとでネットがなくても開けるようにする。
+   しくみの本体はリポジトリの先頭にある sw.js（Service Worker）。
+   ここでは sw.js を登録し、見出しの横に状態の札を出すだけ。
+   ・ネットで開いて保存が済んだ：「オフライン可」（緑）
+   ・ネットが切れている：「オフラインで使用中」（だいだい）
+   ・ファイルをダブルクリックで開いたとき・対応していないブラウザ：何もしない
+     （ファイルで開いたときは、もともとネットは要らない）
+   入力内容（児童名・所見）は、この処理では扱わない。
+   ================================================================== */
+(function(){
+  const SW_PATH = '../sw.js';          // この画面から見た sw.js の位置
+  const CACHE_PREFIX = 'shoken-assist-';  // sw.js の CACHE_PREFIX と同じにする
+  if(!/^https?:$/.test(location.protocol) || !('serviceWorker' in navigator) || !window.caches) return;
+
+  // sw.js の pageKey() と同じ形にそろえる
+  function pageKey(url){
+    const u = new URL(url);
+    let p = u.pathname.replace(/index\.html$/, '');
+    if(!p.endsWith('/') && !/\.[a-z0-9]+$/i.test(p)) p += '/';
+    return u.origin + p;
+  }
+
+  // ---- 札をつくる ----
+  const st = document.createElement('style');
+  st.textContent =
+    '.offbadge{margin-left:8px; font-size:12px; font-weight:600; vertical-align:middle; padding:2px 9px;'+
+    ' border-radius:999px; border:1px solid #9fd3ad; background:#e8f6ec; color:#1d6b35; cursor:pointer; font-family:inherit;}'+
+    '.offbadge.off{border-color:#f0c48a; background:#fff4e5; color:#8a4b00;}';
+  document.head.appendChild(st);
+  const badge = document.createElement('button');
+  badge.type = 'button';
+  badge.className = 'offbadge';
+  badge.style.display = 'none';
+  const ver = document.getElementById('verBadge');
+  if(ver && ver.parentNode) ver.parentNode.insertBefore(badge, ver.nextSibling);
+  else return;
+
+  let saved = false;
+  function paint(){
+    if(!saved){ badge.style.display = 'none'; return; }
+    const offline = navigator.onLine === false;
+    badge.style.display = '';
+    badge.classList.toggle('off', offline);
+    badge.textContent = offline ? 'オフラインで使用中' : 'オフライン可';
+    badge.title = offline
+      ? 'ネットにつながっていません。この端末に保存してある版で動いています。入力や保存はふだんどおりできます。'
+      : 'この端末にアプリを保存してあります。ネットがつながらないときも、このページを開けば使えます。';
+  }
+  badge.addEventListener('click', ()=>{
+    alert(
+      '【ネットがなくても使えます】\n\n' +
+      '・この端末には、所見文アシストのアプリ本体を保存してあります。\n' +
+      '・ネットがつながらないときも、このページ（ブックマーク）を開けば使えます。\n' +
+      '・ネットにつながっているときは、開くたびに最新版に入れ替わります。\n\n' +
+      '入力した児童名や所見は、これまでどおりこの端末の中だけに保存され、外には送られません。'
+    );
+  });
+  addEventListener('online', paint);
+  addEventListener('offline', paint);
+
+  // この画面が保存済みかを確かめて札を出す
+  async function check(){
+    try{
+      const names = (await caches.keys()).filter(n => n.startsWith(CACHE_PREFIX));
+      for(const n of names){
+        const c = await caches.open(n);
+        if(await c.match(pageKey(location.href))){ saved = true; break; }
+      }
+    }catch(e){}
+    paint();
+  }
+
+  navigator.serviceWorker.register(SW_PATH)
+    .then(() => navigator.serviceWorker.ready)
+    .then(() => { check(); setTimeout(check, 3000); })   // はじめての日は保存に少し時間がかかる
+    .catch(() => {});                                     // 登録できなくても、アプリはふだんどおり動く
 })();
 </script>
 </body>

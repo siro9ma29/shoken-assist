@@ -1171,9 +1171,10 @@ details.cat>summary{font-size:16px; padding:12px 14px; background:#f6f9fc;}
 <script>
 /* ============ バージョン情報 ============
    更新するたびに APP_VERSION / APP_DATE を書き換えてください。 */
-const APP_VERSION = "v1.70";
-const APP_DATE    = "2026-11-10";
+const APP_VERSION = "v1.71";
+const APP_DATE    = "2026-11-21";
 const APP_HISTORY = [
+  {v:"v1.71", d:"2026-11-21", note:"ネットで一度開いた端末なら、あとでネットがつながらなくても開けるようにした（オフライン対応）。(1) リポジトリの先頭に sw.js（Service Worker）を置いた。ネットで開くと、標準版・外国語活動版・特別支援学級版の3つの画面をまとめてブラウザの中に保存する。(2) 画面を開くときはネットの最新版を優先し、取れたら保存し直す。ネットがない・4秒待っても返事がないときは保存した版を出す（HTMLを更新しても sw.js を書き換える必要はない）。(3) 見出しの横に「オフライン可」（緑）の札を出す。ネットが切れると「オフラインで使用中」（だいだい）に変わる。札を押すと説明が出る。ファイルをダブルクリックで開いたとき・対応していないブラウザでは何もしない。(4) 扱うのはアプリの画面だけで、入力内容（児童名・所見）は扱わない。自動保存はネットで開いたときと同じ場所（localStorage）を使うので、オフラインで開いても続きから使える。処理は最後の「オフライン対応」の囲みと sw.js。"},
   {v:"v1.70", d:"2026-11-20", note:"所見文の一部を固定できるようにした（生活面を先に確定し、あとで学習面を足す使い方のため）。(1) 文章の確認画面に「固定」の欄を置き、「生活面を固定する」「学習面を固定する」を押すと、その面の文（課題の文を含む）をそのまま残す。固定した文には灰色の下線を付ける。(2) 固定した面の項目は文章づくりに使わず、成績一覧を読み込み直しても、固定していない面の文だけを作り直す。並びは学習面→生活面→課題のまま。固定した部分に課題があれば、ほかの課題は入れない。(3) 固定しても文章が変わらないよう、固定した時点のもう一方の面の顔ぶれを保つ。成績一覧で項目が変わると自動の判定に戻る。(4) 固定していない面には、めやすか「固定した字数＋めやすの半分」の多いほうを目標に文を入れる（めやすを超えることがある）。(5) 手で直した文章は面の切れ目が分からないため、もう一方の面の項目がないときだけ、全体をその面として固定できる。(6) 所見一覧に「固定：生活面」などの印を出し、「所見文の固定」の欄から文章のある全員をまとめて固定・全員の固定を外すことができる。項目を変えたあと開いていない児童は、文章が変わるため固定しない。(7) 成績一覧の読み込みでは、固定した面の★を外し、固定していない面に★がなければその面にだけおすすめの★を付ける。学級をつくり直すときは、固定した文を出席番号で引き継ぐ。"},
   {v:"v1.69", d:"2026-11-17", note:"作業ファイル（.json）の保存先が分かり、選べるようにした。(1) 画面上の「開く」「保存」の横に「保存先」ボタンを置いた。押すと、いまの保存先のファイル名を出し、「別の場所を選んで保存」で保存する場所（フォルダ）とファイル名を選び直せる。「保存先を外す」もできる。まだ決めていなければ「保存先を選んで保存」を出す。(2) 画面を開き直して最初に「保存」を押したとき、前回の保存先に黙って上書きせず、「このファイルに保存」「別の場所を選んで保存」を選べるようにした。(3) 保存する場所を選ぶ画面を出せないブラウザ（機能がない・設定で止められている）では、従来どおりダウンロードで保存するが、最初の1回に「ダウンロード」フォルダに保存されること・ファイル名・毎回保存場所を選ぶためのブラウザの設定を知らせる。保存したあとは画面下と「保存しました」の知らせに「ダウンロード」フォルダのファイル名を出す。(4) 選ぶ画面を出せなかったときは、エラーにせずダウンロードで保存する（開くときは、ふつうのファイル選択で開く）。"},
   {v:"v1.68", d:"2026-11-10", note:"体育の「できる」の文を学年別・領域別にした（段階2）。(1) 勤務校の年間指導計画（体育の単元配当表）から、1〜6年の各学年に12〜17の学習内容（例：1年「多様な動きをつくる運動遊び（なわとび）」、4年「ゴール型ゲーム（タグラグビー・ポートボール）」、6年「走り高跳び」「保健（病気の予防）」）を用意した（GRADE_TEXT の k_l_tai・k_m_tai・k_h_tai。各学習内容の知識・技能／思考・判断・表現／主体的に学習に取り組む態度の文と、3観点の文・まとめた文）。(2) 国語と同じく、「取り上げる学習内容」の選ぶ欄は領域ごと（体つくり運動・器械運動・陸上運動・ボール運動・表現運動・保健・スケートなど）に分けて出す。(3) 出席番号で自動に選ぶときは全件から選び、続く番号の児童は別の領域になる。(4) 4年の保健は、計画では3年と同じ「健康な生活」だが、学習指導要領に合わせて「体の発育・発達」にした。(5) 伸長中の文は学年帯のまま。"},
@@ -8689,6 +8690,88 @@ window.addEventListener('beforeunload', e=>{
     if(typeof showTour === 'function') showTour();
     else document.getElementById('goTour').click();
   });
+})();
+</script>
+<script>
+/* ==================================================================
+   オフライン対応（v1.71）
+   ------------------------------------------------------------------
+   ネットで一度開いた端末なら、あとでネットがなくても開けるようにする。
+   しくみの本体はリポジトリの先頭にある sw.js（Service Worker）。
+   ここでは sw.js を登録し、見出しの横に状態の札を出すだけ。
+   ・ネットで開いて保存が済んだ：「オフライン可」（緑）
+   ・ネットが切れている：「オフラインで使用中」（だいだい）
+   ・ファイルをダブルクリックで開いたとき・対応していないブラウザ：何もしない
+     （ファイルで開いたときは、もともとネットは要らない）
+   入力内容（児童名・所見）は、この処理では扱わない。
+   ================================================================== */
+(function(){
+  const SW_PATH = './sw.js';          // この画面から見た sw.js の位置
+  const CACHE_PREFIX = 'shoken-assist-';  // sw.js の CACHE_PREFIX と同じにする
+  if(!/^https?:$/.test(location.protocol) || !('serviceWorker' in navigator) || !window.caches) return;
+
+  // sw.js の pageKey() と同じ形にそろえる
+  function pageKey(url){
+    const u = new URL(url);
+    let p = u.pathname.replace(/index\.html$/, '');
+    if(!p.endsWith('/') && !/\.[a-z0-9]+$/i.test(p)) p += '/';
+    return u.origin + p;
+  }
+
+  // ---- 札をつくる ----
+  const st = document.createElement('style');
+  st.textContent =
+    '.offbadge{margin-left:8px; font-size:12px; font-weight:600; vertical-align:middle; padding:2px 9px;'+
+    ' border-radius:999px; border:1px solid #9fd3ad; background:#e8f6ec; color:#1d6b35; cursor:pointer; font-family:inherit;}'+
+    '.offbadge.off{border-color:#f0c48a; background:#fff4e5; color:#8a4b00;}';
+  document.head.appendChild(st);
+  const badge = document.createElement('button');
+  badge.type = 'button';
+  badge.className = 'offbadge';
+  badge.style.display = 'none';
+  const ver = document.getElementById('verBadge');
+  if(ver && ver.parentNode) ver.parentNode.insertBefore(badge, ver.nextSibling);
+  else return;
+
+  let saved = false;
+  function paint(){
+    if(!saved){ badge.style.display = 'none'; return; }
+    const offline = navigator.onLine === false;
+    badge.style.display = '';
+    badge.classList.toggle('off', offline);
+    badge.textContent = offline ? 'オフラインで使用中' : 'オフライン可';
+    badge.title = offline
+      ? 'ネットにつながっていません。この端末に保存してある版で動いています。入力や保存はふだんどおりできます。'
+      : 'この端末にアプリを保存してあります。ネットがつながらないときも、このページを開けば使えます。';
+  }
+  badge.addEventListener('click', ()=>{
+    alert(
+      '【ネットがなくても使えます】\n\n' +
+      '・この端末には、所見文アシストのアプリ本体を保存してあります。\n' +
+      '・ネットがつながらないときも、このページ（ブックマーク）を開けば使えます。\n' +
+      '・ネットにつながっているときは、開くたびに最新版に入れ替わります。\n\n' +
+      '入力した児童名や所見は、これまでどおりこの端末の中だけに保存され、外には送られません。'
+    );
+  });
+  addEventListener('online', paint);
+  addEventListener('offline', paint);
+
+  // この画面が保存済みかを確かめて札を出す
+  async function check(){
+    try{
+      const names = (await caches.keys()).filter(n => n.startsWith(CACHE_PREFIX));
+      for(const n of names){
+        const c = await caches.open(n);
+        if(await c.match(pageKey(location.href))){ saved = true; break; }
+      }
+    }catch(e){}
+    paint();
+  }
+
+  navigator.serviceWorker.register(SW_PATH)
+    .then(() => navigator.serviceWorker.ready)
+    .then(() => { check(); setTimeout(check, 3000); })   // はじめての日は保存に少し時間がかかる
+    .catch(() => {});                                     // 登録できなくても、アプリはふだんどおり動く
 })();
 </script>
 </body>
